@@ -61,41 +61,41 @@ export default function AuthenticatedLayout({ header, children }) {
                                     </NavLink>
                                 )}
                                 <div className="relative">
-                                    <Dropdown>
-                                        <Dropdown.Trigger>
+                                <Dropdown>
+                                    <Dropdown.Trigger>
                                             <span className="inline-flex rounded-lg">
-                                                <button
-                                                    type="button"
+                                            <button
+                                                type="button"
                                                     className="inline-flex items-center rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900"
+                                            >
+                                                {user.name}
+                                                <svg
+                                                    className="-me-0.5 ms-2 h-4 w-4"
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    viewBox="0 0 20 20"
+                                                    fill="currentColor"
                                                 >
-                                                    {user.name}
-                                                    <svg
-                                                        className="-me-0.5 ms-2 h-4 w-4"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </span>
-                                        </Dropdown.Trigger>
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </span>
+                                    </Dropdown.Trigger>
 
-                                        <Dropdown.Content>
+                                    <Dropdown.Content>
                                             <Dropdown.Link href={route('profile.edit')} className="text-sm">
                                                 Профиль
-                                            </Dropdown.Link>
+                                        </Dropdown.Link>
                                             <Dropdown.Link href={route('logout')} method="post" as="button" className="text-sm">
                                                 Выход
-                                            </Dropdown.Link>
-                                        </Dropdown.Content>
-                                    </Dropdown>
-                                </div>
+                                        </Dropdown.Link>
+                                    </Dropdown.Content>
+                                </Dropdown>
                             </div>
+                        </div>
                         )}
 
                         {!user && (
@@ -260,14 +260,14 @@ export default function AuthenticatedLayout({ header, children }) {
 
                     {user && (
                         <div className="border-t border-indigo-900 pb-3 pt-4">
-                            <div className="px-4">
+                        <div className="px-4">
                                 <div className="text-base font-medium text-white">
-                                    {user.name}
-                                </div>
-                                <div className="text-sm font-medium text-indigo-300">
-                                    {user.email}
-                                </div>
+                                {user.name}
                             </div>
+                                <div className="text-sm font-medium text-indigo-300">
+                                {user.email}
+                            </div>
+                        </div>
 
                             <div className="mt-3 space-y-1 px-4">
                                 {user.is_admin ? (
@@ -311,20 +311,20 @@ export default function AuthenticatedLayout({ header, children }) {
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                     </svg>
                                     Профиль
-                                </ResponsiveNavLink>
-                                <ResponsiveNavLink
-                                    method="post"
-                                    href={route('logout')}
-                                    as="button"
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                method="post"
+                                href={route('logout')}
+                                as="button"
                                     className={`w-full flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-900`}
-                                >
+                            >
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                     </svg>
                                     Выход
-                                </ResponsiveNavLink>
-                            </div>
+                            </ResponsiveNavLink>
                         </div>
+                    </div>
                     )}
 
                     {!user && (
@@ -370,11 +370,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 <div className="bg-gradient-to-r from-green-600 to-green-700 shadow-lg">
                     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
                         <div className="text-white">
-                            {header}
+                        {header}
                         </div>
                     </div>
-                </div>
-            </header>
+                    </div>
+                </header>
 
             <main>{children}</main>
             <Footer />

@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\VinRequestController;
 
 /*
 |--------------------------------------------------------------------------
@@ -49,21 +50,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // История VIN-запросов пользователя
+    Route::get('/my-vin-requests', [VinRequestController::class, 'userRequests'])->name('vin-request.user');
 });
 
 // Маршруты для магазина автозапчастей
 Route::get('/home', function () {
+    $brands = \App\Models\CarBrand::all();
+    $categories = \Illuminate\Support\Facades\DB::table('part_categories')->whereNull('parent_id')->get();
+    
     return Inertia::render('Home', [
         'auth' => [
             'user' => Auth::user(),
         ],
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
+        'brands' => $brands,
+        'categories' => $categories,
     ]);
 })->name('home');
 
 Route::get('/brands', function () {
+    // Получаем бренды из базы данных
     $brands = \App\Models\CarBrand::all();
+    
+    // Всегда возвращаем обычный Inertia-рендер
     return Inertia::render('Brands/Index', [
         'auth' => [
             'user' => Auth::user(),
@@ -209,9 +221,19 @@ Route::get('/location-map', function () {
     ]);
 })->name('location-map');
 
+// Маршруты для подбора запчастей по VIN
+Route::get('/vin-request', [VinRequestController::class, 'index'])->name('vin-request.index');
+Route::post('/vin-request', [VinRequestController::class, 'store'])->name('vin-request.store');
+Route::get('/vin-request/success', [VinRequestController::class, 'success'])->name('vin-request.success');
+
 // Маршруты админ-панели
 Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+    
+    // Управление VIN-запросами
+    Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('admin.vin-requests.index');
+    Route::get('/vin-requests/{id}', [App\Http\Controllers\Admin\VinRequestController::class, 'show'])->name('admin.vin-requests.show');
+    Route::patch('/vin-requests/{id}/status', [App\Http\Controllers\Admin\VinRequestController::class, 'updateStatus'])->name('admin.vin-requests.update-status');
 });
 
 require __DIR__.'/auth.php';

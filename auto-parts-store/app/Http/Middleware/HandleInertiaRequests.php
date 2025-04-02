@@ -36,4 +36,21 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
     }
+
+    /**
+     * Determine if the given request is asking for JSON.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return bool
+     */
+    public function isInertiaRequest(Request $request)
+    {
+        // Для страницы /brands всегда возвращаем false,
+        // чтобы принудительно использовать HTML-ответ
+        if ($request->is('brands') || $request->is('brands/*')) {
+            return false;
+        }
+        
+        return parent::isInertiaRequest($request);
+    }
 }

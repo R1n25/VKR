@@ -19,33 +19,43 @@ use App\Http\Controllers\API\OrderController;
 |
 */
 
+// Эти маршруты уже имеют префикс api в RouteServiceProvider
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Маршруты для брендов автомобилей
-Route::apiResource('brands', CarBrandController::class);
+// Перенаправляем запросы с /api/brands на /brands
+Route::get('/brands', function () {
+    return redirect('/brands');
+});
+
+Route::get('/brands/{id}', function ($id) {
+    return redirect('/brands/' . $id);
+});
+
+// Закомментировали оригинальный маршрут для брендов
+// Route::apiResource('brands', CarBrandController::class);
 
 // Маршруты для моделей автомобилей
-Route::get('/models', [CarModelController::class, 'index']);
-Route::get('/models/{id}', [CarModelController::class, 'show']);
-Route::get('/models/{id}/parts', [CarModelController::class, 'getParts']);
+Route::get('models', [CarModelController::class, 'index']);
+Route::get('models/{id}', [CarModelController::class, 'show']);
+Route::get('models/{id}/parts', [CarModelController::class, 'getParts']);
 
 // Маршруты для категорий запчастей
-Route::get('/categories', [CategoryController::class, 'index']);
-Route::get('/categories/{id}', [CategoryController::class, 'show']);
-Route::get('/categories/{id}/subcategories', [CategoryController::class, 'getSubcategories']);
-Route::get('/categories/{id}/parts', [CategoryController::class, 'getParts']);
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('categories/{id}', [CategoryController::class, 'show']);
+Route::get('categories/{id}/subcategories', [CategoryController::class, 'getSubcategories']);
+Route::get('categories/{id}/parts', [CategoryController::class, 'getParts']);
 
 // Маршруты для запчастей
-Route::get('/parts', [PartController::class, 'index']);
-Route::get('/parts/{id}', [PartController::class, 'show']);
+Route::get('parts', [PartController::class, 'index']);
+Route::get('parts/{id}', [PartController::class, 'show']);
 
 // Маршруты для заказов
 Route::apiResource('orders', OrderController::class);
 
 // Заглушка для API заказов
-Route::middleware('auth:sanctum')->post('/orders', function (Request $request) {
+Route::middleware('auth:sanctum')->post('orders', function (Request $request) {
     // В реальной системе здесь была бы обработка заказа
     return response()->json([
         'status' => 'success',

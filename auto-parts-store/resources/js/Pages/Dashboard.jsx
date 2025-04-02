@@ -63,7 +63,7 @@ export default function Dashboard({ auth }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Личный кабинет</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Личный кабинет</h2>}
         >
             <Head title="Личный кабинет" />
 
@@ -74,26 +74,103 @@ export default function Dashboard({ auth }) {
                         <div className="p-6 text-gray-900">
                             <h2 className="text-2xl font-bold mb-6">Добро пожаловать, {auth.user.name}!</h2>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-100">
                                     <div className="text-indigo-800 font-medium mb-1">Заказы</div>
-                                    <Link href="/orders" className="text-2xl font-bold text-indigo-700 hover:text-indigo-900">
+                                    <Link href="/orders" className="text-xl font-bold text-indigo-700 hover:text-indigo-900">
                                         Мои заказы
                                     </Link>
                                 </div>
                                 
                                 <div className="bg-emerald-50 p-6 rounded-lg border border-emerald-100">
                                     <div className="text-emerald-800 font-medium mb-1">Корзина</div>
-                                    <Link href="/cart" className="text-2xl font-bold text-emerald-700 hover:text-emerald-900">
+                                    <Link href="/cart" className="text-xl font-bold text-emerald-700 hover:text-emerald-900">
                                         Перейти в корзину
                                     </Link>
                                 </div>
                                 
                                 <div className="bg-amber-50 p-6 rounded-lg border border-amber-100">
                                     <div className="text-amber-800 font-medium mb-1">Профиль</div>
-                                    <Link href="/profile" className="text-2xl font-bold text-amber-700 hover:text-amber-900">
+                                    <Link href="/profile" className="text-xl font-bold text-amber-700 hover:text-amber-900">
                                         Настройки профиля
                                     </Link>
+                                </div>
+                                
+                                <div className="bg-green-50 p-6 rounded-lg border border-green-100">
+                                    <div className="text-green-800 font-medium mb-1">Подбор запчастей</div>
+                                    <Link href={route('vin-request.index')} className="text-xl font-bold text-green-700 hover:text-green-900">
+                                        Подбор по VIN
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Подбор запчастей по VIN */}
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                        <div className="p-6 text-gray-900">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-semibold">Подбор запчастей по VIN-коду</h3>
+                                <Link href={route('vin-request.user')} className="text-green-600 hover:text-green-800 text-sm font-medium">
+                                    Мои VIN-запросы
+                                </Link>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="md:col-span-2">
+                                    <p className="text-gray-600 mb-4">
+                                        Не знаете какие запчасти подойдут для вашего автомобиля? 
+                                        Отправьте нам VIN-код, и наши специалисты подберут необходимые детали.
+                                    </p>
+                                    <ul className="text-gray-600 mb-6 space-y-2">
+                                        <li className="flex items-center">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Точный подбор запчастей для вашего автомобиля
+                                        </li>
+                                        <li className="flex items-center">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Быстрая обработка запроса специалистами
+                                        </li>
+                                        <li className="flex items-center">
+                                            <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Консультация по выбору и установке
+                                        </li>
+                                    </ul>
+                                    <Link
+                                        href={route('vin-request.index')}
+                                        className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    >
+                                        Создать запрос
+                                        <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                                        </svg>
+                                    </Link>
+                                </div>
+                                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                    <div className="text-center">
+                                        <svg className="w-16 h-16 text-green-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                                        </svg>
+                                        <p className="font-medium text-lg text-gray-900 mb-2">VIN-код автомобиля</p>
+                                        <p className="text-sm text-gray-500 mb-4">
+                                            VIN-код состоит из 17 символов и находится в техпаспорте или на кузове автомобиля
+                                        </p>
+                                        <Link
+                                            href={route('vin-request.index')}
+                                            className="inline-flex items-center text-green-600 hover:text-green-800 font-medium"
+                                        >
+                                            Подробнее
+                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -188,7 +265,7 @@ export default function Dashboard({ auth }) {
                         <div className="p-6 text-gray-900">
                             <h3 className="text-xl font-semibold mb-6">Каталог автозапчастей</h3>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <Link
                                     href="/brands"
                                     className="block p-6 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition"
@@ -210,6 +287,18 @@ export default function Dashboard({ auth }) {
                                     </h4>
                                     <p className="text-gray-500">
                                         Просмотрите запчасти по категориям
+                                    </p>
+                                </Link>
+
+                                <Link
+                                    href="/search"
+                                    className="block p-6 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition"
+                                >
+                                    <h4 className="text-lg font-medium text-gray-900 mb-2">
+                                        Поиск запчастей
+                                    </h4>
+                                    <p className="text-gray-500">
+                                        Быстрый поиск по артикулу или названию
                                     </p>
                                 </Link>
                             </div>

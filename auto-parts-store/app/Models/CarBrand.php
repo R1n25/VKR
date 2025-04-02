@@ -13,11 +13,13 @@ class CarBrand extends Model
         'country',
         'description',
         'logo_url',
-        'vin_required'
+        'vin_required',
+        'is_popular'
     ];
 
     protected $casts = [
-        'vin_required' => 'boolean'
+        'vin_required' => 'boolean',
+        'is_popular' => 'boolean'
     ];
 
     /**

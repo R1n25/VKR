@@ -18,5 +18,40 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+        
+        <!-- Скрипт для исправления ссылок на API -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Функция для обработки и исправления ссылок
+                function fixApiLinks() {
+                    // Находим все ссылки на странице
+                    const links = document.querySelectorAll('a[href*="/api/brands"]');
+                    
+                    // Исправляем каждую ссылку
+                    links.forEach(link => {
+                        const href = link.getAttribute('href');
+                        if (href && href.includes('/api/brands')) {
+                            // Заменяем /api/brands на /brands
+                            const newHref = href.replace('/api/brands', '/brands');
+                            link.setAttribute('href', newHref);
+                        }
+                    });
+                }
+                
+                // Запускаем исправление ссылок при загрузке страницы
+                fixApiLinks();
+                
+                // Наблюдатель за изменениями в DOM для динамически добавляемых элементов
+                const observer = new MutationObserver(function(mutations) {
+                    fixApiLinks();
+                });
+                
+                // Начинаем наблюдение за изменениями в DOM
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true
+                });
+            });
+        </script>
     </body>
 </html>
