@@ -1,82 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Search({ auth, searchQuery }) {
-    const [results, setResults] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState('');
-    const [sortBy, setSortBy] = useState('relevance');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
-    const [totalResults, setTotalResults] = useState(0);
-    
-    const { data, setData, get } = useForm({
+export default function Search({ auth, searchQuery, spareParts = [], isAdmin = false }) {
+    const { data, setData } = useForm({
         q: searchQuery || '',
     });
-
-    useEffect(() => {
-        const fetchResults = async () => {
-            if (!searchQuery) {
-                setLoading(false);
-                return;
-            }
-            
-            setLoading(true);
-            
-            try {
-                const params = {
-                    search: searchQuery,
-                    page: currentPage,
-                };
-                
-                if (sortBy === 'price_asc') {
-                    params.sort_by = 'price';
-                    params.sort_order = 'asc';
-                } else if (sortBy === 'price_desc') {
-                    params.sort_by = 'price';
-                    params.sort_order = 'desc';
-                } else if (sortBy === 'name_asc') {
-                    params.sort_by = 'name';
-                    params.sort_order = 'asc';
-                } else if (sortBy === 'name_desc') {
-                    params.sort_by = 'name';
-                    params.sort_order = 'desc';
-                }
-                
-                const response = await axios.get('/api/parts', { params });
-                
-                setResults(response.data.data);
-                setTotalPages(response.data.meta.last_page || 1);
-                setTotalResults(response.data.meta.total || 0);
-                setError('');
-            } catch (err) {
-                console.error('Ошибка при выполнении поиска:', err);
-                setError('Не удалось выполнить поиск. Пожалуйста, попробуйте позже.');
-                setResults([]);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchResults();
-    }, [searchQuery, currentPage, sortBy]);
-
-    const handleSortChange = (e) => {
-        setSortBy(e.target.value);
-        setCurrentPage(1);
-    };
 
     const handleSearch = (e) => {
         e.preventDefault();
         router.get('/search', { q: data.q });
-    };
-
-    const handlePageChange = (page) => {
-        if (page >= 1 && page <= totalPages) {
-            setCurrentPage(page);
-        }
     };
 
     return (
@@ -105,7 +38,7 @@ export default function Search({ auth, searchQuery }) {
                                     <div>
                                         <button
                                             type="submit"
-                                            className="px-6 py-3 bg-white text-green-700 font-semibold rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-green-700"
+                                            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
                                         >
                                             Найти
                                         </button>
@@ -114,19 +47,11 @@ export default function Search({ auth, searchQuery }) {
                             </form>
 
                             {/* Результаты поиска */}
-                            {loading ? (
-                                <div className="text-center py-10">
-                                    <p>Поиск запчастей...</p>
-                                </div>
-                            ) : error ? (
-                                <div className="bg-red-100 text-red-700 p-4 rounded-md">
-                                    {error}
-                                </div>
-                            ) : !searchQuery ? (
+                            {!searchQuery ? (
                                 <div className="text-center py-10 bg-gray-50 rounded-lg">
                                     <p className="text-gray-500">Введите поисковый запрос выше для поиска запчастей</p>
                                 </div>
-                            ) : results.length === 0 ? (
+                            ) : spareParts.length === 0 ? (
                                 <div className="text-center py-10 bg-gray-50 rounded-lg">
                                     <p className="text-gray-500">По вашему запросу ничего не найдено</p>
                                     <p className="text-gray-500 mt-2">Попробуйте изменить запрос или просмотреть каталог</p>
@@ -135,28 +60,12 @@ export default function Search({ auth, searchQuery }) {
                                 <div>
                                     <div className="flex justify-between items-center mb-6">
                                         <p className="text-gray-600">
-                                            Найдено результатов: <span className="font-medium">{totalResults}</span>
+                                            Найдено результатов: <span className="font-medium">{spareParts.length}</span>
                                         </p>
-                                        
-                                        <div className="flex items-center">
-                                            <label htmlFor="sort" className="mr-2 text-sm text-gray-600">Сортировка:</label>
-                                            <select
-                                                id="sort"
-                                                className="border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500"
-                                                value={sortBy}
-                                                onChange={handleSortChange}
-                                            >
-                                                <option value="relevance">По релевантности</option>
-                                                <option value="name_asc">По названию (А-Я)</option>
-                                                <option value="name_desc">По названию (Я-А)</option>
-                                                <option value="price_asc">По цене (возрастание)</option>
-                                                <option value="price_desc">По цене (убывание)</option>
-                                            </select>
-                                        </div>
                                     </div>
 
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                                        {results.map(part => (
+                                        {spareParts.map(part => (
                                             <Link
                                                 key={part.id}
                                                 href={`/parts/${part.id}`}
@@ -185,62 +94,41 @@ export default function Search({ auth, searchQuery }) {
                                                     
                                                     <div className="flex items-center mb-2">
                                                         <span className="text-xs text-gray-500 mr-2">Артикул:</span>
-                                                        <span className="text-xs font-medium">{part.sku}</span>
+                                                        <span className="text-xs font-medium">{part.part_number}</span>
                                                     </div>
                                                     
                                                     <div className="flex items-center mb-3">
-                                                        {part.brand && (
-                                                            <span className="text-sm text-gray-500 mr-2">{part.brand.name}</span>
-                                                        )}
-                                                        {part.car_model && (
-                                                            <span className="text-sm text-gray-500">{part.car_model.name}</span>
-                                                        )}
+                                                        <span className="text-sm text-gray-500 mr-2">{part.manufacturer}</span>
                                                     </div>
                                                     
-                                                    {part.category && (
-                                                        <div className="text-xs text-gray-500 mb-3">
-                                                            {part.category.name}
-                                                        </div>
-                                                    )}
+                                                    <div className="text-xs text-gray-500 mb-3">
+                                                        {part.category}
+                                                    </div>
                                                     
                                                     <div className="flex items-center justify-between mt-2">
-                                                        <div className="font-bold text-green-600">{part.price} руб.</div>
+                                                        {isAdmin ? (
+                                                            <div className="flex flex-col">
+                                                                <div className="flex items-center">
+                                                                    <span className="text-sm text-gray-500 mr-1">Закуп:</span>
+                                                                    <span className="font-bold text-gray-700">{part.original_price} ₽</span>
+                                                                </div>
+                                                                <div className="flex items-center">
+                                                                    <span className="text-sm text-gray-500 mr-1">Продажа:</span>
+                                                                    <span className="font-bold text-green-600">{part.markup_price} ₽</span>
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="font-bold text-green-600">{part.price} ₽</div>
+                                                        )}
                                                         
-                                                        <div className={`text-xs px-2 py-1 rounded ${part.stock > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                            {part.stock > 0 ? 'В наличии' : 'Нет в наличии'}
+                                                        <div className={`text-xs px-2 py-1 rounded ${part.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                            {part.stock_quantity > 0 ? 'В наличии' : 'Нет в наличии'}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </Link>
                                         ))}
                                     </div>
-                                    
-                                    {/* Пагинация */}
-                                    {totalPages > 1 && (
-                                        <div className="flex justify-center mt-8">
-                                            <nav className="flex items-center">
-                                                <button
-                                                    onClick={() => handlePageChange(currentPage - 1)}
-                                                    disabled={currentPage === 1}
-                                                    className="px-3 py-1 rounded border border-gray-300 text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                                >
-                                                    &laquo; Предыдущая
-                                                </button>
-                                                
-                                                <div className="mx-4 text-sm text-gray-700">
-                                                    Страница {currentPage} из {totalPages}
-                                                </div>
-                                                
-                                                <button
-                                                    onClick={() => handlePageChange(currentPage + 1)}
-                                                    disabled={currentPage === totalPages}
-                                                    className="px-3 py-1 rounded border border-gray-300 text-sm font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-                                                >
-                                                    Следующая &raquo;
-                                                </button>
-                                            </nav>
-                                        </div>
-                                    )}
                                 </div>
                             )}
                         </div>

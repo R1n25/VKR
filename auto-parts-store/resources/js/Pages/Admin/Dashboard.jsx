@@ -27,6 +27,18 @@ export default function Dashboard({ auth }) {
                                 <p className="text-gray-600">Управление запросами на подбор запчастей по VIN-коду автомобиля</p>
                             </Link>
                             
+                            <Link href={route('admin.users.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-green-200 hover:shadow-lg transition-all duration-300">
+                                <div className="flex items-center mb-3">
+                                    <div className="bg-green-100 p-3 rounded-lg">
+                                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="ml-3 text-lg font-semibold text-gray-900">Пользователи</h3>
+                                </div>
+                                <p className="text-gray-600">Управление пользователями и настройка индивидуальных наценок</p>
+                            </Link>
+                            
                             {/* Другие разделы админки */}
                         </div>
                     </div>

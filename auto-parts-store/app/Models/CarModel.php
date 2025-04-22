@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CarModel extends Model
 {
@@ -30,5 +31,14 @@ class CarModel extends Model
     public function parts(): HasMany
     {
         return $this->hasMany(Part::class);
+    }
+
+    /**
+     * Get the spare parts that are compatible with this car model.
+     */
+    public function spareParts(): BelongsToMany
+    {
+        return $this->belongsToMany(SparePart::class, 'car_model_spare_part')
+            ->withTimestamps();
     }
 }

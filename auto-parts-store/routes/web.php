@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\VinRequestController;
+use App\Http\Controllers\SparePartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -124,24 +125,10 @@ Route::get('/models/{id}', function ($id) {
     ]);
 })->name('models.show');
 
-Route::get('/parts/{id}', function ($id) {
-    return Inertia::render('Parts/Show', [
-        'partId' => $id,
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->name('parts.show');
+Route::get('/parts/{id}', [SparePartController::class, 'show'])->name('parts.show');
 
 // Маршрут для страницы поиска
-Route::get('/search', function () {
-    return Inertia::render('Search', [
-        'searchQuery' => request('q'),
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->name('search');
+Route::get('/search', [SparePartController::class, 'search'])->name('search');
 
 // Маршрут для корзины
 Route::get('/cart', function () {
@@ -234,6 +221,13 @@ Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->group(func
     Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('admin.vin-requests.index');
     Route::get('/vin-requests/{id}', [App\Http\Controllers\Admin\VinRequestController::class, 'show'])->name('admin.vin-requests.show');
     Route::patch('/vin-requests/{id}/status', [App\Http\Controllers\Admin\VinRequestController::class, 'updateStatus'])->name('admin.vin-requests.update-status');
+    
+    // Управление пользователями
+    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
+    Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
+    Route::patch('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
+    Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy');
+    Route::patch('/users/{user}/markup', [App\Http\Controllers\Admin\UserController::class, 'updateMarkup'])->name('admin.users.update-markup');
 });
 
 require __DIR__.'/auth.php';
