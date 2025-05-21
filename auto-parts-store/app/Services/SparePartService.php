@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class SparePartService
 {
@@ -28,6 +29,8 @@ class SparePartService
                 $builder->where('name', 'like', "%{$query}%")
                     ->orWhere('part_number', 'like', "%{$query}%")
                     ->orWhere('part_number', $query) // Точное совпадение артикула
+                    ->orWhere(DB::raw('LOWER(part_number)'), 'like', '%' . strtolower($query) . '%') // Поиск без учета регистра
+                    ->orWhere(DB::raw('LOWER(part_number)'), strtolower($query)) // Точное совпадение без учета регистра
                     ->orWhere('manufacturer', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%");
             })

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\PermanentUserService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -42,7 +43,12 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'is_admin' => false, // По умолчанию пользователь не админ
+            'markup_percent' => 0, // Устанавливаем значение наценки по умолчанию
         ]);
+
+        // Сохраняем пользователя как постоянного
+        $permanentUserService = new PermanentUserService();
+        $permanentUserService->savePermanentUser($user);
 
         event(new Registered($user));
 

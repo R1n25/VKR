@@ -49,4 +49,14 @@ class User extends Authenticatable
             'markup_percent' => 'float',
         ];
     }
+
+    /**
+     * The attributes that should have default values.
+     *
+     * @var array
+     */
+    protected $attributes = [
+        'is_admin' => false,
+        'markup_percent' => 0,
+    ];
 }

@@ -15,6 +15,13 @@ class CarModel extends Model
         'description',
         'image',
         'brand_id',
+        'start_year',
+        'end_year',
+    ];
+
+    protected $casts = [
+        'start_year' => 'integer',
+        'end_year' => 'integer',
     ];
 
     /**
