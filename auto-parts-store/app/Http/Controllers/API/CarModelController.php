@@ -24,6 +24,14 @@ class CarModelController extends Controller
             $query->where('car_models.brand_id', $request->brand_id);
         }
         
+        // Фильтрация только популярных моделей, если указан параметр
+        if ($request->has('popular') && $request->popular) {
+            $query->where('car_models.is_popular', true);
+        }
+        
+        // Сортировка по алфавиту
+        $query->orderBy('car_models.name', 'asc');
+        
         $models = $query->get();
         
         return response()->json([
@@ -84,6 +92,7 @@ class CarModelController extends Controller
             ->where('model_id', $id)
             ->join('part_categories', 'parts.category_id', '=', 'part_categories.id')
             ->select('parts.*', 'part_categories.name as category_name')
+            ->orderBy('parts.name', 'asc')
             ->get();
         
         return response()->json([

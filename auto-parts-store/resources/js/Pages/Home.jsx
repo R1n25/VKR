@@ -3,7 +3,8 @@ import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Home({ auth, canLogin, canRegister, brands: initialBrands, categories: initialCategories }) {
-    const [brands] = useState(initialBrands || []);
+    // Сортируем бренды по алфавиту
+    const [brands] = useState(initialBrands ? [...initialBrands].sort((a, b) => a.name.localeCompare(b.name)) : []);
     const [categories] = useState(initialCategories || []);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -13,6 +14,9 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
             router.get('/search', { q: searchQuery });
         }
     };
+
+    // Получаем только популярные бренды и сортируем их по алфавиту
+    const popularBrands = brands.filter(brand => brand.is_popular);
 
     return (
         <AuthenticatedLayout
@@ -68,7 +72,7 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                             </div>
 
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                {brands.filter(brand => brand.is_popular).map((brand) => (
+                                {popularBrands.map((brand) => (
                                     <Link
                                         key={brand.id}
                                         href={route('brands.show', brand.id)}

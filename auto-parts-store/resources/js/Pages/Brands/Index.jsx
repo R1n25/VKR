@@ -3,8 +3,11 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function BrandsIndex({ auth, brands: initialBrands }) {
-    const [brands, setBrands] = useState(initialBrands || []);
-    const [filteredBrands, setFilteredBrands] = useState(initialBrands || []);
+    // Сортируем бренды по алфавиту при инициализации
+    const sortedInitialBrands = initialBrands ? [...initialBrands].sort((a, b) => a.name.localeCompare(b.name)) : [];
+    
+    const [brands, setBrands] = useState(sortedInitialBrands);
+    const [filteredBrands, setFilteredBrands] = useState(sortedInitialBrands);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
@@ -24,6 +27,7 @@ export default function BrandsIndex({ auth, brands: initialBrands }) {
             );
         }
         
+        // Сохраняем отсортированный список
         setFilteredBrands(filtered);
     }, [brands, searchQuery]);
     

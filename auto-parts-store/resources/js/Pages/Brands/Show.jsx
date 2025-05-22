@@ -1,12 +1,48 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import axios from 'axios';
 
 export default function BrandShow({ auth, brandId, brand: initialBrand, models: initialModels }) {
     const [brand, setBrand] = useState(initialBrand || null);
     const [models, setModels] = useState(initialModels || []);
     const [loading, setLoading] = useState(!initialBrand);
     const [error, setError] = useState('');
+    const [showPopularOnly, setShowPopularOnly] = useState(true);
+    const [allModels, setAllModels] = useState(initialModels || []);
+    const [popularModels, setPopularModels] = useState([]);
+
+    useEffect(() => {
+        if (brandId) {
+            // Загружаем все модели
+            axios.get(`/api/models?brand_id=${brandId}`)
+                .then(response => {
+                    setAllModels(response.data.data);
+                    setModels(response.data.data);
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке всех моделей:', error);
+                });
+
+            // Загружаем популярные модели
+            axios.get(`/api/models?brand_id=${brandId}&popular=1`)
+                .then(response => {
+                    setPopularModels(response.data.data);
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке популярных моделей:', error);
+                });
+        }
+    }, [brandId]);
+
+    // Переключение между всеми и популярными моделями
+    useEffect(() => {
+        if (showPopularOnly) {
+            setModels(popularModels);
+        } else {
+            setModels(allModels);
+        }
+    }, [showPopularOnly, allModels, popularModels]);
 
     return (
         <AuthenticatedLayout
@@ -37,7 +73,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                     <nav className="mb-6">
                                         <ol className="flex space-x-2 text-sm text-gray-500">
                                             <li>
-                                                <Link href={route('home')} className="hover:text-indigo-600">
+                                                <Link href={route('home')} className="hover:text-green-600">
                                                     Главная
                                                 </Link>
                                             </li>
@@ -45,7 +81,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                                 <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                 </svg>
-                                                <Link href={route('brands.index')} className="hover:text-indigo-600">
+                                                <Link href={route('brands.index')} className="hover:text-green-600">
                                                     Бренды
                                                 </Link>
                                             </li>
@@ -85,11 +121,32 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
 
                                     {/* Модели автомобилей */}
                                     <div>
-                                        <h3 className="text-lg font-semibold mb-6">Модели {brand.name}</h3>
+                                        <div className="flex justify-between items-center mb-6">
+                                            <h3 className="text-lg font-semibold">Модели {brand.name}</h3>
+                                            
+                                            <div className="flex items-center space-x-4">
+                                                <button 
+                                                    className={`px-4 py-2 rounded-md ${!showPopularOnly ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                                    onClick={() => setShowPopularOnly(false)}
+                                                >
+                                                    Все модели
+                                                </button>
+                                                <button 
+                                                    className={`px-4 py-2 rounded-md ${showPopularOnly ? 'bg-green-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                                                    onClick={() => setShowPopularOnly(true)}
+                                                >
+                                                    Популярные
+                                                </button>
+                                            </div>
+                                        </div>
 
                                         {models.length === 0 ? (
                                             <div className="text-center py-10 bg-gray-50 rounded-lg">
-                                                <p className="text-gray-500">Модели для данного бренда пока не добавлены</p>
+                                                <p className="text-gray-500">
+                                                    {showPopularOnly 
+                                                        ? 'Популярные модели для данного бренда пока не добавлены' 
+                                                        : 'Модели для данного бренда пока не добавлены'}
+                                                </p>
                                             </div>
                                         ) : (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -116,7 +173,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                                         </div>
                                                         
                                                         <div className="p-4">
-                                                            <h4 className="font-medium text-gray-900 group-hover:text-indigo-600">{model.name}</h4>
+                                                            <h4 className="font-medium text-gray-900 group-hover:text-green-600">{model.name}</h4>
                                                             
                                                             {model.years && (
                                                                 <p className="text-sm text-gray-500 mt-1">

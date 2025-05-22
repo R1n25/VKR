@@ -11,11 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Проверяем, существует ли уже столбец is_popular
         if (!Schema::hasColumn('car_brands', 'is_popular')) {
             Schema::table('car_brands', function (Blueprint $table) {
-                $table->boolean('is_popular')->default(false)->after('vin_required');
+                $table->boolean('is_popular')->default(false)->after('description');
             });
+            
+            echo "Столбец is_popular добавлен в таблицу car_brands\n";
+        } else {
+            echo "Столбец is_popular уже существует в таблице car_brands\n";
         }
     }
 
@@ -24,10 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        if (Schema::hasColumn('car_brands', 'is_popular')) {
-            Schema::table('car_brands', function (Blueprint $table) {
-                $table->dropColumn('is_popular');
-            });
-        }
+        // Не удаляем столбец при откате, так как он может быть создан другой миграцией
     }
-};
+}; 

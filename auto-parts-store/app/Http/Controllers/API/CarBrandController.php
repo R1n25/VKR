@@ -16,7 +16,10 @@ class CarBrandController extends Controller
      */
     public function index()
     {
-        $brands = CarBrand::with('carModels')->get();
+        $brands = CarBrand::with('carModels')
+            ->orderBy('name', 'asc')
+            ->get();
+            
         return response()->json([
             'status' => 'success',
             'data' => $brands
@@ -55,7 +58,9 @@ class CarBrandController extends Controller
      */
     public function show(string $id)
     {
-        $brand = CarBrand::with('carModels')->findOrFail($id);
+        $brand = CarBrand::with(['carModels' => function($query) {
+            $query->orderBy('name', 'asc');
+        }])->findOrFail($id);
         
         return response()->json([
             'success' => true,

@@ -23,7 +23,7 @@ use App\Http\Controllers\SparePartController;
 */
 
 Route::get('/', function () {
-    $brands = \App\Models\CarBrand::all();
+    $brands = \App\Models\CarBrand::orderBy('name', 'asc')->get();
     $categories = \Illuminate\Support\Facades\DB::table('part_categories')->whereNull('parent_id')->get();
     
     return Inertia::render('Home', [
@@ -58,7 +58,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
 // Маршруты для магазина автозапчастей
 Route::get('/home', function () {
-    $brands = \App\Models\CarBrand::all();
+    $brands = \App\Models\CarBrand::orderBy('name', 'asc')->get();
     $categories = \Illuminate\Support\Facades\DB::table('part_categories')->whereNull('parent_id')->get();
     
     return Inertia::render('Home', [
@@ -73,8 +73,8 @@ Route::get('/home', function () {
 })->name('home');
 
 Route::get('/brands', function () {
-    // Получаем бренды из базы данных
-    $brands = \App\Models\CarBrand::all();
+    // Получаем бренды из базы данных и сортируем по имени
+    $brands = \App\Models\CarBrand::orderBy('name', 'asc')->get();
     
     // Всегда возвращаем обычный Inertia-рендер
     return Inertia::render('Brands/Index', [
@@ -86,8 +86,10 @@ Route::get('/brands', function () {
 })->name('brands.index');
 
 Route::get('/brands/{id}', function ($id) {
-    $brand = \App\Models\CarBrand::with('carModels')->findOrFail($id);
-    $models = \App\Models\CarModel::where('brand_id', $id)->get();
+    $brand = \App\Models\CarBrand::with(['carModels' => function($query) {
+        $query->orderBy('name', 'asc');
+    }])->findOrFail($id);
+    $models = \App\Models\CarModel::where('brand_id', $id)->orderBy('name', 'asc')->get();
     
     return Inertia::render('Brands/Show', [
         'brandId' => $id,

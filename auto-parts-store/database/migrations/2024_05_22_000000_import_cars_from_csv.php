@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Services\CarBrandModelImportService;
+use App\Services\CarImportService;
 
 return new class extends Migration
 {
@@ -16,7 +16,7 @@ return new class extends Migration
         $csvPath = base_path('csv.csv');
         
         // Создаем экземпляр сервиса импорта
-        $importService = new CarBrandModelImportService();
+        $importService = new CarImportService();
         
         // Запускаем импорт
         $result = $importService->importFromCsv($csvPath);
@@ -35,7 +35,6 @@ return new class extends Migration
     public function down(): void
     {
         // В случае отката миграции ничего не делаем
-        // Марки и модели остаются в базе данных
-        echo "Марки и модели автомобилей остаются в базе данных.\n";
+        // Автомобили остаются в базе данных
     }
 }; 
