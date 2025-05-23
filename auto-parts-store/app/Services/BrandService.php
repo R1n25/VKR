@@ -51,11 +51,13 @@ class BrandService
     /**
      * Поиск брендов по названию
      * 
-     * @param string $query Поисковый запрос
+     * @param string|null $query Поисковый запрос
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function searchBrands(string $query)
+    public function searchBrands(?string $query)
     {
+        $query = $query ?? '';
+        
         return CarBrand::where('name', 'like', "%{$query}%")
             ->orWhere('description', 'like', "%{$query}%")
             ->orderBy('name')

@@ -46,6 +46,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Не удаляем таблицу при откате
+        // Удаляем таблицу при откате
+        Schema::dropIfExists('cart_items');
     }
 }; 

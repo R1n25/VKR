@@ -1,15 +1,49 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Search({ auth, searchQuery, spareParts = [], isAdmin = false }) {
+export default function Search(props) {
+    // Деструктурируем пропсы
+    const { auth, searchQuery, spareParts = [], isAdmin = false } = props;
+    
     const { data, setData } = useForm({
         q: searchQuery || '',
     });
 
+    // Добавляем отладочный код
+    useEffect(() => {
+        console.log('Все пропсы:', props);
+        
+        if (spareParts.length > 0) {
+            console.log('Данные запчастей:', spareParts);
+            console.log('Первая запчасть:', spareParts[0]);
+            console.log('Цена первой запчасти:', spareParts[0].price);
+            
+            // Проверяем все поля первой запчасти
+            console.log('Все поля первой запчасти:');
+            for (const key in spareParts[0]) {
+                console.log(`${key}: ${spareParts[0][key]}`);
+            }
+        }
+    }, [props, spareParts]);
+
     const handleSearch = (e) => {
         e.preventDefault();
         router.get('/search', { q: data.q });
+    };
+
+    // Функция для форматирования цены
+    const formatPrice = (price) => {
+        if (!price) return '0.00';
+        
+        // Проверяем, является ли цена строкой или числом
+        if (typeof price === 'string') {
+            // Уже строка, просто возвращаем
+            return price;
+        } else {
+            // Преобразуем в строку с двумя знаками после запятой
+            return Number(price).toFixed(2);
+        }
     };
 
     return (
@@ -110,15 +144,21 @@ export default function Search({ auth, searchQuery, spareParts = [], isAdmin = f
                                                             <div className="flex flex-col">
                                                                 <div className="flex items-center">
                                                                     <span className="text-sm text-gray-500 mr-1">Закуп:</span>
-                                                                    <span className="font-bold text-gray-700">{part.original_price} ₽</span>
+                                                                    <span className="font-bold text-gray-700">
+                                                                        {part.original_price ? `${formatPrice(part.original_price)} ₽` : '—'}
+                                                                    </span>
                                                                 </div>
                                                                 <div className="flex items-center">
                                                                     <span className="text-sm text-gray-500 mr-1">Продажа:</span>
-                                                                    <span className="font-bold text-green-600">{part.markup_price} ₽</span>
+                                                                    <span className="font-bold text-green-600">
+                                                                        {part.markup_price ? `${formatPrice(part.markup_price)} ₽` : '—'}
+                                                                    </span>
                                                                 </div>
                                                             </div>
                                                         ) : (
-                                                            <div className="font-bold text-green-600">{part.price} ₽</div>
+                                                            <div className="font-bold text-green-600">
+                                                                {part.price ? `${formatPrice(part.price)} ₽` : '—'}
+                                                            </div>
                                                         )}
                                                         
                                                         <div className={`text-xs px-2 py-1 rounded ${part.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>

@@ -29,4 +29,12 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Part::class);
     }
+    
+    /**
+     * Get the spare part associated with the order item.
+     */
+    public function sparePart(): BelongsTo
+    {
+        return $this->belongsTo(SparePart::class, 'part_id');
+    }
 }

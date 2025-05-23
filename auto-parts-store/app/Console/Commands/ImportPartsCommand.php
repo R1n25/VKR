@@ -5,21 +5,21 @@ namespace App\Console\Commands;
 use App\Services\ImportService;
 use Illuminate\Console\Command;
 
-class ImportCarsFromCsvCommand extends Command
+class ImportPartsCommand extends Command
 {
     /**
      * Имя и сигнатура консольной команды.
      *
      * @var string
      */
-    protected $signature = 'import:cars {file=csv.csv : Путь к CSV-файлу с автомобилями}';
+    protected $signature = 'import:parts {file=parts.csv : Путь к CSV-файлу с запчастями}';
 
     /**
      * Описание консольной команды.
      *
      * @var string
      */
-    protected $description = 'Импорт автомобилей из CSV-файла в базу данных';
+    protected $description = 'Импорт запчастей из CSV-файла в базу данных';
 
     /**
      * Выполнить консольную команду.
@@ -33,13 +33,13 @@ class ImportCarsFromCsvCommand extends Command
             return 1;
         }
 
-        $this->info("Начинаем импорт из файла {$path}");
+        $this->info("Начинаем импорт запчастей из файла {$path}");
         
         // Создаем экземпляр сервиса импорта
         $importService = new ImportService();
         
         // Запускаем импорт
-        $result = $importService->importCarsFromCsv($path);
+        $result = $importService->importPartsFromCsv($path);
         
         // Выводим информацию о результате
         if ($result['success']) {

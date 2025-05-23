@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-export default function Index({ auth, orders, filters }) {
+export default function Index({ auth, orders, filters, ordersCount }) {
+    // Отладочная информация
+    console.log("Orders data:", orders);
+    console.log("Orders count:", ordersCount);
+
     const [searchFilters, setSearchFilters] = useState({
         order_number: filters?.order_number || '',
         status: filters?.status || '',
@@ -58,8 +62,12 @@ export default function Index({ auth, orders, filters }) {
                 return 'Выполнен';
             case 'cancelled':
                 return 'Отменен';
+            case 'shipped':
+                return 'Отправлен';
+            case 'delivered':
+                return 'Доставлен';
             default:
-                return status;
+                return status || 'Неизвестно';
         }
     };
 
@@ -74,6 +82,10 @@ export default function Index({ auth, orders, filters }) {
                 return 'bg-green-100 text-green-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
+            case 'shipped':
+                return 'bg-purple-100 text-purple-800';
+            case 'delivered':
+                return 'bg-green-200 text-green-900';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -85,7 +97,7 @@ export default function Index({ auth, orders, filters }) {
             const date = new Date(dateString);
             return format(date, 'dd.MM.yyyy, HH:mm', { locale: ru });
         } catch (error) {
-            return dateString;
+            return dateString || 'Нет данных';
         }
     };
 
@@ -100,6 +112,12 @@ export default function Index({ auth, orders, filters }) {
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
+                            {/* Отладочная информация */}
+                            <div className="mb-4 p-4 bg-gray-100 rounded">
+                                <p>Всего заказов: {ordersCount || 0}</p>
+                                <p>Текущая страница: {orders?.current_page || 'N/A'}</p>
+                            </div>
+                            
                             {/* Фильтры */}
                             <div className="mb-8">
                                 <h3 className="text-lg font-semibold mb-4">Фильтры</h3>
@@ -190,7 +208,7 @@ export default function Index({ auth, orders, filters }) {
                             {/* Список заказов */}
                             <h3 className="text-xl font-semibold mb-4">Список заказов</h3>
                             
-                            {orders.data.length > 0 ? (
+                            {orders?.data && orders.data.length > 0 ? (
                                 <>
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
@@ -221,7 +239,7 @@ export default function Index({ auth, orders, filters }) {
                                                     <tr key={order.id}>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm font-medium text-indigo-600">
-                                                                {order.order_number}
+                                                                {order.order_number || `№${order.id}`}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -231,10 +249,10 @@ export default function Index({ auth, orders, filters }) {
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm text-gray-900">
-                                                                {order.shipping_name}
+                                                                {order.shipping_name || order.customer_name}
                                                             </div>
                                                             <div className="text-sm text-gray-500">
-                                                                {order.shipping_phone}
+                                                                {order.shipping_phone || order.phone}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -243,7 +261,7 @@ export default function Index({ auth, orders, filters }) {
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            {order.total_price} руб.
+                                                            {order.total || '0'} руб.
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                                             <Link

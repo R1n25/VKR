@@ -168,11 +168,13 @@ class CategoryService
     /**
      * Поиск категорий по названию
      * 
-     * @param string $query Поисковый запрос
+     * @param string|null $query Поисковый запрос
      * @return \Illuminate\Support\Collection
      */
-    public function searchCategories(string $query)
+    public function searchCategories(?string $query)
     {
+        $query = $query ?? '';
+        
         return DB::table('part_categories')
             ->where('name', 'like', "%{$query}%")
             ->orWhere('description', 'like', "%{$query}%")

@@ -9,21 +9,109 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-class SparePartService
+class PartsService
 {
     // Процент наценки по умолчанию для обычных пользователей и гостей
     const DEFAULT_MARKUP_PERCENT = 25.0;
 
     /**
-     * Поиск запчастей по имени или артикулу
-     *
-     * @param string $query Поисковый запрос
+     * Получить популярные запчасти для отображения на главной странице
+     * 
+     * @param int $limit Количество запчастей для отображения
      * @param bool $isAdmin Является ли пользователь администратором
      * @param float|null $markupPercent Процент наценки для пользователя
      * @return Collection
      */
-    public function searchSpareParts(string $query, bool $isAdmin = false, ?float $markupPercent = null): Collection
+    public function getPopularParts(int $limit = 8, bool $isAdmin = false, ?float $markupPercent = null)
     {
+        $spareParts = SparePart::query()
+            ->where('is_available', true)
+            ->where('stock_quantity', '>', 0)
+            ->orderBy('id', 'desc')
+            ->limit($limit)
+            ->with('carModels')
+            ->get();
+
+        // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
+        if ($markupPercent === null) {
+            $markupPercent = $this->getUserMarkupPercent();
+        }
+
+        return $this->formatSparePartsWithPrices($spareParts, $isAdmin, $markupPercent);
+    }
+    
+    /**
+     * Получить информацию о конкретной запчасти по ID
+     * 
+     * @param int $id ID запчасти
+     * @param bool $isAdmin Является ли пользователь администратором
+     * @param float|null $markupPercent Процент наценки для пользователя
+     * @return SparePart|null
+     */
+    public function getPartById(int $id, bool $isAdmin = false, ?float $markupPercent = null)
+    {
+        $sparePart = SparePart::with('carModels')->find($id);
+        
+        if ($sparePart) {
+            // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
+            if ($markupPercent === null) {
+                $markupPercent = $this->getUserMarkupPercent();
+            }
+            
+            $this->formatSparePartWithPrice($sparePart, $isAdmin, $markupPercent);
+        }
+        
+        return $sparePart;
+    }
+    
+    /**
+     * Получить похожие запчасти для указанной запчасти
+     * 
+     * @param int $partId ID запчасти
+     * @param int $limit Количество похожих запчастей
+     * @param bool $isAdmin Является ли пользователь администратором
+     * @param float|null $markupPercent Процент наценки для пользователя
+     * @return Collection
+     */
+    public function getSimilarParts(int $partId, int $limit = 4, bool $isAdmin = false, ?float $markupPercent = null)
+    {
+        // Получаем информацию о текущей запчасти
+        $part = $this->getPartById($partId);
+        
+        if (!$part) {
+            return collect([]);
+        }
+        
+        // Находим запчасти той же категории
+        $similarParts = SparePart::query()
+            ->where('id', '!=', $partId)
+            ->where('category', $part->category)
+            ->where('is_available', true)
+            ->where('stock_quantity', '>', 0)
+            ->inRandomOrder()
+            ->limit($limit)
+            ->get();
+            
+        // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
+        if ($markupPercent === null) {
+            $markupPercent = $this->getUserMarkupPercent();
+        }
+
+        return $this->formatSparePartsWithPrices($similarParts, $isAdmin, $markupPercent);
+    }
+    
+    /**
+     * Поиск запчастей по названию или артикулу
+     * 
+     * @param string|null $query Поисковый запрос
+     * @param bool $isAdmin Является ли пользователь администратором
+     * @param float|null $markupPercent Процент наценки для пользователя
+     * @return Collection
+     */
+    public function searchParts(?string $query, bool $isAdmin = false, ?float $markupPercent = null)
+    {
+        $query = $query ?? '';
+        
         $spareParts = SparePart::query()
             ->where(function (Builder $builder) use ($query) {
                 $builder->where('name', 'like', "%{$query}%")
@@ -44,70 +132,62 @@ class SparePartService
 
         return $this->formatSparePartsWithPrices($spareParts, $isAdmin, $markupPercent);
     }
-
-    /**
-     * Получить запчасть по ID
-     *
-     * @param int $id ID запчасти
-     * @param bool $isAdmin Является ли пользователь администратором
-     * @param float|null $markupPercent Процент наценки для пользователя
-     * @return SparePart|null
-     */
-    public function getSparePartById(int $id, bool $isAdmin = false, ?float $markupPercent = null): ?SparePart
-    {
-        $sparePart = SparePart::with('carModels')->find($id);
-        
-        if ($sparePart) {
-            // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
-            if ($markupPercent === null) {
-                $markupPercent = $this->getUserMarkupPercent();
-            }
-            
-            $this->formatSparePartWithPrice($sparePart, $isAdmin, $markupPercent);
-        }
-        
-        return $sparePart;
-    }
-
+    
     /**
      * Получить запчасти, совместимые с определенной моделью автомобиля
      *
      * @param int $carModelId ID модели автомобиля
+     * @param array $filters Фильтры
      * @param bool $isAdmin Является ли пользователь администратором
      * @param float|null $markupPercent Процент наценки для пользователя
      * @return Collection
      */
-    public function getSparePartsByCarModel(int $carModelId, bool $isAdmin = false, ?float $markupPercent = null): Collection
+    public function getPartsByCarModel(int $carModelId, array $filters = [], bool $isAdmin = false, ?float $markupPercent = null)
     {
-        $spareParts = SparePart::whereHas('carModels', function (Builder $query) use ($carModelId) {
+        $query = SparePart::whereHas('carModels', function (Builder $query) use ($carModelId) {
             $query->where('car_models.id', $carModelId);
-        })->get();
-
-        // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
-        if ($markupPercent === null) {
-            $markupPercent = $this->getUserMarkupPercent();
+        });
+        
+        // Применяем фильтры
+        if (!empty($filters['category'])) {
+            $query->where('category', $filters['category']);
         }
-
-        return $this->formatSparePartsWithPrices($spareParts, $isAdmin, $markupPercent);
-    }
-
-    /**
-     * Получить популярные запчасти
-     *
-     * @param int $limit Лимит запчастей
-     * @param bool $isAdmin Является ли пользователь администратором
-     * @param float|null $markupPercent Процент наценки для пользователя
-     * @return Collection
-     */
-    public function getPopularSpareParts(int $limit = 8, bool $isAdmin = false, ?float $markupPercent = null): Collection
-    {
-        $spareParts = SparePart::query()
-            ->where('is_available', true)
-            ->where('stock_quantity', '>', 0)
-            ->orderBy('id', 'desc')
-            ->limit($limit)
-            ->with('carModels')
-            ->get();
+        
+        if (!empty($filters['price_min'])) {
+            $query->where('price', '>=', $filters['price_min']);
+        }
+        
+        if (!empty($filters['price_max'])) {
+            $query->where('price', '<=', $filters['price_max']);
+        }
+        
+        if (!empty($filters['in_stock']) && $filters['in_stock']) {
+            $query->where('stock_quantity', '>', 0);
+        }
+        
+        // Сортировка
+        if (!empty($filters['sort'])) {
+            switch ($filters['sort']) {
+                case 'price_asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'name_asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                case 'name_desc':
+                    $query->orderBy('name', 'desc');
+                    break;
+                default:
+                    $query->orderBy('name', 'asc');
+            }
+        } else {
+            $query->orderBy('name', 'asc');
+        }
+        
+        $spareParts = $query->get();
 
         // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
         if ($markupPercent === null) {

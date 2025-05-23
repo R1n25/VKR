@@ -15,12 +15,17 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with('user')
+        $orders = Order::with(['user', 'orderItems.part'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->paginate(10);
+        
+        // Отладочная информация
+        $ordersCount = $orders->total();
         
         return Inertia::render('Admin/Orders/Index', [
             'orders' => $orders,
+            'ordersCount' => $ordersCount,
+            'filters' => request()->all('order_number', 'status', 'date_from', 'date_to'),
         ]);
     }
 

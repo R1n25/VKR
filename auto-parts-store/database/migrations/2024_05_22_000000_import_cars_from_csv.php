@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Services\CarImportService;
+use App\Services\ImportService;
 
 return new class extends Migration
 {
@@ -16,10 +16,10 @@ return new class extends Migration
         $csvPath = base_path('csv.csv');
         
         // Создаем экземпляр сервиса импорта
-        $importService = new CarImportService();
+        $importService = new ImportService();
         
         // Запускаем импорт
-        $result = $importService->importFromCsv($csvPath);
+        $result = $importService->importCarsFromCsv($csvPath);
         
         // Выводим информацию о результате
         if ($result['success']) {

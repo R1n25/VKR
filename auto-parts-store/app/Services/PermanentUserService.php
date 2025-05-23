@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\PermanentUser;
 use Illuminate\Support\Facades\Hash;
+use App\Services\PartsService;
 
 class PermanentUserService
 {
@@ -32,7 +33,7 @@ class PermanentUserService
                     'name' => $permanentUser->name,
                     'password' => $permanentUser->password,
                     'is_admin' => $permanentUser->is_admin,
-                    'markup_percent' => $permanentUser->markup_percent ?? 0,
+                    'markup_percent' => $permanentUser->markup_percent ?? PartsService::DEFAULT_MARKUP_PERCENT,
                     'email_verified_at' => $permanentUser->email_verified_at,
                     'remember_token' => $permanentUser->remember_token,
                 ]
@@ -64,7 +65,7 @@ class PermanentUserService
                 'name' => $user->name,
                 'password' => $user->password,
                 'is_admin' => $user->is_admin,
-                'markup_percent' => $user->markup_percent ?? 0,
+                'markup_percent' => $user->markup_percent ?? PartsService::DEFAULT_MARKUP_PERCENT,
                 'email_verified_at' => $user->email_verified_at,
                 'remember_token' => $user->remember_token,
             ]
@@ -83,7 +84,7 @@ class PermanentUserService
                 'name' => 'Администратор',
                 'password' => Hash::make('admin12345'),
                 'is_admin' => true,
-                'markup_percent' => 0
+                'markup_percent' => 0 // Админу не нужна наценка
             ]
         );
         
@@ -94,7 +95,7 @@ class PermanentUserService
                 'name' => 'Демо пользователь',
                 'password' => Hash::make('user12345'),
                 'is_admin' => false,
-                'markup_percent' => 10
+                'markup_percent' => PartsService::DEFAULT_MARKUP_PERCENT // Используем стандартную наценку
             ]
         );
     }

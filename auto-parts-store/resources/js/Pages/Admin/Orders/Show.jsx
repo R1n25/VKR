@@ -8,6 +8,9 @@ import axios from 'axios';
 export default function Show({ auth, order }) {
     const [processing, setProcessing] = useState(false);
     const [statusError, setStatusError] = useState('');
+    const [note, setNote] = useState('');
+    const [noteError, setNoteError] = useState('');
+    const [addingNote, setAddingNote] = useState(false);
 
     // Функция для получения текстового представления статуса заказа
     const getStatusText = (status) => {
@@ -87,6 +90,34 @@ export default function Show({ auth, order }) {
             setStatusError('Не удалось обновить статус заказа.');
         } finally {
             setProcessing(false);
+        }
+    };
+
+    // Функция для добавления заметки к заказу
+    const handleAddNote = async (e) => {
+        e.preventDefault();
+        
+        if (!note.trim()) {
+            setNoteError('Введите текст заметки');
+            return;
+        }
+        
+        setAddingNote(true);
+        setNoteError('');
+        
+        try {
+            await axios.post(route('admin.orders.add-note', order.id), {
+                note: note
+            });
+            
+            // Очищаем форму и обновляем страницу
+            setNote('');
+            router.reload();
+        } catch (error) {
+            console.error('Ошибка при добавлении заметки:', error);
+            setNoteError('Не удалось добавить заметку к заказу.');
+        } finally {
+            setAddingNote(false);
         }
     };
 
@@ -209,12 +240,50 @@ export default function Show({ auth, order }) {
                                 </div>
                             </div>
                             
-                            {order.notes && (
-                                <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                                    <h3 className="text-lg font-semibold mb-2">Примечания к заказу</h3>
-                                    <p className="text-gray-900">{order.notes}</p>
-                                </div>
-                            )}
+                            {/* Блок с заметками к заказу */}
+                            <div className="bg-gray-50 p-6 rounded-lg mb-8">
+                                <h3 className="text-lg font-semibold mb-4">Заметки к заказу</h3>
+                                
+                                {order.notes ? (
+                                    <div className="mb-6 whitespace-pre-line">
+                                        <p className="text-gray-900">{order.notes}</p>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500 mb-6">Заметки отсутствуют</p>
+                                )}
+                                
+                                {/* Форма для добавления новой заметки */}
+                                <form onSubmit={handleAddNote}>
+                                    <div>
+                                        <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Добавить заметку
+                                        </label>
+                                        <textarea
+                                            id="note"
+                                            name="note"
+                                            rows="3"
+                                            value={note}
+                                            onChange={(e) => setNote(e.target.value)}
+                                            className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            placeholder="Введите текст заметки..."
+                                        ></textarea>
+                                        
+                                        {noteError && (
+                                            <p className="mt-1 text-sm text-red-600">{noteError}</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-3 flex justify-end">
+                                        <button
+                                            type="submit"
+                                            disabled={addingNote}
+                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                                        >
+                                            {addingNote ? 'Добавление...' : 'Добавить заметку'}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
 
                             <div>
                                 <h3 className="text-lg font-semibold mb-4">Товары в заказе</h3>

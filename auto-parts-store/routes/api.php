@@ -55,7 +55,7 @@ Route::get('parts/{id}', [PartController::class, 'show']);
 Route::apiResource('orders', OrderController::class);
 
 // Заглушка для API заказов
-Route::middleware('auth:sanctum')->post('orders', function (Request $request) {
+Route::post('orders', function (Request $request) {
     // В реальной системе здесь была бы обработка заказа
     return response()->json([
         'status' => 'success',

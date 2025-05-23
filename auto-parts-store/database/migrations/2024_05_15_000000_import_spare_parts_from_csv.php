@@ -3,7 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use App\Services\SparePartImportService;
+use App\Services\ImportService;
 
 return new class extends Migration
 {
@@ -16,10 +16,10 @@ return new class extends Migration
         $csvPath = base_path('prise.csv');
         
         // Создаем экземпляр сервиса импорта
-        $importService = new SparePartImportService();
+        $importService = new ImportService();
         
         // Запускаем импорт
-        $result = $importService->importFromCsv($csvPath);
+        $result = $importService->importPartsFromCsv($csvPath);
         
         // Выводим информацию о результате
         if ($result['success']) {

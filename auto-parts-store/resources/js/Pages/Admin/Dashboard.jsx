@@ -15,6 +15,18 @@ export default function Dashboard({ auth }) {
                         <h2 className="text-2xl font-bold text-gray-900 mb-6">Управление магазином</h2>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            <Link href={route('admin.orders.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-green-200 hover:shadow-lg transition-all duration-300">
+                                <div className="flex items-center mb-3">
+                                    <div className="bg-green-100 p-3 rounded-lg">
+                                        <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="ml-3 text-lg font-semibold text-gray-900">Заказы</h3>
+                                </div>
+                                <p className="text-gray-600">Управление заказами пользователей и их статусами</p>
+                            </Link>
+                            
                             <Link href={route('admin.vin-requests.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-green-200 hover:shadow-lg transition-all duration-300">
                                 <div className="flex items-center mb-3">
                                     <div className="bg-green-100 p-3 rounded-lg">

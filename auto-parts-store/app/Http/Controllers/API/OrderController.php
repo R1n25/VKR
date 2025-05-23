@@ -46,6 +46,13 @@ class OrderController extends Controller
             'email' => 'required|email|max:255',
             'phone' => 'required|string|max:20',
             'address' => 'required|string',
+            'shipping_name' => 'nullable|string|max:255',
+            'shipping_phone' => 'nullable|string|max:20',
+            'shipping_address' => 'nullable|string',
+            'shipping_city' => 'nullable|string|max:100',
+            'shipping_zip' => 'nullable|string|max:20',
+            'payment_method' => 'nullable|string|in:cash,card,online',
+            'notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id',
             'items' => 'required|array|min:1',
             'items.*.part_id' => 'required|exists:parts,id',
@@ -53,7 +60,7 @@ class OrderController extends Controller
         ]);
 
         // Начинаем транзакцию для создания заказа и элементов заказа
-        return DB::transaction(function () use ($validated) {
+        return DB::transaction(function () use ($validated, $request) {
             $total = 0;
             
             // Рассчитываем общую сумму заказа и проверяем наличие запчастей
@@ -67,8 +74,12 @@ class OrderController extends Controller
                 $total += $part->price * $item['quantity'];
             }
             
-            // Создаем заказ
-            $order = Order::create([
+            // Генерируем номер заказа
+            $orderNumber = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
+            
+            // Создаем данные заказа
+            $orderData = [
+                'order_number' => $orderNumber,
                 'customer_name' => $validated['customer_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
@@ -76,7 +87,43 @@ class OrderController extends Controller
                 'user_id' => $validated['user_id'] ?? null,
                 'total' => $total,
                 'status' => 'pending',
-            ]);
+                'payment_status' => 'pending',
+                'payment_method' => $request->payment_method ?? 'cash',
+            ];
+            
+            // Добавляем данные о доставке, если они есть
+            if ($request->has('shipping_name')) {
+                $orderData['shipping_name'] = $request->shipping_name;
+            } else {
+                $orderData['shipping_name'] = $validated['customer_name'];
+            }
+            
+            if ($request->has('shipping_phone')) {
+                $orderData['shipping_phone'] = $request->shipping_phone;
+            } else {
+                $orderData['shipping_phone'] = $validated['phone'];
+            }
+            
+            if ($request->has('shipping_address')) {
+                $orderData['shipping_address'] = $request->shipping_address;
+            } else {
+                $orderData['shipping_address'] = $validated['address'];
+            }
+            
+            if ($request->has('shipping_city')) {
+                $orderData['shipping_city'] = $request->shipping_city;
+            }
+            
+            if ($request->has('shipping_zip')) {
+                $orderData['shipping_zip'] = $request->shipping_zip;
+            }
+            
+            if ($request->has('notes')) {
+                $orderData['notes'] = $request->notes;
+            }
+            
+            // Создаем заказ
+            $order = Order::create($orderData);
             
             // Создаем элементы заказа и уменьшаем количество запчастей на складе
             foreach ($validated['items'] as $item) {
