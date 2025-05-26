@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\PermanentUserService;
-use App\Services\PartsService;
+use App\Services\SparePartService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'is_admin' => false, // По умолчанию пользователь не админ
-            'markup_percent' => PartsService::DEFAULT_MARKUP_PERCENT, // Устанавливаем стандартную наценку 25%
+            'markup_percent' => SparePartService::DEFAULT_MARKUP_PERCENT, // Устанавливаем стандартную наценку 25%
         ]);
 
         // Сохраняем пользователя как постоянного

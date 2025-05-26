@@ -2,12 +2,16 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 
 class PartCategory extends Model
 {
+    use HasFactory;
+    
     protected $fillable = [
         'name',
         'slug',
@@ -33,10 +37,10 @@ class PartCategory extends Model
     }
 
     /**
-     * Get the parts for the category.
+     * Get the spare parts for the category.
      */
-    public function parts(): HasMany
+    public function spareParts(): HasMany
     {
-        return $this->hasMany(Part::class);
+        return $this->hasMany(SparePart::class, 'category', 'name');
     }
 }

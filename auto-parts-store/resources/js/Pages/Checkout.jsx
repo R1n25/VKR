@@ -53,13 +53,19 @@ export default function Checkout({ auth }) {
             return;
         }
         
+        // Проверяем, что customer_name не пустой
+        if (!formData.customer_name.trim()) {
+            setError('Пожалуйста, укажите ФИО');
+            return;
+        }
+        
         setSubmitting(true);
         setError('');
         
         try {
             // Преобразуем корзину в формат для отправки на сервер
             const items = cart.map(item => ({
-                part_id: item.id,
+                spare_part_id: item.id,
                 quantity: item.quantity
             }));
             
@@ -77,6 +83,8 @@ export default function Checkout({ auth }) {
                 ...formData,
                 ...shippingData,
                 items,
+                // Гарантируем, что customer_name не будет пустым
+                customer_name: formData.customer_name.trim() || 'Гость'
             };
             
             if (auth.user) {

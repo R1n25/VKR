@@ -1,0 +1,94 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# ===================================================================
+# Project Rules: RealEstateAssistantPro
+# ===================================================================
+
+# --- Общие настройки проекта ---
+ruleType: project
+description: "Основные правила и метаданные для проекта RealEstateAssistantPro"
+- projectName: "RealEstateAssistantPro"
+- prependToPrompt: "{projectName} | "            # Всегда начинать ответы с названия проекта
+- appendToPrompt: "use context7"                 # Подключать Context7 MCP для актуальной документации
+
+# --- Автоматическая интеграция MCP ---
+ruleType: always
+- description: "Контекст модели из Context7 MCP"
+- pattern: "*"                                   # Применять ко всем файлам
+- action: "append 'use context7' to every prompt"
+
+# ===================================================================
+# 1. Правила для React (frontend)
+# ===================================================================
+ruleType: always
+fileMatch: ["src//*.tsx", "src//*.ts"]
+- description: "Использовать функциональные компоненты и хуки"
+- enforce: 
+  - "Functional components only"                # Запрет классовых компонентов
+  - "Hooks for state and side effects (useState, useEffect)"
+- typescript:
+  - "strict": true                               # tsconfig.json: strict mode
+  - "noImplicitAny": true                        # Запрещать any
+- performance:
+  - "useMemo/useCallback to memoize"
+  - "Avoid inline functions in render"
+- style:
+  - "Components in src/components/<Name>/index.tsx"
+  - "Styles in styles.module.css next to component"
+  - "CamelCase for variables, PascalCase for components"
+
+# ===================================================================
+# 2. Правила для PHP (backend)
+# ===================================================================
+ruleType: always
+fileMatch: ["app//*.php", "src//*.php"]
+- codingStandard: "PSR-12"                       # Отступы 4 пробела, длина строк ≤120
+- strictTypes: true                              # declare(strict_types=1);
+- phpVersion: ">=8.0"                            # Использовать фичи PHP 8+
+- errorHandling:
+  - "Exceptions over error codes"
+  - "Monolog for logging"
+- naming:
+  - "CamelCase for methods"
+  - "snake_case for file names"
+
+# ===================================================================
+# 3. Правила для Laravel (framework)
+# ===================================================================
+ruleType: always
+fileMatch: ["app/Http/Controllers//*.php", "app/Models//*.php"]
+- architecture: "MVC"
+- validation: "Use FormRequest classes"
+- dataAccess:
+  - "Eloquent ORM only"
+  - "Repository pattern optional"
+- tasks:
+  - "Use Jobs for background tasks"
+  - "Use Scheduler for cron-like jobs"
+- localization: "Use Lang facade for strings"
+
+# ===================================================================
+# 4. Организация и приоритеты
+# ===================================================================
+ruleType: project
+- ruleLoadingOrder: 
+  - "Global rules"
+  - "MCP rules"
+  - "React rules"
+  - "PHP rules"
+  - "Laravel rules"
+- filePatternOverrides:
+  - "*.test.*": "skip all rules except testing defaults"
+
+# ===================================================================
+# 5. Дополнительные рекомендации
+# ===================================================================
+ruleType: always
+- description: "Общие best practices"
+- advice:
+  - "Write meaningful commit messages"
+  - "Keep PRs small and focused"
+  - "Use @-контекст для точечного управления"

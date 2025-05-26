@@ -240,20 +240,40 @@ export default function Show({ auth, order }) {
                                 </div>
                             </div>
                             
-                            {/* Блок с заметками к заказу */}
-                            <div className="bg-gray-50 p-6 rounded-lg mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Заметки к заказу</h3>
+                            {/* История статусов */}
+                            <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+                                <h3 className="text-lg font-semibold mb-4">История изменений статуса</h3>
                                 
-                                {order.notes ? (
-                                    <div className="mb-6 whitespace-pre-line">
-                                        <p className="text-gray-900">{order.notes}</p>
+                                {order.status_history && order.status_history.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {order.status_history.map((item, index) => (
+                                            <div key={index} className="flex items-start">
+                                                <div className="flex-shrink-0">
+                                                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </div>
+                                                <div className="ml-3">
+                                                    <p className="text-sm text-gray-900">
+                                                        Статус изменен с <span className="font-medium">{getStatusText(item.from)}</span> на <span className="font-medium">{getStatusText(item.to)}</span>
+                                                    </p>
+                                                    <p className="mt-1 text-xs text-gray-500">
+                                                        {item.changed_at} • {item.changed_by}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 ) : (
-                                    <p className="text-gray-500 mb-6">Заметки отсутствуют</p>
+                                    <p className="text-gray-500">История изменений статуса отсутствует</p>
                                 )}
+                            </div>
+                            
+                            {/* Заметки к заказу */}
+                            <div className="mt-8 bg-gray-50 p-6 rounded-lg">
+                                <h3 className="text-lg font-semibold mb-4">Заметки к заказу</h3>
                                 
-                                {/* Форма для добавления новой заметки */}
-                                <form onSubmit={handleAddNote}>
+                                <form onSubmit={handleAddNote} className="mb-6">
                                     <div>
                                         <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
                                             Добавить заметку
@@ -261,7 +281,7 @@ export default function Show({ auth, order }) {
                                         <textarea
                                             id="note"
                                             name="note"
-                                            rows="3"
+                                            rows={3}
                                             value={note}
                                             onChange={(e) => setNote(e.target.value)}
                                             className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
@@ -273,72 +293,106 @@ export default function Show({ auth, order }) {
                                         )}
                                     </div>
                                     
-                                    <div className="mt-3 flex justify-end">
+                                    <div className="mt-3">
                                         <button
                                             type="submit"
                                             disabled={addingNote}
-                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
                                         >
                                             {addingNote ? 'Добавление...' : 'Добавить заметку'}
                                         </button>
                                     </div>
                                 </form>
+                                
+                                <div className="space-y-4">
+                                    {order.notes_json && order.notes_json.length > 0 ? (
+                                        order.notes_json.map((note, index) => (
+                                            <div key={index} className="bg-white p-4 rounded-md shadow-sm">
+                                                <p className="text-gray-900">{note.text}</p>
+                                                <p className="mt-2 text-xs text-gray-500">
+                                                    {note.created_at} • {note.created_by}
+                                                </p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-500">Нет заметок к этому заказу</p>
+                                    )}
+                                </div>
                             </div>
 
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Товары в заказе</h3>
+                            {/* Товары заказа */}
+                            <div className="bg-white border rounded-lg overflow-hidden mb-8">
+                                <div className="px-6 py-4 border-b bg-gray-50">
+                                    <h3 className="text-lg font-semibold">Товары заказа</h3>
+                                </div>
                                 
                                 <div className="overflow-x-auto">
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Товар
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Артикул
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Цена
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Количество
                                                 </th>
-                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Сумма
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {order.orderItems.map(item => (
+                                            {order.orderItems.map((item) => (
                                                 <tr key={item.id}>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {item.part_name}
+                                                        <div className="flex items-center">
+                                                            {item.sparePart && item.sparePart.image_url && (
+                                                                <img 
+                                                                    src={item.sparePart.image_url} 
+                                                                    alt={item.sparePart.name}
+                                                                    className="h-10 w-10 object-cover mr-3"
+                                                                />
+                                                            )}
+                                                            <div>
+                                                                <p className="text-sm font-medium text-gray-900">
+                                                                    {item.sparePart ? item.sparePart.name : 'Товар не найден'}
+                                                                </p>
+                                                                {item.sparePart && item.sparePart.brand && (
+                                                                    <p className="text-xs text-gray-500">
+                                                                        {item.sparePart.brand.name}
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                                                        {item.part_number}
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {item.sparePart ? item.sparePart.part_number : '-'}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {item.price} руб.
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {item.quantity} шт.
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                         {(item.price * item.quantity).toFixed(2)} руб.
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        <tfoot>
+                                        <tfoot className="bg-gray-50">
                                             <tr>
-                                                <td colSpan="4" className="px-6 py-4 text-right font-bold">
+                                                <td colSpan="4" className="px-6 py-4 text-right text-sm font-medium">
                                                     Итого:
                                                 </td>
-                                                <td className="px-6 py-4 text-right font-bold text-indigo-600">
-                                                    {order.total_price} руб.
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                                    {order.total} руб.
                                                 </td>
                                             </tr>
                                         </tfoot>

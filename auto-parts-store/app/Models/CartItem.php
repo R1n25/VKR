@@ -31,4 +31,12 @@ class CartItem extends Model
     {
         return $this->belongsTo(SparePart::class);
     }
+    
+    /**
+     * Альтернативный метод для получения запчасти (для совместимости с OrderItem).
+     */
+    public function part()
+    {
+        return $this->belongsTo(SparePart::class, 'spare_part_id');
+    }
 } 

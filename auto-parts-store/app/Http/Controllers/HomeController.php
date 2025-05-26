@@ -6,13 +6,13 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Services\BrandService;
 use App\Services\CategoryService;
-use App\Services\PartsService;
+use App\Services\SparePartService;
 
 class HomeController extends Controller
 {
     protected $brandService;
     protected $categoryService;
-    protected $partsService;
+    protected $sparePartService;
 
     /**
      * Конструктор контроллера с внедрением сервисов
@@ -20,11 +20,11 @@ class HomeController extends Controller
     public function __construct(
         BrandService $brandService, 
         CategoryService $categoryService,
-        PartsService $partsService
+        SparePartService $sparePartService
     ) {
         $this->brandService = $brandService;
         $this->categoryService = $categoryService;
-        $this->partsService = $partsService;
+        $this->sparePartService = $sparePartService;
     }
 
     /**
@@ -39,7 +39,7 @@ class HomeController extends Controller
         $categories = $this->categoryService->getRootCategories();
         
         // Получаем популярные запчасти
-        $popularParts = $this->partsService->getPopularParts(8);
+        $popularParts = $this->sparePartService->getPopularParts(8);
         
         return Inertia::render('Home', [
             'auth' => [

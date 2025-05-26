@@ -14,6 +14,8 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\VinRequestController;
 use App\Http\Controllers\InfoController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 
 /*
@@ -70,6 +72,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // История VIN-запросов пользователя
     Route::get('/my-vin-requests', [VinRequestController::class, 'userRequests'])->name('vin-request.user');
+    
+    // Маршруты для работы с финансами
+    Route::get('/finances', [PaymentController::class, 'index'])->name('finances.index');
+    Route::get('/finances/create', [PaymentController::class, 'create'])->name('finances.create');
+    Route::post('/finances', [PaymentController::class, 'store'])->name('finances.store');
+    Route::get('/finances/{id}', [PaymentController::class, 'show'])->name('finances.show');
+    Route::put('/finances/{id}/status', [PaymentController::class, 'updateStatus'])->name('finances.update-status');
+    Route::get('/orders/{id}/add-payment', [PaymentController::class, 'createForOrder'])->name('orders.add-payment');
 });
 
 // Маршрут для корзины
@@ -101,23 +111,10 @@ Route::post('/checkout', function (Request $request) {
 })->name('checkout.store');
 
 // Маршрут для просмотра списка заказов (требуется аутентификация)
-Route::get('/orders', function () {
-    return Inertia::render('Orders/Index', [
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->middleware(['auth'])->name('orders.index');
+Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth'])->name('orders.index');
 
 // Маршрут для просмотра деталей заказа (требуется аутентификация)
-Route::get('/orders/{id}', function ($id) {
-    return Inertia::render('Orders/Show', [
-        'orderId' => $id,
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->middleware(['auth'])->name('orders.show');
+Route::get('/orders/{id}', [OrderController::class, 'show'])->middleware(['auth'])->name('orders.show');
 
 // Маршруты для информационных страниц
 Route::get('/news', [InfoController::class, 'news'])->name('news');
@@ -151,6 +148,21 @@ Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->group(func
     Route::get('/orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('admin.orders.show');
     Route::put('/orders/{id}/status', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('admin.orders.update-status');
     Route::post('/orders/{id}/note', [App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('admin.orders.add-note');
+    Route::get('/orders-export', [App\Http\Controllers\Admin\OrderController::class, 'export'])->name('admin.orders.export');
+    
+    // Управление платежами
+    Route::get('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('admin.payments.index');
+    Route::get('/payments/create', [App\Http\Controllers\Admin\PaymentController::class, 'create'])->name('admin.payments.create');
+    Route::post('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('admin.payments.store');
+    Route::get('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
+    Route::put('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'update'])->name('admin.payments.update');
+    Route::get('/payments-export', [App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('admin.payments.export');
+    Route::get('/orders/{id}/add-payment', [App\Http\Controllers\Admin\PaymentController::class, 'createForOrder'])->name('admin.orders.add-payment');
+    
+    // Управление методами оплаты
+    Route::get('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'paymentMethods'])->name('admin.payment-methods');
+    Route::post('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'storePaymentMethod'])->name('admin.payment-methods.store');
+    Route::put('/payment-methods/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'updatePaymentMethod'])->name('admin.payment-methods.update');
 });
 
 require __DIR__.'/auth.php';

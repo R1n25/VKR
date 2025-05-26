@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -9,21 +10,27 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class CarModel extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'name',
         'slug',
-        'description',
-        'image',
         'brand_id',
-        'year_from',
-        'year_to',
+        'year_start',
+        'year_end',
+        'generation',
+        'body_type',
+        'engine_type',
+        'engine_volume',
+        'transmission_type',
+        'drive_type',
         'is_popular',
     ];
 
     protected $casts = [
-        'year_from' => 'integer',
-        'year_to' => 'integer',
         'is_popular' => 'boolean',
+        'year_start' => 'integer',
+        'year_end' => 'integer',
     ];
 
     /**
@@ -32,14 +39,6 @@ class CarModel extends Model
     public function carBrand(): BelongsTo
     {
         return $this->belongsTo(CarBrand::class, 'brand_id');
-    }
-
-    /**
-     * Get the parts for the car model.
-     */
-    public function parts(): HasMany
-    {
-        return $this->hasMany(Part::class);
     }
 
     /**

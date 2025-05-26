@@ -7,6 +7,7 @@ use App\Http\Controllers\API\CarModelController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\PartController;
 use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\API\CartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -51,20 +52,18 @@ Route::get('categories/{id}/parts', [CategoryController::class, 'getParts']);
 Route::get('parts', [PartController::class, 'index']);
 Route::get('parts/{id}', [PartController::class, 'show']);
 
-// Маршруты для заказов
-Route::apiResource('orders', OrderController::class);
+// Маршруты для корзины
+Route::get('cart', [CartController::class, 'getCart']);
+Route::post('cart/add', [CartController::class, 'addToCart']);
+Route::post('cart/sync', [CartController::class, 'syncCart']);
+Route::post('cart/remove', [CartController::class, 'removeFromCart']);
+Route::post('cart/update', [CartController::class, 'updateQuantity']);
+Route::post('cart/clear', [CartController::class, 'clearCart']);
+Route::post('cart/add-order', [CartController::class, 'addOrderToCart']);
 
-// Заглушка для API заказов
-Route::post('orders', function (Request $request) {
-    // В реальной системе здесь была бы обработка заказа
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Заказ успешно создан',
-        'data' => [
-            'order_id' => rand(1000, 9999),
-            'order_date' => now()->toDateTimeString(),
-            'status' => 'в обработке',
-            'total' => $request->total
-        ]
-    ], 201);
-}); 
+// Маршруты для заказов
+Route::get('orders', [OrderController::class, 'index']);
+Route::get('orders/{id}', [OrderController::class, 'show']);
+Route::post('orders', [OrderController::class, 'store']);
+Route::put('orders/{id}', [OrderController::class, 'update']);
+Route::delete('orders/{id}', [OrderController::class, 'destroy']); 

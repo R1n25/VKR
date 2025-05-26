@@ -9,7 +9,7 @@ class OrderItem extends Model
 {
     protected $fillable = [
         'order_id',
-        'part_id',
+        'spare_part_id',
         'quantity',
         'price',
     ];
@@ -23,18 +23,19 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the part that owns the order item.
-     */
-    public function part(): BelongsTo
-    {
-        return $this->belongsTo(Part::class);
-    }
-    
-    /**
      * Get the spare part associated with the order item.
      */
     public function sparePart(): BelongsTo
     {
-        return $this->belongsTo(SparePart::class, 'part_id');
+        return $this->belongsTo(SparePart::class);
+    }
+    
+    /**
+     * Альтернативный метод для обратной совместимости.
+     * @deprecated Используйте sparePart() вместо этого метода.
+     */
+    public function part(): BelongsTo
+    {
+        return $this->belongsTo(SparePart::class, 'spare_part_id');
     }
 }

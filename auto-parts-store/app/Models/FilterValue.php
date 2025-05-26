@@ -8,14 +8,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class FilterValue extends Model
 {
     protected $fillable = [
-        'part_id',
+        'spare_part_id',
         'filter_attribute_id',
         'value',
     ];
 
+    public function sparePart(): BelongsTo
+    {
+        return $this->belongsTo(SparePart::class);
+    }
+    
+    /**
+     * Альтернативный метод для обратной совместимости.
+     * @deprecated Используйте sparePart() вместо этого метода.
+     */
     public function part(): BelongsTo
     {
-        return $this->belongsTo(Part::class);
+        return $this->belongsTo(SparePart::class, 'spare_part_id');
     }
 
     public function attribute(): BelongsTo

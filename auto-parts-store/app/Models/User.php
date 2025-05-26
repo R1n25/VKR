@@ -6,7 +6,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use App\Services\PartsService;
+use App\Services\SparePartService;
 
 class User extends Authenticatable
 {
@@ -58,6 +58,6 @@ class User extends Authenticatable
      */
     protected $attributes = [
         'is_admin' => false,
-        'markup_percent' => PartsService::DEFAULT_MARKUP_PERCENT,
+        'markup_percent' => SparePartService::DEFAULT_MARKUP_PERCENT,
     ];
 }

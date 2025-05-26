@@ -5,7 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
-use App\Models\Part;
+use App\Models\SparePart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -23,12 +23,27 @@ class OrderController extends Controller
             $query->where('status', $request->status);
         }
         
-        // Фильтр по пользователю
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
+        // Если указан лимит, применяем его
+        if ($request->has('limit')) {
+            $limit = (int)$request->limit;
+        } else {
+            $limit = 10;
         }
         
-        $orders = $query->orderBy('created_at', 'desc')->paginate(10);
+        // Фильтр по пользователю - если пользователь авторизован, показываем только его заказы
+        if (auth()->check()) {
+            $query->where('user_id', auth()->id());
+        } elseif ($request->has('user_id')) {
+            $query->where('user_id', $request->user_id);
+        } else {
+            // Если пользователь не авторизован и не указан user_id, возвращаем пустой результат
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
+        }
+        
+        $orders = $query->orderBy('created_at', 'desc')->paginate($limit);
         
         return response()->json([
             'success' => true,
@@ -41,6 +56,11 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
+        // Убедимся, что customer_name не пустой
+        if (empty($request->customer_name)) {
+            $request->merge(['customer_name' => 'Гость']);
+        }
+        
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
@@ -55,7 +75,7 @@ class OrderController extends Controller
             'notes' => 'nullable|string',
             'user_id' => 'nullable|exists:users,id',
             'items' => 'required|array|min:1',
-            'items.*.part_id' => 'required|exists:parts,id',
+            'items.*.spare_part_id' => 'required|exists:spare_parts,id',
             'items.*.quantity' => 'required|integer|min:1',
         ]);
 
@@ -65,9 +85,9 @@ class OrderController extends Controller
             
             // Рассчитываем общую сумму заказа и проверяем наличие запчастей
             foreach ($validated['items'] as $item) {
-                $part = Part::findOrFail($item['part_id']);
+                $part = SparePart::findOrFail($item['spare_part_id']);
                 
-                if ($part->stock < $item['quantity']) {
+                if ($part->stock_quantity < $item['quantity']) {
                     throw new \Exception("Недостаточное количество запчасти '{$part->name}' на складе");
                 }
                 
@@ -77,7 +97,7 @@ class OrderController extends Controller
             // Генерируем номер заказа
             $orderNumber = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
             
-            // Создаем данные заказа
+            // Создаем данные заказа с гарантированным значением для customer_name
             $orderData = [
                 'order_number' => $orderNumber,
                 'customer_name' => $validated['customer_name'],
@@ -92,7 +112,7 @@ class OrderController extends Controller
             ];
             
             // Добавляем данные о доставке, если они есть
-            if ($request->has('shipping_name')) {
+            if ($request->has('shipping_name') && !empty($request->shipping_name)) {
                 $orderData['shipping_name'] = $request->shipping_name;
             } else {
                 $orderData['shipping_name'] = $validated['customer_name'];
@@ -127,23 +147,23 @@ class OrderController extends Controller
             
             // Создаем элементы заказа и уменьшаем количество запчастей на складе
             foreach ($validated['items'] as $item) {
-                $part = Part::findOrFail($item['part_id']);
+                $part = SparePart::findOrFail($item['spare_part_id']);
                 
                 // Уменьшаем количество запчастей на складе
-                $part->stock -= $item['quantity'];
+                $part->stock_quantity -= $item['quantity'];
                 $part->save();
                 
                 // Создаем элемент заказа
                 OrderItem::create([
                     'order_id' => $order->id,
-                    'part_id' => $part->id,
+                    'spare_part_id' => $part->id,
                     'quantity' => $item['quantity'],
                     'price' => $part->price,
                 ]);
             }
             
             // Загружаем заказ с элементами
-            $order->load('orderItems.part');
+            $order->load('orderItems.sparePart');
             
             return response()->json([
                 'success' => true,
@@ -158,7 +178,7 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        $order = Order::with('orderItems.part')->findOrFail($id);
+        $order = Order::with('orderItems.sparePart')->findOrFail($id);
         
         return response()->json([
             'success' => true,
@@ -181,8 +201,8 @@ class OrderController extends Controller
         if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
             DB::transaction(function () use ($order) {
                 foreach ($order->orderItems as $item) {
-                    $part = $item->part;
-                    $part->stock += $item->quantity;
+                    $part = $item->sparePart;
+                    $part->stock_quantity += $item->quantity;
                     $part->save();
                 }
             });
@@ -208,8 +228,8 @@ class OrderController extends Controller
         if ($order->status !== 'cancelled') {
             DB::transaction(function () use ($order) {
                 foreach ($order->orderItems as $item) {
-                    $part = $item->part;
-                    $part->stock += $item->quantity;
+                    $part = $item->sparePart;
+                    $part->stock_quantity += $item->quantity;
                     $part->save();
                 }
             });

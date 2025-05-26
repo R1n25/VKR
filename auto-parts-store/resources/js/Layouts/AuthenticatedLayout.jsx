@@ -5,6 +5,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import Footer from '@/Components/Footer';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import CartIcon from '@/Components/CartIcon';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth?.user;
@@ -37,14 +38,8 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <NavLink href={route('news')} active={route().current('news')}>
                                     Новости
                                 </NavLink>
-                                <NavLink href={route('about')} active={route().current('about')}>
-                                    О нас
-                                </NavLink>
                                 <NavLink href={route('contacts')} active={route().current('contacts')}>
                                     Контакты
-                                </NavLink>
-                                <NavLink href={route('location-map')} active={route().current('location-map')}>
-                                    Схема проезда
                                 </NavLink>
                             </div>
                         </div>
@@ -60,42 +55,52 @@ export default function AuthenticatedLayout({ header, children }) {
                                         Личный кабинет
                                     </NavLink>
                                 )}
+                                <NavLink href={route('orders.index')} active={route().current('orders.index')}>
+                                    Заказы
+                                </NavLink>
+                                
+                                <div className="mr-4 inline-flex">
+                                    <CartIcon user={user} />
+                                </div>
                                 <div className="relative">
-                                <Dropdown>
-                                    <Dropdown.Trigger>
-                                            <span className="inline-flex rounded-lg">
-                                            <button
-                                                type="button"
-                                                    className="inline-flex items-center rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900"
-                                            >
-                                                {user.name}
-                                                <svg
-                                                    className="-me-0.5 ms-2 h-4 w-4"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    viewBox="0 0 20 20"
-                                                    fill="currentColor"
+                                    <Dropdown>
+                                        <Dropdown.Trigger>
+                                                <span className="inline-flex rounded-lg">
+                                                <button
+                                                    type="button"
+                                                        className="inline-flex items-center rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900"
                                                 >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </span>
-                                    </Dropdown.Trigger>
+                                                    {user.name}
+                                                    <svg
+                                                        className="-me-0.5 ms-2 h-4 w-4"
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        viewBox="0 0 20 20"
+                                                        fill="currentColor"
+                                                    >
+                                                        <path
+                                                            fillRule="evenodd"
+                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                            clipRule="evenodd"
+                                                        />
+                                                    </svg>
+                                                </button>
+                                            </span>
+                                        </Dropdown.Trigger>
 
-                                    <Dropdown.Content>
-                                            <Dropdown.Link href={route('profile.edit')} className="text-sm">
-                                                Профиль
-                                        </Dropdown.Link>
-                                            <Dropdown.Link href={route('logout')} method="post" as="button" className="text-sm">
-                                                Выход
-                                        </Dropdown.Link>
-                                    </Dropdown.Content>
-                                </Dropdown>
+                                        <Dropdown.Content>
+                                                <Dropdown.Link href={route('orders.index')} className="text-sm">
+                                                    Заказы
+                                            </Dropdown.Link>
+                                                <Dropdown.Link href={route('finances.index')} className="text-sm">
+                                                    Финансы
+                                            </Dropdown.Link>
+                                                <Dropdown.Link href={route('logout')} method="post" as="button" className="text-sm">
+                                                    Выход
+                                            </Dropdown.Link>
+                                        </Dropdown.Content>
+                                    </Dropdown>
+                                </div>
                             </div>
-                        </div>
                         )}
 
                         {!user && (
@@ -214,20 +219,6 @@ export default function AuthenticatedLayout({ header, children }) {
                             Новости
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            href={route('about')}
-                            active={route().current('about')}
-                            className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('about')
-                                    ? 'bg-[#2a4075] text-white shadow-lg shadow-[#2a4075]/30 font-semibold'
-                                    : 'text-white hover:bg-indigo-900'
-                            }`}
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            О нас
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
                             href={route('contacts')}
                             active={route().current('contacts')}
                             className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
@@ -240,21 +231,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                             Контакты
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            href={route('location-map')}
-                            active={route().current('location-map')}
-                            className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('location-map')
-                                    ? 'bg-[#2a4075] text-white shadow-lg shadow-[#2a4075]/30 font-semibold'
-                                    : 'text-white hover:bg-indigo-900'
-                            }`}
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            Схема проезда
                         </ResponsiveNavLink>
                     </div>
 
@@ -300,31 +276,46 @@ export default function AuthenticatedLayout({ header, children }) {
                                     </ResponsiveNavLink>
                                 )}
                                 <ResponsiveNavLink 
-                                    href={route('profile.edit')}
+                                    href={route('orders.index')}
                                     className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                        route().current('profile.edit')
+                                        route().current('orders.index')
                                             ? 'bg-green-500 shadow-lg shadow-green-500/30'
                                             : 'hover:bg-indigo-900'
                                     }`}
                                 >
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                                     </svg>
-                                    Профиль
-                            </ResponsiveNavLink>
-                            <ResponsiveNavLink
-                                method="post"
-                                href={route('logout')}
-                                as="button"
-                                    className={`w-full flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-900`}
-                            >
+                                    Заказы
+                                </ResponsiveNavLink>
+                                
+                                <ResponsiveNavLink 
+                                    href={route('finances.index')}
+                                    className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
+                                        route().current('finances.*')
+                                            ? 'bg-green-500 shadow-lg shadow-green-500/30'
+                                            : 'hover:bg-indigo-900'
+                                    }`}
+                                >
                                     <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                     </svg>
-                                    Выход
-                            </ResponsiveNavLink>
+                                    Финансы
+                                </ResponsiveNavLink>
+                                
+                                <ResponsiveNavLink
+                                    method="post"
+                                    href={route('logout')}
+                                    as="button"
+                                        className={`w-full flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 hover:bg-indigo-900`}
+                                >
+                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                        </svg>
+                                        Выход
+                                </ResponsiveNavLink>
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {!user && (

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class PartScheme extends Model
 {
@@ -36,9 +37,9 @@ class PartScheme extends Model
         return $this->hasMany(PartSchemeItem::class);
     }
 
-    public function parts()
+    public function spareParts(): BelongsToMany
     {
-        return $this->belongsToMany(Part::class, 'part_scheme_items')
+        return $this->belongsToMany(SparePart::class, 'part_scheme_items')
             ->withPivot(['position_x', 'position_y', 'number'])
             ->withTimestamps();
     }
