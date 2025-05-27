@@ -9,6 +9,9 @@ export default function Index({ auth, orders, filters, ordersCount }) {
     console.log("Orders data:", orders);
     console.log("Orders count:", ordersCount);
 
+    // Константа для админ-панели
+    const isAdmin = true;
+
     const [searchFilters, setSearchFilters] = useState({
         order_number: filters?.order_number || '',
         customer_name: filters?.customer_name || '',
@@ -16,7 +19,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
         date_from: filters?.date_from || '',
         date_to: filters?.date_to || '',
     });
-
+    
     // Функция для обработки изменений в форме фильтров
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -60,14 +63,14 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                 return 'Ожидает обработки';
             case 'processing':
                 return 'В обработке';
-            case 'completed':
-                return 'Выполнен';
-            case 'cancelled':
-                return 'Отменен';
             case 'shipped':
                 return 'Отправлен';
             case 'delivered':
                 return 'Доставлен';
+            case 'completed':
+                return 'Выполнен';
+            case 'cancelled':
+                return 'Отменен';
             default:
                 return status || 'Неизвестно';
         }
@@ -80,14 +83,14 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                 return 'bg-yellow-100 text-yellow-800';
             case 'processing':
                 return 'bg-blue-100 text-blue-800';
+            case 'shipped':
+                return 'bg-purple-100 text-purple-800';
+            case 'delivered':
+                return 'bg-blue-200 text-blue-900';
             case 'completed':
                 return 'bg-green-100 text-green-800';
             case 'cancelled':
                 return 'bg-red-100 text-red-800';
-            case 'shipped':
-                return 'bg-purple-100 text-purple-800';
-            case 'delivered':
-                return 'bg-green-200 text-green-900';
             default:
                 return 'bg-gray-100 text-gray-800';
         }
@@ -294,13 +297,22 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                             {order.total || '0'} руб.
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                                            <Link
-                                                                href={route('admin.orders.show', order.id)}
-                                                                className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                                        <td className="px-6 py-4 text-sm">
+                                                            <a
+                                                                href={`${window.location.origin}/admin/orders/${order.id}`}
+                                                                className="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-2"
                                                             >
-                                                                Просмотр
-                                                            </Link>
+                                                                Подробнее
+                                                            </a>
+                                                            
+                                                            {(isAdmin || (auth.user && auth.user.id === order.user_id)) && order.payment_status !== 'paid' && (
+                                                                <Link
+                                                                    href={isAdmin ? route('admin.orders.add-payment', order.id) : route('orders.add-payment', order.id)}
+                                                                    className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                                                >
+                                                                    Оплатить
+                                                                </Link>
+                                                            )}
                                                         </td>
                                                     </tr>
                                                 ))}

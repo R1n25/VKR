@@ -11,6 +11,34 @@ export default function Show({ auth, order }) {
     const [note, setNote] = useState('');
     const [noteError, setNoteError] = useState('');
     const [addingNote, setAddingNote] = useState(false);
+    const [statusNote, setStatusNote] = useState('');
+
+    // Проверка наличия order
+    if (!order) {
+        return (
+            <AdminLayout
+                user={auth.user}
+                header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Заказ не найден</h2>}
+            >
+                <Head title="Заказ не найден" />
+                <div className="py-12">
+                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                            <div className="p-6 text-gray-900 text-center">
+                                <p className="mb-4">Запрашиваемый заказ не найден.</p>
+                                <Link
+                                    href={route('admin.orders.index')}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                >
+                                    ← Вернуться к списку заказов
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </AdminLayout>
+        );
+    }
 
     // Функция для получения текстового представления статуса заказа
     const getStatusText = (status) => {
@@ -19,6 +47,10 @@ export default function Show({ auth, order }) {
                 return 'Ожидает обработки';
             case 'processing':
                 return 'В обработке';
+            case 'shipped':
+                return 'Отправлен';
+            case 'delivered':
+                return 'Доставлен';
             case 'completed':
                 return 'Выполнен';
             case 'cancelled':
@@ -35,6 +67,10 @@ export default function Show({ auth, order }) {
                 return 'bg-yellow-100 text-yellow-800';
             case 'processing':
                 return 'bg-blue-100 text-blue-800';
+            case 'shipped':
+                return 'bg-purple-100 text-purple-800';
+            case 'delivered':
+                return 'bg-blue-200 text-blue-900';
             case 'completed':
                 return 'bg-green-100 text-green-800';
             case 'cancelled':
@@ -81,9 +117,11 @@ export default function Show({ auth, order }) {
         
         try {
             await axios.put(route('admin.orders.update-status', order.id), {
-                status: newStatus
+                status: newStatus,
+                note: statusNote
             });
             
+            setStatusNote('');
             router.reload();
         } catch (error) {
             console.error('Ошибка при обновлении статуса:', error);
@@ -144,7 +182,7 @@ export default function Show({ auth, order }) {
                             <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                                 <div>
                                     <h2 className="text-2xl font-bold text-gray-900">
-                                        Заказ №{order.order_number}
+                                        Заказ №{order.order_number || order.id}
                                     </h2>
                                     <p className="text-gray-600 mt-1">
                                         от {formatDate(order.created_at)}
@@ -160,27 +198,74 @@ export default function Show({ auth, order }) {
                                     </div>
                                     
                                     {/* Форма для изменения статуса */}
-                                    <div className="mt-2">
-                                        <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Изменить статус
-                                        </label>
-                                        <div className="flex items-center">
-                                            <select
-                                                id="status-select"
-                                                value={order.status}
-                                                onChange={(e) => handleStatusChange(e.target.value)}
+                                    <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
+                                        <h3 className="text-md font-semibold mb-3">Управление статусом заказа</h3>
+                                        <div>
+                                            <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Выберите новый статус
+                                            </label>
+                                            <div className="flex items-center">
+                                                <select
+                                                    id="status-select"
+                                                    value={order.status}
+                                                    onChange={(e) => handleStatusChange(e.target.value)}
+                                                    disabled={processing}
+                                                    className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                                                >
+                                                    <option value="pending">Ожидает обработки</option>
+                                                    <option value="processing">В обработке</option>
+                                                    <option value="shipped">Отправлен</option>
+                                                    <option value="delivered">Доставлен</option>
+                                                    <option value="completed">Выполнен</option>
+                                                    <option value="cancelled">Отменен</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-3">
+                                            <label htmlFor="status-note" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Комментарий к изменению статуса (необязательно)
+                                            </label>
+                                            <textarea
+                                                id="status-note"
+                                                value={statusNote}
+                                                onChange={(e) => setStatusNote(e.target.value)}
                                                 disabled={processing}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                                                rows={2}
+                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                placeholder="Добавьте комментарий к изменению статуса"
+                                            ></textarea>
+                                        </div>
+                                        
+                                        <div className="mt-4 grid grid-cols-3 gap-2">
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleStatusChange('processing')}
+                                                disabled={processing || order.status === 'processing'}
+                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
                                             >
-                                                <option value="pending">Ожидает обработки</option>
-                                                <option value="processing">В обработке</option>
-                                                <option value="completed">Выполнен</option>
-                                                <option value="cancelled">Отменен</option>
-                                            </select>
+                                                В обработку
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleStatusChange('shipped')}
+                                                disabled={processing || order.status === 'shipped'}
+                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-purple-700 focus:bg-purple-700 disabled:opacity-50 transition"
+                                            >
+                                                Отправить
+                                            </button>
+                                            <button 
+                                                type="button" 
+                                                onClick={() => handleStatusChange('completed')}
+                                                disabled={processing || order.status === 'completed'}
+                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
+                                            >
+                                                Выполнен
+                                            </button>
                                         </div>
                                         
                                         {statusError && (
-                                            <p className="mt-1 text-sm text-red-600">{statusError}</p>
+                                            <p className="mt-3 text-sm text-red-600">{statusError}</p>
                                         )}
                                     </div>
                                 </div>
@@ -258,7 +343,7 @@ export default function Show({ auth, order }) {
                                                         Статус изменен с <span className="font-medium">{getStatusText(item.from)}</span> на <span className="font-medium">{getStatusText(item.to)}</span>
                                                     </p>
                                                     <p className="mt-1 text-xs text-gray-500">
-                                                        {item.changed_at} • {item.changed_by}
+                                                        {item.changed_at} • {item.changed_by || 'Система'}
                                                     </p>
                                                 </div>
                                             </div>
@@ -310,7 +395,7 @@ export default function Show({ auth, order }) {
                                             <div key={index} className="bg-white p-4 rounded-md shadow-sm">
                                                 <p className="text-gray-900">{note.text}</p>
                                                 <p className="mt-2 text-xs text-gray-500">
-                                                    {note.created_at} • {note.created_by}
+                                                    {note.created_at} • {note.created_by || 'Система'}
                                                 </p>
                                             </div>
                                         ))
@@ -348,43 +433,77 @@ export default function Show({ auth, order }) {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {order.orderItems.map((item) => (
-                                                <tr key={item.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="flex items-center">
-                                                            {item.sparePart && item.sparePart.image_url && (
-                                                                <img 
-                                                                    src={item.sparePart.image_url} 
-                                                                    alt={item.sparePart.name}
-                                                                    className="h-10 w-10 object-cover mr-3"
-                                                                />
-                                                            )}
-                                                            <div>
-                                                                <p className="text-sm font-medium text-gray-900">
-                                                                    {item.sparePart ? item.sparePart.name : 'Товар не найден'}
-                                                                </p>
-                                                                {item.sparePart && item.sparePart.brand && (
-                                                                    <p className="text-xs text-gray-500">
-                                                                        {item.sparePart.brand.name}
-                                                                    </p>
+                                            {order.orderItems && order.orderItems.length > 0 ? (
+                                                order.orderItems.map((item) => (
+                                                    <tr key={item.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex items-center">
+                                                                {item.sparePart && item.sparePart.image_url && (
+                                                                    <img 
+                                                                        src={item.sparePart.image_url} 
+                                                                        alt={item.sparePart.name}
+                                                                        className="h-10 w-10 object-cover mr-3"
+                                                                    />
                                                                 )}
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {item.sparePart ? item.sparePart.name : (item.part_name || `Товар #${item.spare_part_id || item.part_id || 'N/A'}`)}
+                                                                    </p>
+                                                                    {item.sparePart && item.sparePart.brand && (
+                                                                        <p className="text-xs text-gray-500">
+                                                                            {item.sparePart.brand.name}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {item.sparePart ? item.sparePart.part_number : '-'}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {item.price} руб.
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {item.quantity} шт.
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        {(item.price * item.quantity).toFixed(2)} руб.
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.sparePart ? item.sparePart.part_number : (item.part_number || '-')}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.price} руб.
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.quantity} шт.
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {(item.price * item.quantity).toFixed(2)} руб.
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : order.direct_items && order.direct_items.length > 0 ? (
+                                                order.direct_items.map((item) => (
+                                                    <tr key={item.id}>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <div className="flex items-center">
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-gray-900">
+                                                                        {item.part_name || `Товар #${item.spare_part_id || item.part_id || 'N/A'}`}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.part_number || '-'}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.price} руб.
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                            {item.quantity} шт.
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                            {(item.price * item.quantity).toFixed(2)} руб.
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                        Товары в заказе не найдены
                                                     </td>
                                                 </tr>
-                                            ))}
+                                            )}
                                         </tbody>
                                         <tfoot className="bg-gray-50">
                                             <tr>
@@ -392,7 +511,7 @@ export default function Show({ auth, order }) {
                                                     Итого:
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                    {order.total} руб.
+                                                    {order.total || 0} руб.
                                                 </td>
                                             </tr>
                                         </tfoot>

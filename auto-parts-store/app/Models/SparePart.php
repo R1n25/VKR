@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SparePart extends Model
 {
@@ -77,6 +78,106 @@ class SparePart extends Model
     {
         return $this->belongsToMany(CarModel::class, 'car_model_spare_part')
             ->withTimestamps();
+    }
+
+    /**
+     * Получить аналоги запчасти
+     */
+    public function analogs()
+    {
+        return $this->hasMany(SparePartAnalog::class);
+    }
+
+    /**
+     * Получить запчасти, для которых данная запчасть является аналогом
+     */
+    public function analogFor()
+    {
+        return $this->hasMany(SparePartAnalog::class, 'analog_spare_part_id');
+    }
+
+    /**
+     * Получить все совместимости с автомобилями
+     */
+    public function compatibilities()
+    {
+        return $this->hasMany(SparePartCompatibility::class);
+    }
+
+    /**
+     * Получить бренд запчасти
+     * 
+     * Это отношение имитирует связь с брендом через поле manufacturer,
+     * поскольку в модели нет прямой связи brand_id с таблицей car_brands
+     */
+    public function brand()
+    {
+        // Поскольку у нас нет отношения через foreign key,
+        // мы используем специальный метод для поиска бренда по имени
+        return $this->belongsTo(CarBrand::class, 'manufacturer', 'name');
+    }
+
+    /**
+     * Получить все модели автомобилей, с которыми совместима запчасть
+     */
+    public function compatibleCarModels()
+    {
+        return $this->belongsToMany(CarModel::class, 'spare_part_compatibilities')
+                    ->withPivot('start_year', 'end_year', 'notes')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Получить все предложения пользователей по этой запчасти
+     */
+    public function suggestions()
+    {
+        return $this->hasMany(UserSuggestion::class);
+    }
+
+    /**
+     * Проверить, совместима ли запчасть с указанной моделью автомобиля и годом выпуска
+     */
+    public function isCompatibleWith($carModelId, $year = null)
+    {
+        $compatibility = $this->compatibilities()
+                              ->where('car_model_id', $carModelId)
+                              ->first();
+        
+        if (!$compatibility) {
+            return false;
+        }
+        
+        if ($year === null) {
+            return true;
+        }
+        
+        return $compatibility->isCompatibleWithYear($year);
+    }
+
+    /**
+     * Добавить аналог для запчасти
+     */
+    public function addAnalog($analogSparePartId, $isDirect = true, $notes = null)
+    {
+        return $this->analogs()->create([
+            'analog_spare_part_id' => $analogSparePartId,
+            'is_direct' => $isDirect,
+            'notes' => $notes,
+        ]);
+    }
+
+    /**
+     * Добавить совместимость с моделью автомобиля
+     */
+    public function addCompatibility($carModelId, $startYear = null, $endYear = null, $notes = null)
+    {
+        return $this->compatibilities()->create([
+            'car_model_id' => $carModelId,
+            'start_year' => $startYear,
+            'end_year' => $endYear,
+            'notes' => $notes,
+        ]);
     }
 
     /**

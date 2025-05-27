@@ -22,7 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
-        'is_admin',
+        'role',
         'markup_percent',
     ];
 
@@ -46,7 +46,6 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
             'markup_percent' => 'float',
         ];
     }
@@ -57,7 +56,32 @@ class User extends Authenticatable
      * @var array
      */
     protected $attributes = [
-        'is_admin' => false,
+        'role' => 'user',
         'markup_percent' => SparePartService::DEFAULT_MARKUP_PERCENT,
+    ];
+
+    /**
+     * Проверяет, является ли пользователь администратором
+     */
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
+    
+    /**
+     * Аксессор для совместимости с AuthenticatedLayout
+     */
+    public function getIsAdminAttribute()
+    {
+        return $this->role === 'admin';
+    }
+    
+    /**
+     * Дополнительные атрибуты для добавления к массиву модели
+     *
+     * @var array
+     */
+    protected $appends = [
+        'is_admin',
     ];
 }

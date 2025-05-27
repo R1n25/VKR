@@ -21,6 +21,9 @@ class AuthServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Добавляем политику для управления предложениями пользователей
+        Gate::define('manage-suggestions', function ($user) {
+            return $user->isAdmin();
+        });
     }
 } 

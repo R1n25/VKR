@@ -6,11 +6,19 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\SparePart;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
+    protected $orderService;
+    
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -95,11 +103,7 @@ class OrderController extends Controller
             }
             
             // Генерируем номер заказа
-            $orderNumber = 'ORD-' . date('Ymd') . '-' . rand(1000, 9999);
-            
-            // Создаем данные заказа с гарантированным значением для customer_name
             $orderData = [
-                'order_number' => $orderNumber,
                 'customer_name' => $validated['customer_name'],
                 'email' => $validated['email'],
                 'phone' => $validated['phone'],
@@ -144,6 +148,14 @@ class OrderController extends Controller
             
             // Создаем заказ
             $order = Order::create($orderData);
+            
+            // Для отладки: выводим информацию о созданном заказе
+            \Log::info('Создан заказ через API', [
+                'order_id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $order->user_id,
+                'total' => $order->total
+            ]);
             
             // Создаем элементы заказа и уменьшаем количество запчастей на складе
             foreach ($validated['items'] as $item) {

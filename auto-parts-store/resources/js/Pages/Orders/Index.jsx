@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Orders({ auth, orders, isAdmin }) {
+export default function Orders({ auth, orders }) {
     // Функция для форматирования даты
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -63,7 +63,7 @@ export default function Orders({ auth, orders, isAdmin }) {
             <Head title="Заказы" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             {orders.length === 0 ? (
@@ -77,34 +77,29 @@ export default function Orders({ auth, orders, isAdmin }) {
                                     </Link>
                                 </div>
                             ) : (
-                                <div>
-                                    <table className="min-w-full divide-y divide-gray-200">
+                                <div className="overflow-x-auto">
+                                    <table className="min-w-full divide-y divide-gray-200 table-fixed">
                                         <thead className="bg-gray-50">
                                             <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     № заказа
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                                                     Дата
                                                 </th>
-                                                {isAdmin && (
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Клиент
-                                                    </th>
-                                                )}
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                                                     Сумма
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                                                     Оплачено
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     Статус заказа
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     Статус оплаты
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[14%]">
                                                     Действия
                                                 </th>
                                             </tr>
@@ -112,45 +107,40 @@ export default function Orders({ auth, orders, isAdmin }) {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {orders.map((order) => (
                                                 <tr key={order.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                         {order.order_number || `#${order.id}`}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
                                                         {formatDate(order.created_at)}
                                                     </td>
-                                                    {isAdmin && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {order.user ? order.user.name : order.customer_name}
-                                                        </td>
-                                                    )}
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
                                                         {order.total || order.total_amount} руб.
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
                                                         {order.total_paid || 0} руб.
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-6 py-4">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
                                                             {getStatusText(order.status)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-6 py-4">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusClass(order.payment_status)}`}>
                                                             {getPaymentStatusText(order.payment_status)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-6 py-4 text-sm">
                                                         <Link
                                                             href={`/orders/${order.id}`}
-                                                            className="text-indigo-600 hover:text-indigo-900 mr-3"
+                                                            className="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-2"
                                                         >
                                                             Подробнее
                                                         </Link>
                                                         
-                                                        {(isAdmin || (auth.user && auth.user.id === order.user_id)) && order.payment_status !== 'paid' && (
+                                                        {order.payment_status !== 'paid' && (
                                                             <Link
-                                                                href={isAdmin ? route('admin.orders.add-payment', order.id) : route('orders.add-payment', order.id)}
-                                                                className="text-green-600 hover:text-green-900"
+                                                                href={route('orders.add-payment', order.id)}
+                                                                className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                             >
                                                                 Оплатить
                                                             </Link>

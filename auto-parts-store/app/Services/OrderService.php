@@ -69,14 +69,23 @@ class OrderService
      */
     private function generateOrderNumber()
     {
-        $orderNumber = 'ORD-' . strtoupper(Str::random(8));
+        // Получаем последний номер заказа
+        $lastOrder = Order::orderBy('id', 'desc')->first();
         
-        // Проверяем, не существует ли уже такой номер заказа
-        while (Order::where('order_number', $orderNumber)->exists()) {
-            $orderNumber = 'ORD-' . strtoupper(Str::random(8));
+        if ($lastOrder && is_numeric($lastOrder->order_number)) {
+            // Если есть последний заказ и его номер - число, увеличиваем на 1
+            $nextOrderNumber = intval($lastOrder->order_number) + 1;
+        } else {
+            // Если заказов еще нет или формат номера был другой, начинаем с 100000001
+            $nextOrderNumber = 100000001;
         }
         
-        return $orderNumber;
+        // Убеждаемся, что номер заказа уникален
+        while (Order::where('order_number', (string)$nextOrderNumber)->exists()) {
+            $nextOrderNumber++;
+        }
+        
+        return (string)$nextOrderNumber;
     }
 
     /**

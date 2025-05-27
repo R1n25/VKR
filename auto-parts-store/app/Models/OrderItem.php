@@ -27,7 +27,7 @@ class OrderItem extends Model
      */
     public function sparePart(): BelongsTo
     {
-        return $this->belongsTo(SparePart::class);
+        return $this->belongsTo(SparePart::class, 'spare_part_id');
     }
     
     /**

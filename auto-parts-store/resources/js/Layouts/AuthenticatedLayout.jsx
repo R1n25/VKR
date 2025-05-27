@@ -46,60 +46,42 @@ export default function AuthenticatedLayout({ header, children }) {
 
                         {user && (
                             <div className="hidden sm:flex sm:items-center sm:ml-auto space-x-4">
-                                {user.is_admin ? (
+                                {user.role === 'admin' ? (
                                     <NavLink href={route('admin.dashboard')} active={route().current('admin.dashboard')}>
                                         Админ-панель
                                     </NavLink>
                                 ) : (
-                                    <NavLink href={route('dashboard')} active={route().current('dashboard')}>
-                                        Личный кабинет
-                                    </NavLink>
+                                    <>
+                                        <NavLink href={route('dashboard')} active={route().current('dashboard')}>
+                                            Личный кабинет
+                                        </NavLink>
+                                        <NavLink href={route('orders.index')} active={route().current('orders.index')}>
+                                            Заказы
+                                        </NavLink>
+                                    </>
                                 )}
-                                <NavLink href={route('orders.index')} active={route().current('orders.index')}>
-                                    Заказы
-                                </NavLink>
                                 
                                 <div className="mr-4 inline-flex">
                                     <CartIcon user={user} />
                                 </div>
-                                <div className="relative">
-                                    <Dropdown>
-                                        <Dropdown.Trigger>
-                                                <span className="inline-flex rounded-lg">
-                                                <button
-                                                    type="button"
-                                                        className="inline-flex items-center rounded-lg bg-green-500 px-4 py-2 text-sm font-medium text-white transition-all duration-300 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 focus:ring-offset-gray-900"
-                                                >
-                                                    {user.name}
-                                                    <svg
-                                                        className="-me-0.5 ms-2 h-4 w-4"
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        viewBox="0 0 20 20"
-                                                        fill="currentColor"
-                                                    >
-                                                        <path
-                                                            fillRule="evenodd"
-                                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                                            clipRule="evenodd"
-                                                        />
-                                                    </svg>
-                                                </button>
-                                            </span>
-                                        </Dropdown.Trigger>
-
-                                        <Dropdown.Content>
-                                                <Dropdown.Link href={route('orders.index')} className="text-sm">
-                                                    Заказы
-                                            </Dropdown.Link>
-                                                <Dropdown.Link href={route('finances.index')} className="text-sm">
-                                                    Финансы
-                                            </Dropdown.Link>
-                                                <Dropdown.Link href={route('logout')} method="post" as="button" className="text-sm">
-                                                    Выход
-                                            </Dropdown.Link>
-                                        </Dropdown.Content>
-                                    </Dropdown>
-                                </div>
+                                
+                                {user.role !== 'admin' && (
+                                    <NavLink href={route('finances.index')} active={route().current('finances.index')}>
+                                        Финансы
+                                    </NavLink>
+                                )}
+                                
+                                <span className="text-white mr-2">|</span>
+                                <span className="text-white mr-2">{user.name}</span>
+                                
+                                <Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1 rounded transition duration-200"
+                                >
+                                    Выход
+                                </Link>
                             </div>
                         )}
 
@@ -246,7 +228,7 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                             <div className="mt-3 space-y-1 px-4">
-                                {user.is_admin ? (
+                                {user.role === 'admin' ? (
                                     <ResponsiveNavLink 
                                         href={route('admin.dashboard')}
                                         className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
@@ -261,47 +243,52 @@ export default function AuthenticatedLayout({ header, children }) {
                                         Админ-панель
                                     </ResponsiveNavLink>
                                 ) : (
+                                    <>
+                                        <ResponsiveNavLink 
+                                            href={route('dashboard')}
+                                            className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
+                                                route().current('dashboard')
+                                                    ? 'bg-green-500 shadow-lg shadow-green-500/30'
+                                                    : 'hover:bg-indigo-900'
+                                            }`}
+                                        >
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            Личный кабинет
+                                        </ResponsiveNavLink>
+                                        
+                                        <ResponsiveNavLink 
+                                            href={route('orders.index')}
+                                            className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
+                                                route().current('orders.index')
+                                                    ? 'bg-green-500 shadow-lg shadow-green-500/30'
+                                                    : 'hover:bg-indigo-900'
+                                            }`}
+                                        >
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                            </svg>
+                                            Заказы
+                                        </ResponsiveNavLink>
+                                    </>
+                                )}
+                                
+                                {user.role !== 'admin' && (
                                     <ResponsiveNavLink 
-                                        href={route('dashboard')}
+                                        href={route('finances.index')}
                                         className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                            route().current('dashboard')
+                                            route().current('finances.*')
                                                 ? 'bg-green-500 shadow-lg shadow-green-500/30'
                                                 : 'hover:bg-indigo-900'
                                         }`}
                                     >
                                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                         </svg>
-                                        Личный кабинет
+                                        Финансы
                                     </ResponsiveNavLink>
                                 )}
-                                <ResponsiveNavLink 
-                                    href={route('orders.index')}
-                                    className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                        route().current('orders.index')
-                                            ? 'bg-green-500 shadow-lg shadow-green-500/30'
-                                            : 'hover:bg-indigo-900'
-                                    }`}
-                                >
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                    </svg>
-                                    Заказы
-                                </ResponsiveNavLink>
-                                
-                                <ResponsiveNavLink 
-                                    href={route('finances.index')}
-                                    className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                        route().current('finances.*')
-                                            ? 'bg-green-500 shadow-lg shadow-green-500/30'
-                                            : 'hover:bg-indigo-900'
-                                    }`}
-                                >
-                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Финансы
-                                </ResponsiveNavLink>
                                 
                                 <ResponsiveNavLink
                                     method="post"

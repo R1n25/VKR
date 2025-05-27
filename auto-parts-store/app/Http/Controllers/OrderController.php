@@ -17,18 +17,16 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         
-        // Если пользователь - администратор, показываем все заказы
+        // Если пользователь - администратор, перенаправляем в админ-панель
         if ($user->is_admin) {
-            $orders = Order::with(['orderItems.sparePart', 'user', 'payments'])
-                ->orderBy('created_at', 'desc')
-                ->get();
-        } else {
-            // Иначе показываем только заказы текущего пользователя
-            $orders = Order::with(['orderItems.sparePart', 'payments'])
-                ->where('user_id', $user->id)
-                ->orderBy('created_at', 'desc')
-                ->get();
+            return redirect()->route('admin.orders.index');
         }
+        
+        // Показываем только заказы текущего пользователя
+        $orders = Order::with(['orderItems.sparePart', 'payments'])
+            ->where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         // Добавляем информацию о статусе оплаты и суммах платежей
         foreach ($orders as $order) {
@@ -39,7 +37,7 @@ class OrderController extends Controller
         
         return Inertia::render('Orders/Index', [
             'orders' => $orders,
-            'isAdmin' => $user->is_admin
+            'isAdmin' => false
         ]);
     }
 
@@ -50,16 +48,15 @@ class OrderController extends Controller
     {
         $user = Auth::user();
         
-        // Если пользователь - администратор, он может просматривать любой заказ
+        // Если пользователь - администратор, перенаправляем в админ-панель
         if ($user->is_admin) {
-            $order = Order::with(['orderItems.sparePart', 'user', 'payments.paymentMethod'])
-                ->findOrFail($id);
-        } else {
-            // Иначе пользователь может просматривать только свои заказы
-            $order = Order::with(['orderItems.sparePart', 'payments.paymentMethod'])
-                ->where('user_id', $user->id)
-                ->findOrFail($id);
+            return redirect()->route('admin.orders.show', $id);
         }
+        
+        // Пользователь может просматривать только свои заказы
+        $order = Order::with(['orderItems.sparePart', 'payments.paymentMethod'])
+            ->where('user_id', $user->id)
+            ->findOrFail($id);
         
         // Добавляем информацию о статусе оплаты и суммах платежей
         $order->payment_status = $order->getPaymentStatus();
@@ -68,7 +65,7 @@ class OrderController extends Controller
         
         return Inertia::render('Orders/Show', [
             'order' => $order,
-            'isAdmin' => $user->is_admin
+            'isAdmin' => false
         ]);
     }
     

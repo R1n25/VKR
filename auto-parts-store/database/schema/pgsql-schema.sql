@@ -537,7 +537,8 @@ CREATE TABLE public.orders (
     status_history json,
     status_updated_at timestamp(0) without time zone,
     status_updated_by bigint,
-    CONSTRAINT orders_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'processing'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])))
+    payment_id bigint,
+    CONSTRAINT orders_status_check CHECK (((status)::text = ANY (ARRAY[('pending'::character varying)::text, ('processing'::character varying)::text, ('completed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -710,6 +711,84 @@ CREATE TABLE public.password_reset_tokens (
 
 
 --
+-- Name: payment_methods; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.payment_methods (
+    id bigint NOT NULL,
+    name character varying(255) NOT NULL,
+    code character varying(255) NOT NULL,
+    description text,
+    is_active boolean DEFAULT true NOT NULL,
+    icon character varying(255),
+    settings json,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: payment_methods_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.payment_methods_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: payment_methods_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.payment_methods_id_seq OWNED BY public.payment_methods.id;
+
+
+--
+-- Name: payments; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.payments (
+    id bigint NOT NULL,
+    order_id bigint NOT NULL,
+    user_id bigint,
+    payment_method_id bigint NOT NULL,
+    transaction_id character varying(255),
+    amount numeric(10,2) NOT NULL,
+    currency character varying(255) DEFAULT 'RUB'::character varying NOT NULL,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    notes text,
+    payment_data json,
+    payment_date timestamp(0) without time zone,
+    refund_date timestamp(0) without time zone,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone,
+    CONSTRAINT payments_status_check CHECK (((status)::text = ANY ((ARRAY['pending'::character varying, 'completed'::character varying, 'failed'::character varying, 'refunded'::character varying])::text[])))
+);
+
+
+--
+-- Name: payments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.payments_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: payments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.payments_id_seq OWNED BY public.payments.id;
+
+
+--
 -- Name: permanent_users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -758,6 +837,75 @@ CREATE TABLE public.sessions (
     payload text NOT NULL,
     last_activity integer NOT NULL
 );
+
+
+--
+-- Name: spare_part_analogs; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.spare_part_analogs (
+    id bigint NOT NULL,
+    spare_part_id bigint NOT NULL,
+    analog_spare_part_id bigint NOT NULL,
+    is_direct boolean DEFAULT true NOT NULL,
+    notes text,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: spare_part_analogs_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.spare_part_analogs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: spare_part_analogs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.spare_part_analogs_id_seq OWNED BY public.spare_part_analogs.id;
+
+
+--
+-- Name: spare_part_compatibilities; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.spare_part_compatibilities (
+    id bigint NOT NULL,
+    spare_part_id bigint NOT NULL,
+    car_model_id bigint NOT NULL,
+    start_year integer,
+    end_year integer,
+    notes text,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: spare_part_compatibilities_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.spare_part_compatibilities_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: spare_part_compatibilities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.spare_part_compatibilities_id_seq OWNED BY public.spare_part_compatibilities.id;
 
 
 --
@@ -864,6 +1012,46 @@ ALTER SEQUENCE public.user_cars_id_seq OWNED BY public.user_cars.id;
 
 
 --
+-- Name: user_suggestions; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.user_suggestions (
+    id bigint NOT NULL,
+    user_id bigint,
+    suggestion_type character varying(255) NOT NULL,
+    spare_part_id bigint,
+    analog_spare_part_id bigint,
+    car_model_id bigint,
+    comment text,
+    status character varying(255) DEFAULT 'pending'::character varying NOT NULL,
+    admin_comment text,
+    approved_by bigint,
+    approved_at timestamp(0) without time zone,
+    created_at timestamp(0) without time zone,
+    updated_at timestamp(0) without time zone
+);
+
+
+--
+-- Name: user_suggestions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.user_suggestions_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: user_suggestions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.user_suggestions_id_seq OWNED BY public.user_suggestions.id;
+
+
+--
 -- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -877,7 +1065,8 @@ CREATE TABLE public.users (
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
     is_admin boolean DEFAULT false NOT NULL,
-    markup_percent double precision DEFAULT '0'::double precision NOT NULL
+    markup_percent double precision DEFAULT '0'::double precision NOT NULL,
+    role character varying(255) DEFAULT 'user'::character varying NOT NULL
 );
 
 
@@ -1024,7 +1213,7 @@ CREATE TABLE public.vin_requests (
     processed_at timestamp(0) without time zone,
     created_at timestamp(0) without time zone,
     updated_at timestamp(0) without time zone,
-    CONSTRAINT vin_requests_status_check CHECK (((status)::text = ANY ((ARRAY['new'::character varying, 'processing'::character varying, 'completed'::character varying, 'cancelled'::character varying])::text[])))
+    CONSTRAINT vin_requests_status_check CHECK (((status)::text = ANY (ARRAY[('new'::character varying)::text, ('processing'::character varying)::text, ('completed'::character varying)::text, ('cancelled'::character varying)::text])))
 );
 
 
@@ -1213,10 +1402,38 @@ ALTER TABLE ONLY public.part_schemes ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: payment_methods id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_methods ALTER COLUMN id SET DEFAULT nextval('public.payment_methods_id_seq'::regclass);
+
+
+--
+-- Name: payments id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payments ALTER COLUMN id SET DEFAULT nextval('public.payments_id_seq'::regclass);
+
+
+--
 -- Name: permanent_users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.permanent_users ALTER COLUMN id SET DEFAULT nextval('public.permanent_users_id_seq'::regclass);
+
+
+--
+-- Name: spare_part_analogs id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_analogs ALTER COLUMN id SET DEFAULT nextval('public.spare_part_analogs_id_seq'::regclass);
+
+
+--
+-- Name: spare_part_compatibilities id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_compatibilities ALTER COLUMN id SET DEFAULT nextval('public.spare_part_compatibilities_id_seq'::regclass);
 
 
 --
@@ -1238,6 +1455,13 @@ ALTER TABLE ONLY public.spare_parts ALTER COLUMN id SET DEFAULT nextval('public.
 --
 
 ALTER TABLE ONLY public.user_cars ALTER COLUMN id SET DEFAULT nextval('public.user_cars_id_seq'::regclass);
+
+
+--
+-- Name: user_suggestions id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions ALTER COLUMN id SET DEFAULT nextval('public.user_suggestions_id_seq'::regclass);
 
 
 --
@@ -1507,6 +1731,30 @@ ALTER TABLE ONLY public.password_reset_tokens
 
 
 --
+-- Name: payment_methods payment_methods_code_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_methods
+    ADD CONSTRAINT payment_methods_code_unique UNIQUE (code);
+
+
+--
+-- Name: payment_methods payment_methods_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payment_methods
+    ADD CONSTRAINT payment_methods_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: payments payments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payments
+    ADD CONSTRAINT payments_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: permanent_users permanent_users_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1528,6 +1776,30 @@ ALTER TABLE ONLY public.permanent_users
 
 ALTER TABLE ONLY public.sessions
     ADD CONSTRAINT sessions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: spare_part_analogs spare_part_analogs_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_analogs
+    ADD CONSTRAINT spare_part_analogs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: spare_part_analogs spare_part_analogs_spare_part_id_analog_spare_part_id_unique; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_analogs
+    ADD CONSTRAINT spare_part_analogs_spare_part_id_analog_spare_part_id_unique UNIQUE (spare_part_id, analog_spare_part_id);
+
+
+--
+-- Name: spare_part_compatibilities spare_part_compatibilities_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_compatibilities
+    ADD CONSTRAINT spare_part_compatibilities_pkey PRIMARY KEY (id);
 
 
 --
@@ -1571,11 +1843,27 @@ ALTER TABLE ONLY public.spare_parts
 
 
 --
+-- Name: spare_part_compatibilities unique_compatibility; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_compatibilities
+    ADD CONSTRAINT unique_compatibility UNIQUE (spare_part_id, car_model_id, start_year, end_year);
+
+
+--
 -- Name: user_cars user_cars_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.user_cars
     ADD CONSTRAINT user_cars_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: user_suggestions user_suggestions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_pkey PRIMARY KEY (id);
 
 
 --
@@ -1737,6 +2025,13 @@ CREATE INDEX sessions_user_id_index ON public.sessions USING btree (user_id);
 
 
 --
+-- Name: spare_parts_manufacturer_index; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX spare_parts_manufacturer_index ON public.spare_parts USING btree (manufacturer);
+
+
+--
 -- Name: spare_parts_part_number_index; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1848,6 +2143,14 @@ ALTER TABLE ONLY public.order_items
 
 
 --
+-- Name: orders orders_payment_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.orders
+    ADD CONSTRAINT orders_payment_id_foreign FOREIGN KEY (payment_id) REFERENCES public.payments(id) ON DELETE SET NULL;
+
+
+--
 -- Name: orders orders_status_updated_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1920,6 +2223,62 @@ ALTER TABLE ONLY public.part_schemes
 
 
 --
+-- Name: payments payments_order_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payments
+    ADD CONSTRAINT payments_order_id_foreign FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
+
+
+--
+-- Name: payments payments_payment_method_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payments
+    ADD CONSTRAINT payments_payment_method_id_foreign FOREIGN KEY (payment_method_id) REFERENCES public.payment_methods(id) ON DELETE CASCADE;
+
+
+--
+-- Name: payments payments_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.payments
+    ADD CONSTRAINT payments_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: spare_part_analogs spare_part_analogs_analog_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_analogs
+    ADD CONSTRAINT spare_part_analogs_analog_spare_part_id_foreign FOREIGN KEY (analog_spare_part_id) REFERENCES public.spare_parts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: spare_part_analogs spare_part_analogs_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_analogs
+    ADD CONSTRAINT spare_part_analogs_spare_part_id_foreign FOREIGN KEY (spare_part_id) REFERENCES public.spare_parts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: spare_part_compatibilities spare_part_compatibilities_car_model_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_compatibilities
+    ADD CONSTRAINT spare_part_compatibilities_car_model_id_foreign FOREIGN KEY (car_model_id) REFERENCES public.car_models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: spare_part_compatibilities spare_part_compatibilities_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.spare_part_compatibilities
+    ADD CONSTRAINT spare_part_compatibilities_spare_part_id_foreign FOREIGN KEY (spare_part_id) REFERENCES public.spare_parts(id) ON DELETE CASCADE;
+
+
+--
 -- Name: spare_part_vehicle_style spare_part_vehicle_style_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -1933,6 +2292,46 @@ ALTER TABLE ONLY public.spare_part_vehicle_style
 
 ALTER TABLE ONLY public.spare_part_vehicle_style
     ADD CONSTRAINT spare_part_vehicle_style_vehicle_style_id_foreign FOREIGN KEY (vehicle_style_id) REFERENCES public.vehicle_styles(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_suggestions user_suggestions_analog_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_analog_spare_part_id_foreign FOREIGN KEY (analog_spare_part_id) REFERENCES public.spare_parts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_suggestions user_suggestions_approved_by_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_approved_by_foreign FOREIGN KEY (approved_by) REFERENCES public.users(id) ON DELETE SET NULL;
+
+
+--
+-- Name: user_suggestions user_suggestions_car_model_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_car_model_id_foreign FOREIGN KEY (car_model_id) REFERENCES public.car_models(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_suggestions user_suggestions_spare_part_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_spare_part_id_foreign FOREIGN KEY (spare_part_id) REFERENCES public.spare_parts(id) ON DELETE CASCADE;
+
+
+--
+-- Name: user_suggestions user_suggestions_user_id_foreign; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.user_suggestions
+    ADD CONSTRAINT user_suggestions_user_id_foreign FOREIGN KEY (user_id) REFERENCES public.users(id) ON DELETE SET NULL;
 
 
 --
@@ -2049,6 +2448,13 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 53	2024_06_03_000001_create_cross_references_table	14
 54	2024_06_03_000002_create_vehicle_tables	15
 55	2025_05_26_030139_add_status_history_to_orders_table	16
+56	2024_06_05_000000_create_payment_methods_table	17
+57	2024_06_05_000001_create_payments_table	17
+58	2025_05_27_000000_create_user_suggestions_table	18
+59	2025_05_27_000001_create_spare_part_analogs_table	18
+60	2025_05_27_000002_create_spare_part_compatibilities_table	18
+61	2025_05_27_000003_add_role_to_users_table	18
+62	2025_05_27_212803_add_index_to_manufacturer_on_spare_parts_table	19
 \.
 
 
@@ -2056,7 +2462,7 @@ COPY public.migrations (id, migration, batch) FROM stdin;
 -- Name: migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.migrations_id_seq', 55, true);
+SELECT pg_catalog.setval('public.migrations_id_seq', 62, true);
 
 
 --

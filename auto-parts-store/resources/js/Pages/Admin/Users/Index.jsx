@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import AdminLayout from '@/Layouts/AdminLayout';
 
 export default function UsersIndex({ auth, users }) {
     const [isDeleting, setIsDeleting] = useState(false);
@@ -26,7 +26,7 @@ export default function UsersIndex({ auth, users }) {
     };
     
     return (
-        <AuthenticatedLayout
+        <AdminLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Управление пользователями</h2>}
         >
@@ -121,6 +121,6 @@ export default function UsersIndex({ auth, users }) {
                     </div>
                 </div>
             )}
-        </AuthenticatedLayout>
+        </AdminLayout>
     );
 } 

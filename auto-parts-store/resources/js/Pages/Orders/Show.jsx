@@ -3,7 +3,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function OrderShow({ auth, order, isAdmin }) {
+export default function OrderShow({ auth, order }) {
     const [addingToCart, setAddingToCart] = useState(false);
     const [cartSuccess, setCartSuccess] = useState(false);
     const [error, setError] = useState('');
@@ -24,6 +24,8 @@ export default function OrderShow({ auth, order, isAdmin }) {
         const statusMap = {
             'pending': 'Ожидает обработки',
             'processing': 'В обработке',
+            'shipped': 'Отправлен',
+            'delivered': 'Доставлен',
             'completed': 'Выполнен',
             'cancelled': 'Отменен'
         };
@@ -36,6 +38,8 @@ export default function OrderShow({ auth, order, isAdmin }) {
         const statusClasses = {
             'pending': 'bg-yellow-100 text-yellow-800',
             'processing': 'bg-blue-100 text-blue-800',
+            'shipped': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-blue-200 text-blue-900',
             'completed': 'bg-green-100 text-green-800',
             'cancelled': 'bg-red-100 text-red-800'
         };
@@ -95,24 +99,13 @@ export default function OrderShow({ auth, order, isAdmin }) {
             setAddingToCart(false);
         }
     };
-    
-    // Функция для обновления статуса заказа
-    const updateOrderStatus = (e) => {
-        e.preventDefault();
-        
-        post(route('orders.update-status', order.id), {
-            onSuccess: () => {
-                reset('note');
-            }
-        });
-    };
 
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Заказ #{order.id}</h2>}
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Заказ №{order.order_number}</h2>}
         >
-            <Head title={`Заказ #${order.id}`} />
+            <Head title={`Заказ №${order.order_number}`} />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -138,6 +131,75 @@ export default function OrderShow({ auth, order, isAdmin }) {
                                     </div>
                                 </div>
                                 
+                                {/* Прогресс заказа */}
+                                <div className="mb-8 bg-gray-50 p-4 rounded-lg shadow-sm">
+                                    <h3 className="text-lg font-semibold mb-4">Статус выполнения заказа</h3>
+                                    <div className="relative">
+                                        <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
+                                            <div
+                                                style={{ 
+                                                    width: order.status === 'cancelled' ? '0%' :
+                                                        order.status === 'pending' ? '20%' :
+                                                        order.status === 'processing' ? '40%' :
+                                                        order.status === 'shipped' ? '60%' :
+                                                        order.status === 'delivered' ? '80%' :
+                                                        order.status === 'completed' ? '100%' : '0%'
+                                                }}
+                                                className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"
+                                            ></div>
+                                        </div>
+                                        <div className="flex justify-between text-xs text-gray-600">
+                                            <div className={`text-center ${order.status === 'pending' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Заказ принят
+                                            </div>
+                                            <div className={`text-center ${order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                                В обработке
+                                            </div>
+                                            <div className={`text-center ${order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Отправлен
+                                            </div>
+                                            <div className={`text-center ${order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Доставлен
+                                            </div>
+                                            <div className={`text-center ${order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Выполнен
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {order.status === 'cancelled' && (
+                                        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                                            <p className="text-red-800 font-medium">Заказ был отменен</p>
+                                        </div>
+                                    )}
+                                    
+                                    {/* История статусов */}
+                                    {order.status_history && order.status_history.length > 0 && (
+                                        <div className="mt-6">
+                                            <h4 className="font-medium mb-3 text-gray-700">История статусов</h4>
+                                            <div className="space-y-2">
+                                                {order.status_history.map((history, index) => (
+                                                    <div key={index} className="flex items-start">
+                                                        <div className="flex-shrink-0">
+                                                            <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </div>
+                                                        <div className="ml-3">
+                                                            <p className="text-sm text-gray-900">
+                                                                Статус изменен с <span className="font-medium">{getStatusText(history.from)}</span> на <span className="font-medium">{getStatusText(history.to)}</span>
+                                                            </p>
+                                                            <p className="mt-1 text-xs text-gray-500">
+                                                                {formatDate(history.changed_at)}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     {/* Информация о заказе */}
                                     <div className="md:col-span-2">
@@ -147,20 +209,13 @@ export default function OrderShow({ auth, order, isAdmin }) {
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 <div>
                                                     <p className="text-sm text-gray-500">Номер заказа</p>
-                                                    <p className="font-medium">#{order.order_number || order.id}</p>
+                                                    <p className="font-medium">№{order.order_number}</p>
                                                 </div>
                                                 
                                                 <div>
                                                     <p className="text-sm text-gray-500">Дата</p>
                                                     <p className="font-medium">{formatDate(order.created_at)}</p>
                                                 </div>
-                                                
-                                                {isAdmin && order.user && (
-                                                    <div>
-                                                        <p className="text-sm text-gray-500">Пользователь</p>
-                                                        <p className="font-medium">{order.user.name} ({order.user.email})</p>
-                                                    </div>
-                                                )}
                                                 
                                                 <div>
                                                     <p className="text-sm text-gray-500">ФИО</p>
@@ -299,7 +354,7 @@ export default function OrderShow({ auth, order, isAdmin }) {
                                                                     </td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-indigo-600">
                                                                         <Link
-                                                                            href={isAdmin ? route('admin.payments.show', payment.id) : route('finances.show', payment.id)}
+                                                                            href={route('finances.show', payment.id)}
                                                                             className="text-indigo-600 hover:text-indigo-900"
                                                                         >
                                                                             Подробнее
@@ -350,89 +405,13 @@ export default function OrderShow({ auth, order, isAdmin }) {
                                                     <span className="font-medium text-red-600">{order.remaining_amount || order.total_amount || order.total} руб.</span>
                                                 </div>
                                                 
-                                                {(isAdmin || (auth.user && auth.user.id === order.user_id)) && (
-                                                    <Link
-                                                        href={isAdmin ? route('admin.orders.add-payment', order.id) : route('orders.add-payment', order.id)}
-                                                        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 block text-center mt-2"
-                                                    >
-                                                        Добавить платеж
-                                                    </Link>
-                                                )}
+                                                <Link
+                                                    href={route('orders.add-payment', order.id)}
+                                                    className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 block text-center mt-2"
+                                                >
+                                                    Добавить платеж
+                                                </Link>
                                             </div>
-                                            
-                                            {/* Управление статусом заказа (только для админа) */}
-                                            {isAdmin && (
-                                                <div className="mt-6 border-t border-gray-200 pt-4">
-                                                    <h4 className="font-medium mb-3">Управление заказом</h4>
-                                                    
-                                                    <form onSubmit={updateOrderStatus}>
-                                                        <div className="mb-3">
-                                                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                                                                Статус заказа
-                                                            </label>
-                                                            <select
-                                                                id="status"
-                                                                name="status"
-                                                                value={data.status}
-                                                                onChange={(e) => setData('status', e.target.value)}
-                                                                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                                            >
-                                                                <option value="pending">Ожидает обработки</option>
-                                                                <option value="processing">В обработке</option>
-                                                                <option value="completed">Выполнен</option>
-                                                                <option value="cancelled">Отменен</option>
-                                                            </select>
-                                                        </div>
-                                                        
-                                                        <div className="mb-3">
-                                                            <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
-                                                                Комментарий (необязательно)
-                                                            </label>
-                                                            <textarea
-                                                                id="note"
-                                                                name="note"
-                                                                value={data.note}
-                                                                onChange={(e) => setData('note', e.target.value)}
-                                                                rows="3"
-                                                                className="shadow-sm focus:ring-indigo-500 focus:border-indigo-500 mt-1 block w-full sm:text-sm border border-gray-300 rounded-md"
-                                                                placeholder="Добавьте комментарий к изменению статуса"
-                                                            ></textarea>
-                                                        </div>
-                                                        
-                                                        <button
-                                                            type="submit"
-                                                            disabled={processing}
-                                                            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                                                        >
-                                                            {processing ? 'Сохранение...' : 'Обновить статус'}
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            )}
-                                            
-                                            {/* История статусов */}
-                                            {order.status_history && order.status_history.length > 0 && (
-                                                <div className="mt-6 border-t border-gray-200 pt-4">
-                                                    <h4 className="font-medium mb-3">История статусов</h4>
-                                                    <div className="space-y-2">
-                                                        {order.status_history.map((history, index) => (
-                                                            <div key={index} className="text-sm">
-                                                                <p className="text-gray-600">
-                                                                    {formatDate(history.changed_at)}
-                                                                </p>
-                                                                <p>
-                                                                    <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusClass(history.to)}`}>
-                                                                        {getStatusText(history.to)}
-                                                                    </span>
-                                                                    <span className="ml-2 text-gray-500">
-                                                                        {history.changed_by}
-                                                                    </span>
-                                                                </p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
                                             
                                             {/* Комментарии */}
                                             {order.notes_json && order.notes_json.length > 0 && (
@@ -451,29 +430,27 @@ export default function OrderShow({ auth, order, isAdmin }) {
                                                 </div>
                                             )}
                                             
-                                            {!isAdmin && (
-                                                <div className="mt-6">
-                                                    <button
-                                                        onClick={addOrderToCart}
-                                                        disabled={addingToCart}
-                                                        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
-                                                    >
-                                                        {addingToCart ? 'Добавление...' : 'Повторить заказ'}
-                                                    </button>
-                                                    
-                                                    {cartSuccess && (
-                                                        <div className="mt-3 text-sm text-green-600">
-                                                            Товары добавлены в корзину
-                                                        </div>
-                                                    )}
-                                                    
-                                                    {error && (
-                                                        <div className="mt-3 text-sm text-red-600">
-                                                            {error}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
+                                            <div className="mt-6">
+                                                <button
+                                                    onClick={addOrderToCart}
+                                                    disabled={addingToCart}
+                                                    className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                                >
+                                                    {addingToCart ? 'Добавление...' : 'Повторить заказ'}
+                                                </button>
+                                                
+                                                {cartSuccess && (
+                                                    <div className="mt-3 text-sm text-green-600">
+                                                        Товары добавлены в корзину
+                                                    </div>
+                                                )}
+                                                
+                                                {error && (
+                                                    <div className="mt-3 text-sm text-red-600">
+                                                        {error}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

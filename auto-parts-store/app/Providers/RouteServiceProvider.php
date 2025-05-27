@@ -41,7 +41,7 @@ class RouteServiceProvider extends ServiceProvider
 
     public function redirectTo(Request $request)
     {
-        if ($request->user() && $request->user()->is_admin) {
+        if ($request->user() && $request->user()->role === 'admin') {
             return self::ADMIN_HOME;
         }
         

@@ -11,10 +11,19 @@ createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => {
         console.log('Resolving page component:', name);
+        
+        // Проверка для страниц админ-панели
+        if (name.startsWith('Admin/')) {
+            return resolvePageComponent(
+                `./Pages/${name}.jsx`,
+                import.meta.glob('./Pages/**/*.jsx'),
+            );
+        }
+        
         return resolvePageComponent(
             `./Pages/${name}.jsx`,
             import.meta.glob('./Pages/**/*.jsx'),
-        )
+        );
     },
     setup({ el, App, props }) {
         const root = createRoot(el);

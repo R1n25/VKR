@@ -17,6 +17,11 @@ use App\Http\Controllers\InfoController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
+use App\Http\Controllers\UserSuggestionController;
+use App\Http\Controllers\Admin\SparePartController as AdminSparePartController;
+use App\Http\Controllers\Admin\SuggestionController;
+use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\CartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,17 +60,15 @@ Route::get('/models/{id}', function ($id) {
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
 Route::get('/search', [PartsController::class, 'search'])->name('search');
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard', [
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', function() {
+        if (auth()->user() && auth()->user()->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return app(\App\Http\Controllers\User\DashboardController::class)->index();
+    })->name('dashboard');
+    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -127,42 +130,72 @@ Route::get('/vin-request', [VinRequestController::class, 'index'])->name('vin-re
 Route::post('/vin-request', [VinRequestController::class, 'store'])->name('vin-request.store');
 Route::get('/vin-request/success', [VinRequestController::class, 'success'])->name('vin-request.success');
 
+// Маршруты для предложений пользователей
+Route::middleware(['auth'])->group(function () {
+    // Формы создания предложений
+    Route::get('/spare-parts/{sparePart}/suggest-analog', [UserSuggestionController::class, 'createAnalog'])
+        ->name('suggestions.create-analog')
+        ->middleware('auth');
+    Route::post('/spare-parts/{sparePart}/suggest-analog', [UserSuggestionController::class, 'storeAnalog'])
+        ->name('suggestions.store-analog')
+        ->middleware('auth');
+    
+    // Сохранение предложений
+    Route::get('/spare-parts/{sparePart}/suggest-compatibility', [UserSuggestionController::class, 'createCompatibility'])
+        ->name('suggestions.create-compatibility')
+        ->middleware('auth');
+    Route::post('/spare-parts/{sparePart}/suggest-compatibility', [UserSuggestionController::class, 'storeCompatibility'])
+        ->name('suggestions.store-compatibility')
+        ->middleware('auth');
+});
+
 // Маршруты админ-панели
-Route::middleware(['auth', AdminMiddleware::class])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
+    
+    // Управление запчастями
+    Route::resource('spare-parts', App\Http\Controllers\Admin\SparePartController::class);
+    Route::post('spare-parts/{sparePart}/toggle-status', [App\Http\Controllers\Admin\SparePartController::class, 'toggleStatus'])->name('spare-parts.toggle-status');
+    Route::get('spare-parts-inertia', [App\Http\Controllers\Admin\SparePartController::class, 'indexInertia'])->name('spare-parts.inertia');
     
     // Управление VIN-запросами
-    Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('admin.vin-requests.index');
-    Route::get('/vin-requests/{id}', [App\Http\Controllers\Admin\VinRequestController::class, 'show'])->name('admin.vin-requests.show');
-    Route::patch('/vin-requests/{id}/status', [App\Http\Controllers\Admin\VinRequestController::class, 'updateStatus'])->name('admin.vin-requests.update-status');
+    Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('vin-requests.index');
+    Route::get('/vin-requests/{id}', [App\Http\Controllers\Admin\VinRequestController::class, 'show'])->name('vin-requests.show');
+    Route::patch('/vin-requests/{id}/status', [App\Http\Controllers\Admin\VinRequestController::class, 'updateStatus'])->name('vin-requests.update-status');
     
     // Управление пользователями
-    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
-    Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
-    Route::patch('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
-    Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy');
-    Route::patch('/users/{user}/markup', [App\Http\Controllers\Admin\UserController::class, 'updateMarkup'])->name('admin.users.update-markup');
+    Route::get('/users', [App\Http\Controllers\Admin\UserController::class, 'index'])->name('users.index');
+    Route::get('/users/{user}/edit', [App\Http\Controllers\Admin\UserController::class, 'edit'])->name('users.edit');
+    Route::patch('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('users.destroy');
+    Route::patch('/users/{user}/markup', [App\Http\Controllers\Admin\UserController::class, 'updateMarkup'])->name('users.update-markup');
     
     // Управление заказами
-    Route::get('/orders', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('admin.orders.index');
-    Route::get('/orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('admin.orders.show');
-    Route::put('/orders/{id}/status', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('admin.orders.update-status');
-    Route::post('/orders/{id}/note', [App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('admin.orders.add-note');
-    Route::get('/orders-export', [App\Http\Controllers\Admin\OrderController::class, 'export'])->name('admin.orders.export');
+    Route::get('/orders', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('orders.show');
+    Route::put('/orders/{id}/status', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{id}/note', [App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('orders.add-note');
+    Route::get('/orders-export', [App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
     
     // Управление платежами
-    Route::get('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('admin.payments.index');
-    Route::get('/payments/create', [App\Http\Controllers\Admin\PaymentController::class, 'create'])->name('admin.payments.create');
-    Route::post('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('admin.payments.store');
-    Route::get('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('admin.payments.show');
-    Route::put('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'update'])->name('admin.payments.update');
-    Route::get('/payments-export', [App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('admin.payments.export');
-    Route::get('/orders/{id}/add-payment', [App\Http\Controllers\Admin\PaymentController::class, 'createForOrder'])->name('admin.orders.add-payment');
+    Route::get('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
+    Route::get('/payments/create', [App\Http\Controllers\Admin\PaymentController::class, 'create'])->name('payments.create');
+    Route::post('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('payments.store');
+    Route::get('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
+    Route::put('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'update'])->name('payments.update');
+    Route::get('/payments-export', [App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('payments.export');
+    Route::get('/orders/{id}/add-payment', [App\Http\Controllers\Admin\PaymentController::class, 'createForOrder'])->name('orders.add-payment');
     
     // Управление методами оплаты
-    Route::get('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'paymentMethods'])->name('admin.payment-methods');
-    Route::post('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'storePaymentMethod'])->name('admin.payment-methods.store');
-    Route::put('/payment-methods/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'updatePaymentMethod'])->name('admin.payment-methods.update');
+    Route::get('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'paymentMethods'])->name('payment-methods');
+    Route::post('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'storePaymentMethod'])->name('payment-methods.store');
+    Route::put('/payment-methods/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'updatePaymentMethod'])->name('payment-methods.update');
+
+    // Управление предложениями пользователей
+    Route::get('/suggestions', [App\Http\Controllers\Admin\SuggestionController::class, 'index'])->name('suggestions.index');
+    Route::get('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'show'])->name('suggestions.show');
+    Route::post('/suggestions/{suggestion}/approve', [App\Http\Controllers\Admin\SuggestionController::class, 'approve'])->name('suggestions.approve');
+    Route::post('/suggestions/{suggestion}/reject', [App\Http\Controllers\Admin\SuggestionController::class, 'reject'])->name('suggestions.reject');
 });
 
 require __DIR__.'/auth.php';

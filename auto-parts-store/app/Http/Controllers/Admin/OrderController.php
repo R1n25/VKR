@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -20,7 +21,7 @@ class OrderController extends Controller
         
         // Применяем фильтры
         if ($request->filled('order_number')) {
-            $query->where('id', $request->order_number);
+            $query->where('order_number', $request->order_number);
         }
         
         if ($request->filled('status')) {
@@ -57,12 +58,66 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['user', 'orderItems.sparePart'])
-            ->findOrFail($id);
-        
-        return Inertia::render('Admin/Orders/Show', [
-            'order' => $order,
+        // Логирование для диагностики
+        \Log::info('Запрос на просмотр заказа', [
+            'order_id' => $id,
+            'route' => request()->route()->getName(),
+            'is_ajax' => request()->ajax(),
+            'is_json' => request()->expectsJson(),
+            'headers' => request()->headers->all()
         ]);
+
+        try {
+            // Простой подход без дополнительных проверок
+            $order = Order::with([
+                'user', 
+                'orderItems.sparePart',
+                'orderItems.sparePart.brand'
+            ])->findOrFail($id);
+            
+            // Дополнительно загружаем элементы заказа напрямую через SQL-запрос
+            try {
+                $query = "
+                    SELECT order_items.*, spare_parts.name as part_name, spare_parts.part_number
+                    FROM order_items 
+                    LEFT JOIN spare_parts ON (
+                        CASE 
+                            WHEN order_items.spare_part_id IS NOT NULL THEN order_items.spare_part_id = spare_parts.id
+                            ELSE order_items.part_id = spare_parts.id
+                        END
+                    )
+                    WHERE order_items.order_id = ?
+                ";
+                \Log::info('SQL запрос', ['query' => $query, 'id' => $id]);
+                $orderItems = DB::select($query, [$id]);
+                \Log::info('Результат запроса', ['count' => count($orderItems)]);
+            } catch (\Exception $e) {
+                \Log::error('Ошибка при выполнении SQL запроса: ' . $e->getMessage(), ['exception' => $e]);
+                
+                // Альтернативный способ получения данных без join
+                $orderItems = DB::table('order_items')
+                    ->where('order_id', $id)
+                    ->get();
+                \Log::info('Альтернативный запрос без join', ['count' => count($orderItems)]);
+            }
+                
+            // Добавляем результаты запроса к заказу
+            if ($orderItems && (!$order->orderItems || count($order->orderItems) === 0)) {
+                $order->direct_items = $orderItems;
+            }
+            
+            return Inertia::render('Admin/Orders/Show', [
+                'order' => $order,
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при загрузке заказа: ' . $e->getMessage(), ['exception' => $e, 'trace' => $e->getTraceAsString()]);
+            
+            if (request()->expectsJson()) {
+                return response()->json(['error' => 'Не удалось загрузить заказ: ' . $e->getMessage()], 500);
+            }
+            
+            return redirect()->route('admin.orders.index')->with('error', 'Не удалось загрузить заказ: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -71,7 +126,8 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $validated = $request->validate([
-            'status' => 'required|in:pending,processing,shipped,delivered,cancelled',
+            'status' => 'required|in:pending,processing,shipped,delivered,completed,cancelled',
+            'note' => 'nullable|string',
         ]);
         
         $order = Order::findOrFail($id);
@@ -94,7 +150,32 @@ class OrderController extends Controller
         
         $order->update(['status_history' => $statusHistory]);
         
-        return redirect()->back()->with('message', 'Статус заказа обновлен');
+        // Если указана заметка, то добавляем её
+        if (!empty($validated['note'])) {
+            // Добавляем новую заметку к существующим заметкам
+            $notes = $order->notes_json ?? [];
+            $notes[] = [
+                'text' => $validated['note'],
+                'created_at' => now()->toDateTimeString(),
+                'created_by' => Auth::user()->name,
+            ];
+            
+            $order->update([
+                'notes_json' => $notes,
+            ]);
+        }
+        
+        // Логируем информацию об изменении статуса
+        \Log::info('Статус заказа изменён', [
+            'order_id' => $order->id,
+            'order_number' => $order->order_number,
+            'old_status' => $oldStatus,
+            'new_status' => $validated['status'],
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+        ]);
+        
+        return redirect()->back()->with('message', 'Статус заказа успешно обновлен');
     }
 
     /**
@@ -132,7 +213,7 @@ class OrderController extends Controller
         
         // Применяем те же фильтры, что и для списка
         if ($request->filled('order_number')) {
-            $query->where('id', $request->order_number);
+            $query->where('order_number', $request->order_number);
         }
         
         if ($request->filled('status')) {
@@ -201,6 +282,7 @@ class OrderController extends Controller
             'processing' => 'В обработке',
             'shipped' => 'Отправлен',
             'delivered' => 'Доставлен',
+            'completed' => 'Выполнен',
             'cancelled' => 'Отменен',
         ];
         

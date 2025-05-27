@@ -70,9 +70,25 @@ class Order extends Model
         parent::boot();
 
         static::creating(function ($order) {
-            // Генерируем уникальный номер заказа, если он не задан
+            // Генерируем уникальный номер заказа, только если он не задан
             if (!$order->order_number) {
-                $order->order_number = 'ORD-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -5));
+                // Получаем последний номер заказа
+                $lastOrder = Order::orderBy('id', 'desc')->first();
+                
+                if ($lastOrder && is_numeric($lastOrder->order_number)) {
+                    // Если есть последний заказ и его номер - число, увеличиваем на 1
+                    $nextOrderNumber = intval($lastOrder->order_number) + 1;
+                } else {
+                    // Если заказов еще нет или формат номера был другой, начинаем с 100000001
+                    $nextOrderNumber = 100000001;
+                }
+                
+                // Убеждаемся, что номер заказа уникален
+                while (Order::where('order_number', (string)$nextOrderNumber)->exists()) {
+                    $nextOrderNumber++;
+                }
+                
+                $order->order_number = (string)$nextOrderNumber;
             }
         });
     }
