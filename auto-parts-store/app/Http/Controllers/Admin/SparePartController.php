@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SparePart;
 use App\Models\CarModel;
-use App\Models\Category;
-use App\Models\Brand;
+use App\Models\PartCategory;
+use App\Models\CarBrand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -18,7 +18,7 @@ class SparePartController extends Controller
      */
     public function index(Request $request)
     {
-        $query = SparePart::query()->with(['category', 'brand']);
+        $query = SparePart::query()->with(['category']);
         
         // Фильтрация
         if ($request->filled('search')) {
@@ -34,8 +34,8 @@ class SparePartController extends Controller
             $query->where('category_id', $request->input('category'));
         }
         
-        if ($request->filled('brand')) {
-            $query->where('brand_id', $request->input('brand'));
+        if ($request->filled('manufacturer')) {
+            $query->where('manufacturer', $request->input('manufacturer'));
         }
         
         if ($request->filled('status')) {
@@ -44,14 +44,17 @@ class SparePartController extends Controller
         
         // Сортировка
         $sortField = $request->input('sort', 'id');
-        $sortDirection = $request->input('direction', 'desc');
+        $sortDirection = $request->input('direction', 'asc');
         $query->orderBy($sortField, $sortDirection);
         
-        $spareParts = $query->paginate(20)->withQueryString();
-        $categories = Category::all();
-        $brands = Brand::all();
+        $perPage = $request->input('per_page', 30);
+        $spareParts = $query->paginate($perPage)->withQueryString();
+        $categories = PartCategory::all();
         
-        return view('admin.spare-parts.index', compact('spareParts', 'categories', 'brands'));
+        // Получение уникальных производителей запчастей
+        $manufacturers = SparePart::distinct()->pluck('manufacturer')->filter()->values();
+        
+        return view('admin.spare-parts.index', compact('spareParts', 'categories', 'manufacturers'));
     }
 
     /**
@@ -59,8 +62,8 @@ class SparePartController extends Controller
      */
     public function create()
     {
-        $categories = Category::all();
-        $brands = Brand::all();
+        $categories = PartCategory::all();
+        $brands = CarBrand::all();
         $carModels = CarModel::orderBy('brand')->orderBy('name')->get();
         
         return view('admin.spare-parts.create', compact('categories', 'brands', 'carModels'));
@@ -77,8 +80,8 @@ class SparePartController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:part_categories,id',
+            'brand_id' => 'required|exists:car_brands,id',
             'is_active' => 'boolean',
             'image' => 'nullable|image|max:2048',
             'compatible_car_models' => 'nullable|array',
@@ -121,8 +124,8 @@ class SparePartController extends Controller
      */
     public function edit(SparePart $sparePart)
     {
-        $categories = Category::all();
-        $brands = Brand::all();
+        $categories = PartCategory::all();
+        $brands = CarBrand::all();
         $carModels = CarModel::orderBy('brand')->orderBy('name')->get();
         
         // Получение ID совместимых моделей
@@ -142,8 +145,8 @@ class SparePartController extends Controller
             'description' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
+            'category_id' => 'required|exists:part_categories,id',
+            'brand_id' => 'required|exists:car_brands,id',
             'is_active' => 'boolean',
             'image' => 'nullable|image|max:2048',
             'compatible_car_models' => 'nullable|array',
@@ -223,50 +226,43 @@ class SparePartController extends Controller
     }
 
     /**
-     * Отображение списка запчастей через Inertia
+     * Отображение списка запчастей через Inertia.js
      */
     public function indexInertia(Request $request)
     {
-        $query = SparePart::query()->with(['brand']);
+        $query = SparePart::query()->with(['category']);
         
         // Фильтрация
         if ($request->filled('search')) {
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('part_number', 'like', "%{$search}%")
+                  ->orWhere('article_number', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
         
-        if ($request->filled('category')) {
-            $query->where('category', $request->input('category'));
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->input('category_id'));
         }
         
         if ($request->filled('manufacturer')) {
             $query->where('manufacturer', $request->input('manufacturer'));
         }
         
-        if ($request->filled('status')) {
-            $query->where('is_available', $request->input('status') === 'available' ? 1 : 0);
-        }
-        
         // Сортировка
         $sortField = $request->input('sort', 'id');
-        $sortDirection = $request->input('direction', 'desc');
+        $sortDirection = $request->input('direction', 'asc');
         $query->orderBy($sortField, $sortDirection);
         
-        $spareParts = $query->paginate(15)->withQueryString();
+        $perPage = $request->input('per_page', 30);
+        $spareParts = $query->paginate($perPage)->withQueryString();
+        $categories = PartCategory::all();
         
-        // Получаем уникальные категории и производителей для фильтров
-        $categories = SparePart::distinct()->pluck('category')->filter()->values();
-        $manufacturers = SparePart::distinct()->pluck('manufacturer')->filter()->values();
-        
-        return \Inertia\Inertia::render('Admin/SpareParts/Index', [
+        return inertia('Admin/SpareParts/Index', [
             'spareParts' => $spareParts,
             'categories' => $categories,
-            'manufacturers' => $manufacturers,
-            'filters' => $request->only(['search', 'category', 'manufacturer', 'status', 'sort', 'direction']),
+            'filters' => $request->only(['search', 'category_id', 'manufacturer', 'sort', 'direction']),
         ]);
     }
 } 

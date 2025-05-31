@@ -4,9 +4,11 @@
         <ul class="mt-2 space-y-2">
             @foreach($sparePart->analogs as $analog)
                 <li class="border-b pb-2">
-                    <a href="{{ route('spare-parts.show', $analog->analogSparePart) }}" class="text-blue-600 hover:underline">
+                    <a href="{{ route('parts.show', $analog->analogSparePart) }}" class="text-blue-600 hover:underline">
                         {{ $analog->analogSparePart->name }} ({{ $analog->analogSparePart->part_number }})
                     </a>
+                    <span class="ml-2 text-gray-600">{{ $analog->analogSparePart->manufacturer }}</span>
+                    <span class="ml-2 text-green-600 font-semibold">{{ number_format($analog->analogSparePart->price, 2) }} ₽</span>
                     @if($analog->notes)
                         <p class="text-sm text-gray-600">{{ $analog->notes }}</p>
                     @endif
@@ -15,11 +17,18 @@
         </ul>
     @else
         <p class="text-gray-600">Аналогов пока нет</p>
+        
+        <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p class="text-sm">
+                <span class="font-semibold">Знаете аналог для этой запчасти?</span> 
+                Поделитесь своими знаниями и помогите другим пользователям найти нужную деталь!
+            </p>
+        </div>
     @endif
     
-    <div class="mt-2">
+    <div class="mt-4">
         <a href="{{ route('suggestions.create-analog', $sparePart) }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Предложить аналог
+            <i class="fas fa-plus-circle mr-1"></i> Предложить аналог
         </a>
     </div>
 </div>
@@ -56,7 +65,7 @@
     
     <div class="mt-2">
         <a href="{{ route('suggestions.create-compatibility', $sparePart) }}" class="inline-block px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            Предложить совместимость
+            <i class="fas fa-car mr-1"></i> Предложить совместимость
         </a>
     </div>
 </div>
@@ -67,24 +76,24 @@
         onclick="addToCart({{ $sparePart->id }})" 
         class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
     >
-        Добавить в корзину
+        <i class="fas fa-shopping-cart mr-1"></i> Добавить в корзину
     </button>
     
     @auth
         <a href="{{ route('suggestions.create-analog', $sparePart) }}" 
            class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-green-500">
-            Предложить аналог
+            <i class="fas fa-exchange-alt mr-1"></i> Предложить аналог
         </a>
         
         <a href="{{ route('suggestions.create-compatibility', $sparePart) }}" 
            class="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-purple-500">
-            Предложить совместимость
+            <i class="fas fa-car mr-1"></i> Предложить совместимость
         </a>
     @else
         <a href="{{ route('login') }}" 
            class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded focus:outline-none focus:ring-2 focus:ring-gray-400"
            title="Войдите, чтобы предложить аналог или совместимость">
-            Войти для предложений
+            <i class="fas fa-sign-in-alt mr-1"></i> Войти для предложений
         </a>
     @endauth
 </div> 

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Inertia } from '@inertiajs/inertia';
 
 export default function Index({ auth, cart, cartItems, user }) {
     const [processing, setProcessing] = useState(false);
@@ -29,7 +28,7 @@ export default function Index({ auth, cart, cartItems, user }) {
         setProcessing(true);
         setErrors({});
 
-        Inertia.post(route('checkout.store'), formData, {
+        router.post(route('checkout.store'), formData, {
             onSuccess: () => {
                 setProcessing(false);
             },
@@ -263,4 +262,4 @@ export default function Index({ auth, cart, cartItems, user }) {
             </div>
         </AuthenticatedLayout>
     );
-} 
+}

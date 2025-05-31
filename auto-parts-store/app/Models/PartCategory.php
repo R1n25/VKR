@@ -4,24 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PartCategory extends Model
 {
     use HasFactory;
     
+    /**
+     * Таблица, соответствующая модели.
+     *
+     * @var string
+     */
+    protected $table = 'part_categories';
+
+    /**
+     * Атрибуты, которые можно массово назначать.
+     *
+     * @var array<int, string>
+     */
     protected $fillable = [
         'name',
         'slug',
         'description',
-        'image',
         'parent_id',
+        'image_url',
     ];
 
     /**
-     * Get the parent category.
+     * Получить все запчасти в этой категории.
+     */
+    public function spareParts(): HasMany
+    {
+        return $this->hasMany(SparePart::class, 'category_id');
+    }
+
+    /**
+     * Получить родительскую категорию.
      */
     public function parent(): BelongsTo
     {
@@ -29,7 +48,7 @@ class PartCategory extends Model
     }
 
     /**
-     * Get the child categories.
+     * Получить дочерние категории.
      */
     public function children(): HasMany
     {
@@ -37,10 +56,22 @@ class PartCategory extends Model
     }
 
     /**
-     * Get the spare parts for the category.
+     * Проверить, имеет ли категория дочерние элементы.
      */
-    public function spareParts(): HasMany
+    public function hasChildren(): bool
     {
-        return $this->hasMany(SparePart::class, 'category', 'name');
+        return $this->children()->count() > 0;
+    }
+
+    /**
+     * Получить URL изображения категории или вернуть изображение по умолчанию.
+     */
+    public function getImageUrlAttribute($value)
+    {
+        if (!$value) {
+            return asset('images/default-category.jpg');
+        }
+        
+        return asset('storage/' . $value);
     }
 }

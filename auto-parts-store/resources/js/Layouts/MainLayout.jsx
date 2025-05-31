@@ -2,6 +2,8 @@ import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import CartIcon from '@/Components/CartIcon';
+import SearchIcon from '@/Components/SearchIcon';
+import CircleDotIcon from '@/Components/CircleDotIcon';
 
 const MainLayout = ({ auth, children }) => {
     const { url } = usePage();
@@ -72,21 +74,22 @@ const MainLayout = ({ auth, children }) => {
                                 >
                                     Контакты
                                 </Link>
+                                <Link
+                                    href={route('search')}
+                                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
+                                        url === '/search'
+                                            ? 'border-primary text-gray-900'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <SearchIcon className="w-5 h-5 mr-1" />
+                                    Поиск
+                                </Link>
                             </div>
                         </div>
 
                         {/* Правая часть навигации */}
                         <div className="hidden sm:flex sm:items-center sm:ml-6 space-x-4">
-                            {/* Поиск */}
-                            <Link
-                                href={route('search')}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </Link>
-
                             {/* Корзина */}
                             <CartIcon user={auth?.user} />
 

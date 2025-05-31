@@ -59,9 +59,10 @@
                         <div class="col-md-4 fw-bold">Запчасть:</div>
                         <div class="col-md-8">
                             @if($suggestion->sparePart)
-                                <a href="{{ route('spare-parts.show', $suggestion->sparePart->id) }}" target="_blank">
-                                    {{ $suggestion->sparePart->name }} ({{ $suggestion->sparePart->article_number }})
-                                </a>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-secondary me-2">{{ $suggestion->sparePart->part_number }}</span>
+                                    <span>{{ $suggestion->sparePart->manufacturer }}</span>
+                                </div>
                             @else
                                 <span class="text-muted">Не указано</span>
                             @endif
@@ -70,14 +71,39 @@
                     
                     @if($suggestion->suggestion_type == 'analog')
                         <div class="row mb-3">
-                            <div class="col-md-4 fw-bold">Аналог запчасти:</div>
+                            <div class="col-md-4 fw-bold">Аналог:</div>
                             <div class="col-md-8">
-                                @if($analogSparePart)
-                                    <a href="{{ route('spare-parts.show', $analogSparePart->id) }}" target="_blank">
-                                        {{ $analogSparePart->name }} ({{ $analogSparePart->article_number }})
-                                    </a>
+                                <div class="d-flex align-items-center">
+                                    @if($suggestion->analogSparePart)
+                                        <span class="badge bg-success me-2">{{ $suggestion->analogSparePart->part_number }}</span>
+                                        <span>{{ $suggestion->analogSparePart->manufacturer }}</span>
+                                    @elseif($suggestion->data && !empty($suggestion->data['analog_article']))
+                                        <span class="badge bg-info me-2">{{ $suggestion->data['analog_article'] }}</span>
+                                        <span>{{ $suggestion->data['analog_brand'] ?? 'Не указан' }}</span>
+                                    @else
+                                        <span class="badge bg-danger">Не найден</span>
+                                    @endif
+                                    
+                                    <span class="badge {{ strpos($analogTypeText, 'Прямой') !== false ? 'bg-success' : 'bg-warning text-dark' }} ms-3">
+                                        {{ $analogTypeText }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4 fw-bold">Тип аналога:</div>
+                            <div class="col-md-8">
+                                @if(isset($analogTypeText))
+                                    @if(strpos($analogTypeText, 'Прямой') !== false)
+                                        <span class="badge bg-success">{{ $analogTypeText }}</span>
+                                        <small class="text-muted d-block mt-1">Полностью заменяет оригинальную деталь</small>
+                                    @else
+                                        <span class="badge bg-warning text-dark">{{ $analogTypeText }}</span>
+                                        <small class="text-muted d-block mt-1">Подходит с некоторыми ограничениями</small>
+                                    @endif
                                 @else
-                                    <span class="text-danger">Запчасть не найдена</span>
+                                    <span class="badge bg-secondary">Не указан</span>
                                 @endif
                             </div>
                         </div>
@@ -169,10 +195,14 @@
                     
                     <hr>
                     
-                    <div class="d-grid">
+                    <div class="d-grid gap-2">
                         <a href="{{ route('admin.suggestions.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left me-1"></i> Вернуться к списку
                         </a>
+                        
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash-alt me-1"></i> Удалить предложение
+                        </button>
                     </div>
                 </div>
             </div>
@@ -234,6 +264,32 @@
                     <button type="submit" class="btn btn-danger">Отклонить</button>
                 </div>
             </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно для удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить это предложение?</p>
+                <div class="alert alert-danger">
+                    <strong>Внимание!</strong> Это действие нельзя отменить. Предложение будет безвозвратно удалено.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <form action="{{ route('admin.suggestions.destroy', $suggestion->id) }}" method="POST">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-danger">Удалить</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

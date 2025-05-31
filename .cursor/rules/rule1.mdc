@@ -4,13 +4,13 @@ globs:
 alwaysApply: true
 ---
 # ===================================================================
-# Project Rules: RealEstateAssistantPro
+# Project Rules: Auto-parts-store
 # ===================================================================
 
 # --- Общие настройки проекта ---
 ruleType: project
-description: "Основные правила и метаданные для проекта RealEstateAssistantPro"
-- projectName: "RealEstateAssistantPro"
+description: "Основные правила и метаданные для проекта Auto-parts-store"
+- projectName: "Auto-parts-store"
 - prependToPrompt: "{projectName} | "            # Всегда начинать ответы с названия проекта
 - appendToPrompt: "use context7"                 # Подключать Context7 MCP для актуальной документации
 

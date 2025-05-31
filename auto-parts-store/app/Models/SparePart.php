@@ -31,7 +31,7 @@ class SparePart extends Model
         'price',
         'stock_quantity',
         'manufacturer',
-        'category',
+        'category_id',
         'image_url',
         'is_available',
     ];
@@ -61,7 +61,7 @@ class SparePart extends Model
         'price',
         'stock_quantity',
         'manufacturer',
-        'category',
+        'category_id',
         'image_url',
         'is_available',
         'created_at',
@@ -70,6 +70,14 @@ class SparePart extends Model
         'markup_price',
         'markup_percent'
     ];
+
+    /**
+     * Получить категорию запчасти.
+     */
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(PartCategory::class, 'category_id');
+    }
 
     /**
      * Получить модели автомобилей, совместимые с этой запчастью.

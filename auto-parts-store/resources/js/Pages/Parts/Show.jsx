@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import PartCard from '@/Components/Parts/PartCard';
 
-export default function PartShow({ auth, part, similarParts = [] }) {
+export default function PartShow({ auth, part, similarParts = [], recommendedAnalogs = [] }) {
     const [quantity, setQuantity] = useState(1);
     const [addingToCart, setAddingToCart] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
@@ -80,6 +81,11 @@ export default function PartShow({ auth, part, similarParts = [] }) {
         }, 3000);
     };
 
+    // Функция для предложения аналога
+    const handleSuggestAnalog = () => {
+        window.location.href = `/suggestions/analog/${part.id}`;
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -89,6 +95,13 @@ export default function PartShow({ auth, part, similarParts = [] }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Сообщение об успешном добавлении в корзину */}
+                    {message.text && (
+                        <div className={`mb-4 p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                            {message.text}
+                        </div>
+                    )}
+                
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             {!part ? (
@@ -203,15 +216,98 @@ export default function PartShow({ auth, part, similarParts = [] }) {
                                                 </button>
                                             </div>
                                         )}
-                                        
-                                        {message.text && (
-                                            <div className={`mt-4 p-3 rounded-md ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                {message.text}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    </div>
+                    
+                    {/* Аналоги запчасти */}
+                    <div className="mt-8">
+                        <h2 className="text-xl font-semibold mb-4">Аналоги запчасти</h2>
+                        
+                        {recommendedAnalogs && recommendedAnalogs.length > 0 ? (
+                            <div>
+                                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                                    <div className="flex">
+                                        <div className="flex-shrink-0">
+                                            <svg className="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+                                        <div className="ml-3">
+                                            <p className="text-sm text-yellow-700">
+                                                Эти запчасти могут быть аналогами, но требуют проверки специалистом.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {recommendedAnalogs.map(analog => (
+                                        <PartCard key={analog.id} part={analog} />
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-gray-50 p-4 rounded-md">
+                                <p className="text-gray-600">Для этой запчасти пока нет утвержденных аналогов.</p>
+                            </div>
+                        )}
+                        
+                        {/* Кнопка предложить аналог */}
+                        <div className="mt-4">
+                            <Link
+                                href={route('suggestions.create-analog', part.id)}
+                                className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Предложить аналог
+                            </Link>
+                        </div>
+                    </div>
+                    
+                    {/* Совместимые модели */}
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6">
+                            <h3 className="text-xl font-semibold mb-4">Совместимые автомобили</h3>
+                            
+                            {part.compatibilities && part.compatibilities.length > 0 ? (
+                                <ul className="space-y-3 mb-4">
+                                    {part.compatibilities.map(compatibility => (
+                                        <li key={compatibility.id} className="border-b pb-2">
+                                            <span className="font-medium">{compatibility.brand} {compatibility.model}</span>
+                                            {compatibility.years && (
+                                                <span className="text-sm text-gray-600 ml-2">
+                                                    ({compatibility.years})
+                                                </span>
+                                            )}
+                                            {compatibility.notes && (
+                                                <p className="text-sm text-gray-500 mt-1">{compatibility.notes}</p>
+                                            )}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="bg-gray-50 p-4 rounded-md mb-4">
+                                    <p className="text-gray-600">Информация о совместимости с автомобилями пока не добавлена.</p>
+                                </div>
+                            )}
+                            
+                            <div className="mt-4">
+                                <Link 
+                                    href={route('suggestions.create-compatibility', part.id)}
+                                    className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-5h2a1 1 0 00.8-.4l3-4a1 1 0 00.2-.6V5a1 1 0 00-1-1H3z" />
+                                    </svg>
+                                    Предложить совместимость
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            //
+            // Делаем поле total_price nullable
+            if (Schema::hasColumn('orders', 'total_price')) {
+                $table->decimal('total_price', 10, 2)->nullable()->change();
+            }
         });
     }
 
@@ -22,7 +25,10 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            //
+            // Возвращаем не-nullable
+            if (Schema::hasColumn('orders', 'total_price')) {
+                $table->decimal('total_price', 10, 2)->nullable(false)->change();
+            }
         });
     }
 };

@@ -62,7 +62,7 @@
                         @forelse($suggestions as $suggestion)
                             <tr>
                                 <td>{{ $suggestion->id }}</td>
-                                <td>{{ $suggestion->user->name }}</td>
+                                <td>{{ $suggestion->user ? $suggestion->user->name : 'Не указан' }}</td>
                                 <td>
                                     @if($suggestion->suggestion_type == 'analog')
                                         <span class="badge bg-info">Аналог</span>
@@ -74,9 +74,19 @@
                                 </td>
                                 <td>
                                     @if($suggestion->sparePart)
-                                        <a href="{{ route('spare-parts.show', $suggestion->sparePart->id) }}" target="_blank">
-                                            {{ $suggestion->sparePart->name }}
-                                        </a>
+                                        <div class="text-sm">
+                                            <div class="flex items-center">
+                                                <span class="badge bg-secondary">{{ $suggestion->sparePart->part_number }}</span>
+                                                @if($suggestion->suggestion_type == 'analog' && $suggestion->data && !empty($suggestion->data['analog_article']))
+                                                    <i class="fas fa-arrow-right mx-1 text-primary"></i>
+                                                    <span class="badge bg-info">{{ $suggestion->data['analog_article'] }}</span>
+                                                    <small class="ml-1 text-muted">({{ $suggestion->data['analog_brand'] ?? 'Не указан' }})</small>
+                                                @elseif($suggestion->suggestion_type == 'compatibility' && $suggestion->carModel && $suggestion->carModel->brand)
+                                                    <i class="fas fa-arrow-right mx-1 text-purple-500"></i>
+                                                    <span class="badge bg-purple-100 text-purple-800">{{ $suggestion->carModel->brand->name }} {{ $suggestion->carModel->name }}</span>
+                                                @endif
+                                            </div>
+                                        </div>
                                     @else
                                         <span class="text-muted">Не указано</span>
                                     @endif
@@ -93,9 +103,9 @@
                                 <td>{{ $suggestion->created_at->format('d.m.Y H:i') }}</td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.suggestions.show', $suggestion->id) }}" class="btn btn-sm btn-info">
+                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewModal{{ $suggestion->id }}">
                                             <i class="fas fa-eye"></i>
-                                        </a>
+                                        </button>
                                         
                                         @if($suggestion->status == 'pending')
                                             <button type="button" class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#approveModal{{ $suggestion->id }}">
@@ -106,6 +116,147 @@
                                                 <i class="fas fa-times"></i>
                                             </button>
                                         @endif
+                                        
+                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $suggestion->id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Модальное окно для просмотра деталей предложения -->
+                                    <div class="modal fade" id="viewModal{{ $suggestion->id }}" tabindex="-1" aria-labelledby="viewModalLabel{{ $suggestion->id }}" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="viewModalLabel{{ $suggestion->id }}">Детали предложения #{{ $suggestion->id }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-4 fw-bold">Тип предложения:</div>
+                                                        <div class="col-md-8">
+                                                            @if($suggestion->suggestion_type == 'analog')
+                                                                <span class="badge bg-info">Аналог запчасти</span>
+                                                            @elseif($suggestion->suggestion_type == 'compatibility')
+                                                                <span class="badge bg-primary">Совместимость с автомобилем</span>
+                                                            @else
+                                                                <span class="badge bg-secondary">{{ $suggestion->suggestion_type }}</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-4 fw-bold">Пользователь:</div>
+                                                        <div class="col-md-8">
+                                                            @if($suggestion->user)
+                                                                {{ $suggestion->user->name }} ({{ $suggestion->user->email }})
+                                                            @else
+                                                                <span class="text-muted">Пользователь не указан</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-4 fw-bold">Запчасть:</div>
+                                                        <div class="col-md-8">
+                                                            <div class="d-flex align-items-center">
+                                                                @if($suggestion->sparePart)
+                                                                    <span class="badge bg-secondary me-2">{{ $suggestion->sparePart->part_number }}</span>
+                                                                    <span>{{ $suggestion->sparePart->manufacturer }}</span>
+                                                                @else
+                                                                    <span class="text-danger">Запчасть не найдена</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    @if($suggestion->suggestion_type == 'analog')
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4 fw-bold">Аналог:</div>
+                                                            <div class="col-md-8">
+                                                                <div class="d-flex align-items-center">
+                                                                    @if($suggestion->analogSparePart)
+                                                                        <span class="badge bg-success me-2">{{ $suggestion->analogSparePart->part_number }}</span>
+                                                                        <span>{{ $suggestion->analogSparePart->manufacturer }}</span>
+                                                                    @elseif($suggestion->data && !empty($suggestion->data['analog_article']))
+                                                                        <span class="badge bg-info me-2">{{ $suggestion->data['analog_article'] }}</span>
+                                                                        <span>{{ $suggestion->data['analog_brand'] ?? 'Не указан' }}</span>
+                                                                    @else
+                                                                        <span class="badge bg-danger">Не найден</span>
+                                                                    @endif
+                                                                    
+                                                                    @if(isset($suggestion->data['analog_type']))
+                                                                        <span class="badge {{ $suggestion->data['analog_type'] == 'direct' ? 'bg-success' : 'bg-warning text-dark' }} ms-3">
+                                                                            {{ $suggestion->data['analog_type'] == 'direct' ? 'Прямой аналог' : 'Заменитель' }}
+                                                                        </span>
+                                                                    @endif
+                                                                </div>
+                                                                
+                                                                @if($suggestion->data && !empty($suggestion->data['analog_description']))
+                                                                    <div class="mt-2">
+                                                                        <small class="text-muted">Описание:</small>
+                                                                        <p class="mb-0">{{ $suggestion->data['analog_description'] }}</p>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @elseif($suggestion->suggestion_type == 'compatibility')
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4 fw-bold">Автомобиль:</div>
+                                                            <div class="col-md-8">
+                                                                @if($suggestion->carModel && $suggestion->carModel->brand)
+                                                                    <span class="badge bg-primary">{{ $suggestion->carModel->brand->name }} {{ $suggestion->carModel->name }}</span>
+                                                                    @if($suggestion->data && (!empty($suggestion->data['start_year']) || !empty($suggestion->data['end_year'])))
+                                                                        <span class="ms-2">
+                                                                            ({{ $suggestion->data['start_year'] ?? '-' }} - {{ $suggestion->data['end_year'] ?? 'н.в.' }})
+                                                                        </span>
+                                                                    @endif
+                                                                @else
+                                                                    <span class="text-danger">Не указан</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                    
+                                                    <div class="row mb-3">
+                                                        <div class="col-md-4 fw-bold">Комментарий:</div>
+                                                        <div class="col-md-8">
+                                                            {{ $suggestion->comment ?? 'Не указан' }}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    @if($suggestion->status != 'pending')
+                                                        <div class="row mb-3">
+                                                            <div class="col-md-4 fw-bold">Статус:</div>
+                                                            <div class="col-md-8">
+                                                                @if($suggestion->status == 'approved')
+                                                                    <span class="badge bg-success">Одобрено</span>
+                                                                @elseif($suggestion->status == 'rejected')
+                                                                    <span class="badge bg-danger">Отклонено</span>
+                                                                @endif
+                                                                
+                                                                @if($suggestion->approved_by)
+                                                                    <small class="d-block mt-1">
+                                                                        {{ $suggestion->approvedBy->name ?? 'Администратор' }} 
+                                                                        ({{ $suggestion->approved_at ? $suggestion->approved_at->format('d.m.Y H:i') : 'Дата не указана' }})
+                                                                    </small>
+                                                                @endif
+                                                                
+                                                                @if($suggestion->admin_comment)
+                                                                    <div class="mt-2">
+                                                                        <small class="text-muted">Комментарий администратора:</small>
+                                                                        <p class="mb-0">{{ $suggestion->admin_comment }}</p>
+                                                                    </div>
+                                                                @endif
+                                                            </div>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                                    <a href="{{ route('admin.suggestions.show', $suggestion->id) }}" class="btn btn-primary">Полный просмотр</a>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <!-- Модальное окно для одобрения -->
@@ -155,6 +306,29 @@
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Модальное окно для удаления -->
+                                    <div class="modal fade" id="deleteModal{{ $suggestion->id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ $suggestion->id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ $suggestion->id }}">Подтверждение удаления</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p class="text-danger">Вы уверены, что хотите удалить это предложение? Это действие нельзя отменить.</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                                                    <form action="{{ route('admin.suggestions.destroy', $suggestion->id) }}" method="POST">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </td>
                             </tr>
                         @empty
@@ -172,4 +346,33 @@
         </div>
     </div>
 </div>
-@endsection 
+@endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Обработка ошибок при открытии модальных окон
+    const viewButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            try {
+                const targetId = this.getAttribute('data-bs-target');
+                console.log('Открытие модального окна:', targetId);
+                
+                // Задержка, чтобы убедиться, что модальное окно открывается
+                setTimeout(() => {
+                    const modal = document.querySelector(targetId);
+                    if (modal && !modal.classList.contains('show')) {
+                        console.error('Модальное окно не открылось:', targetId);
+                    }
+                }, 500);
+            } catch (error) {
+                console.error('Ошибка при открытии модального окна:', error);
+                alert('Произошла ошибка при открытии данных. Пожалуйста, перезагрузите страницу или обратитесь к администратору.');
+                e.preventDefault();
+            }
+        });
+    });
+});
+</script>
+@endpush 

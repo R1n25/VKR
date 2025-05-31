@@ -4,21 +4,20 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
-export default function Index({ auth, spareParts, categories, manufacturers, filters }) {
+export default function Index({ auth, spareParts, categories, filters }) {
     const [searchParams, setSearchParams] = useState({
         search: filters.search || '',
-        category: filters.category || '',
+        category_id: filters.category_id || '',
         manufacturer: filters.manufacturer || '',
-        status: filters.status || '',
     });
 
     const { data, setData, get, processing } = useForm({
         search: filters.search || '',
-        category: filters.category || '',
+        category_id: filters.category_id || '',
         manufacturer: filters.manufacturer || '',
-        status: filters.status || '',
         sort: filters.sort || 'id',
-        direction: filters.direction || 'desc',
+        direction: filters.direction || 'asc',
+        per_page: filters.per_page || 30,
     });
 
     const handleSort = (field) => {
@@ -35,12 +34,18 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
     const handleReset = () => {
         setData({
             search: '',
-            category: '',
+            category_id: '',
             manufacturer: '',
-            status: '',
             sort: 'id',
-            direction: 'desc',
+            direction: 'asc',
+            per_page: 30,
         });
+        get(route('admin.spare-parts.inertia'), { preserveState: true });
+    };
+
+    const handlePerPageChange = (e) => {
+        const value = e.target.value;
+        setData({ ...data, per_page: value });
         get(route('admin.spare-parts.inertia'), { preserveState: true });
     };
 
@@ -54,13 +59,8 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
         return format(new Date(date), 'dd MMM yyyy, HH:mm', { locale: ru });
     };
 
-    const getAvailabilityStatus = (isAvailable) => {
-        return isAvailable ? (
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">В наличии</span>
-        ) : (
-            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Нет в наличии</span>
-        );
-    };
+    // Получить уникальные производители из запчастей
+    const manufacturers = [...new Set(spareParts.data.map(part => part.manufacturer).filter(Boolean))];
 
     return (
         <AdminLayout
@@ -92,20 +92,20 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                                     </div>
 
                                     <div>
-                                        <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
                                             Категория
                                         </label>
                                         <select
-                                            id="category"
-                                            name="category"
-                                            value={data.category}
-                                            onChange={e => setData('category', e.target.value)}
+                                            id="category_id"
+                                            name="category_id"
+                                            value={data.category_id}
+                                            onChange={e => setData('category_id', e.target.value)}
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
                                             <option value="">Все категории</option>
                                             {categories.map((category) => (
-                                                <option key={category} value={category}>
-                                                    {category}
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
                                                 </option>
                                             ))}
                                         </select>
@@ -132,19 +132,21 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                                     </div>
 
                                     <div>
-                                        <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Статус
+                                        <label htmlFor="per_page" className="block text-sm font-medium text-gray-700 mb-1">
+                                            Записей на странице
                                         </label>
                                         <select
-                                            id="status"
-                                            name="status"
-                                            value={data.status}
-                                            onChange={e => setData('status', e.target.value)}
+                                            id="per_page"
+                                            name="per_page"
+                                            value={data.per_page}
+                                            onChange={handlePerPageChange}
                                             className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                                         >
-                                            <option value="">Любой статус</option>
-                                            <option value="available">В наличии</option>
-                                            <option value="unavailable">Нет в наличии</option>
+                                            <option value="10">10</option>
+                                            <option value="20">20</option>
+                                            <option value="30">30</option>
+                                            <option value="50">50</option>
+                                            <option value="100">100</option>
                                         </select>
                                     </div>
 
@@ -174,62 +176,68 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                             </div>
 
                             {/* Таблица запчастей */}
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
+                            <div className="overflow-x-auto w-full">
+                                <table className="w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[5%]"
                                                 onClick={() => handleSort('id')}
                                             >
                                                 ID {getSortIcon('id')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[30%]"
                                                 onClick={() => handleSort('name')}
                                             >
                                                 Название {getSortIcon('name')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                onClick={() => handleSort('part_number')}
+                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[15%]"
+                                                onClick={() => handleSort('article_number')}
                                             >
-                                                Артикул {getSortIcon('part_number')}
+                                                Артикул {getSortIcon('article_number')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                onClick={() => handleSort('price')}
+                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
+                                                onClick={() => handleSort('category_id')}
                                             >
-                                                Цена {getSortIcon('price')}
+                                                Категория {getSortIcon('category_id')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                onClick={() => handleSort('stock_quantity')}
-                                            >
-                                                Количество {getSortIcon('stock_quantity')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
                                                 onClick={() => handleSort('manufacturer')}
                                             >
                                                 Производитель {getSortIcon('manufacturer')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                                onClick={() => handleSort('is_available')}
+                                                className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
+                                                onClick={() => handleSort('price')}
                                             >
-                                                Статус {getSortIcon('is_available')}
+                                                Цена {getSortIcon('price')}
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[5%]"
+                                                onClick={() => handleSort('stock_quantity')}
+                                            >
+                                                Кол-во {getSortIcon('stock_quantity')}
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
+                                            >
+                                                Статус
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]"
                                             >
                                                 Действия
                                             </th>
@@ -238,41 +246,48 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {spareParts.data.length > 0 ? (
                                             spareParts.data.map((part) => (
-                                                <tr key={part.id}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                <tr key={part.id} className="hover:bg-gray-50">
+                                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
                                                         {part.id}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                    <td className="px-2 py-3 text-sm text-gray-900 break-words">
                                                         {part.name}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {part.part_number}
+                                                    <td className="px-2 py-3 text-sm text-gray-500">
+                                                        {part.article_number}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {part.price} руб.
+                                                    <td className="px-2 py-3 text-sm text-gray-500">
+                                                        {part.category ? part.category.name : '-'}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {part.stock_quantity} шт.
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    <td className="px-2 py-3 text-sm text-gray-500 break-words">
                                                         {part.manufacturer}
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {getAvailabilityStatus(part.is_available)}
+                                                    <td className="px-2 py-3 text-sm text-gray-500 text-right">
+                                                        {part.price} ₽
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                        <div className="flex space-x-2">
-                                                            <Link
-                                                                href={route('admin.spare-parts.show', part.id)}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                Просмотр
-                                                            </Link>
+                                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
+                                                        {part.stock_quantity}
+                                                    </td>
+                                                    <td className="px-2 py-3 text-sm text-gray-500">
+                                                        {part.is_active ? (
+                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
+                                                        ) : (
+                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-2 py-3 text-sm font-medium">
+                                                        <div className="flex flex-col space-y-1 items-center">
                                                             <Link
                                                                 href={route('admin.spare-parts.edit', part.id)}
-                                                                className="text-yellow-600 hover:text-yellow-900"
+                                                                className="text-indigo-600 hover:text-indigo-900"
                                                             >
-                                                                Редактировать
+                                                                Изменить
+                                                            </Link>
+                                                            <Link
+                                                                href={route('admin.spare-parts.show', part.id)}
+                                                                className="text-green-600 hover:text-green-900"
+                                                            >
+                                                                Просмотр
                                                             </Link>
                                                         </div>
                                                     </td>
@@ -280,7 +295,7 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                                                     Запчасти не найдены
                                                 </td>
                                             </tr>
@@ -293,17 +308,17 @@ export default function Index({ auth, spareParts, categories, manufacturers, fil
                             <div className="mt-4">
                                 <div className="flex justify-between items-center">
                                     <div className="text-sm text-gray-700">
-                                        Показано с {spareParts.from || 0} по {spareParts.to || 0} из {spareParts.total} запчастей
+                                        Показано с {spareParts.from || 0} по {spareParts.to || 0} из {spareParts.total} записей
                                     </div>
                                     <div className="flex space-x-1">
                                         {spareParts.links.map((link, index) => (
                                             <Link
                                                 key={index}
                                                 href={link.url}
-                                                className={`px-4 py-2 text-sm border rounded ${
-                                                    link.active
+                                                className={`px-3 py-1 text-sm rounded ${
+                                                    link.active 
                                                         ? 'bg-indigo-600 text-white'
-                                                        : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                        : 'bg-white text-gray-700 hover:bg-gray-100'
                                                 } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />

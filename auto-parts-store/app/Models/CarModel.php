@@ -42,6 +42,14 @@ class CarModel extends Model
     }
 
     /**
+     * Alias for carBrand relationship.
+     */
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(CarBrand::class, 'brand_id');
+    }
+
+    /**
      * Get the spare parts that are compatible with this car model.
      */
     public function spareParts(): BelongsToMany

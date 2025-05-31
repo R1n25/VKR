@@ -21,7 +21,9 @@ use App\Http\Controllers\UserSuggestionController;
 use App\Http\Controllers\Admin\SparePartController as AdminSparePartController;
 use App\Http\Controllers\Admin\SuggestionController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\CatalogManagerController;
 use App\Http\Controllers\CartController;
+use App\Http\Controllers\Admin\PartCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -59,6 +61,7 @@ Route::get('/models/{id}', function ($id) {
 // Маршруты для запчастей
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
 Route::get('/search', [PartsController::class, 'search'])->name('search');
+// Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
 
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -196,6 +199,18 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'show'])->name('suggestions.show');
     Route::post('/suggestions/{suggestion}/approve', [App\Http\Controllers\Admin\SuggestionController::class, 'approve'])->name('suggestions.approve');
     Route::post('/suggestions/{suggestion}/reject', [App\Http\Controllers\Admin\SuggestionController::class, 'reject'])->name('suggestions.reject');
+    Route::delete('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'destroy'])->name('suggestions.destroy');
+    
+    // Управление каталогом
+    Route::get('/catalog-manager', [CatalogManagerController::class, 'index'])->name('catalog-manager.index');
+    Route::post('/catalog-manager/import-parts', [CatalogManagerController::class, 'importParts'])->name('catalog-manager.import-parts');
+    Route::post('/catalog-manager/import-cars', [CatalogManagerController::class, 'importCars'])->name('catalog-manager.import-cars');
+    Route::get('/catalog-manager/export-parts', [CatalogManagerController::class, 'exportParts'])->name('catalog-manager.export-parts');
+    Route::get('/catalog-manager/export-cars', [CatalogManagerController::class, 'exportCars'])->name('catalog-manager.export-cars');
+    Route::get('/catalog-manager/download-backup', [CatalogManagerController::class, 'downloadBackup'])->name('catalog-manager.download-backup');
+
+    // Управление категориями запчастей
+    Route::resource('part-categories', PartCategoryController::class);
 });
 
 require __DIR__.'/auth.php';

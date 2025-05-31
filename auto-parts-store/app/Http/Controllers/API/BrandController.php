@@ -4,7 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Brand;
+use App\Models\CarBrand;
+use App\Models\CarModel;
 use Illuminate\Support\Facades\DB;
 
 class BrandController extends Controller
@@ -16,7 +17,7 @@ class BrandController extends Controller
      */
     public function index()
     {
-        $brands = DB::table('car_brands')->get();
+        $brands = CarBrand::all();
         
         return response()->json([
             'status' => 'success',
@@ -32,7 +33,7 @@ class BrandController extends Controller
      */
     public function show($id)
     {
-        $brand = DB::table('car_brands')->find($id);
+        $brand = CarBrand::find($id);
         
         if (!$brand) {
             return response()->json([
@@ -55,7 +56,7 @@ class BrandController extends Controller
      */
     public function getModels($id)
     {
-        $brand = DB::table('car_brands')->find($id);
+        $brand = CarBrand::find($id);
         
         if (!$brand) {
             return response()->json([
@@ -64,7 +65,7 @@ class BrandController extends Controller
             ], 404);
         }
         
-        $models = DB::table('car_models')->where('brand_id', $id)->get();
+        $models = CarModel::where('car_brand_id', $id)->get();
         
         return response()->json([
             'status' => 'success',
@@ -83,7 +84,7 @@ class BrandController extends Controller
      */
     public function getParts($id)
     {
-        $brand = DB::table('car_brands')->find($id);
+        $brand = CarBrand::find($id);
         
         if (!$brand) {
             return response()->json([
@@ -92,9 +93,9 @@ class BrandController extends Controller
             ], 404);
         }
         
-        $parts = DB::table('parts')
-            ->where('brand_id', $id)
-            ->select('id', 'name', 'sku', 'price', 'stock', 'image_url')
+        $parts = DB::table('spare_parts')
+            ->where('manufacturer', $brand->name)
+            ->select('id', 'name', 'part_number as sku', 'price', 'stock_quantity as stock', 'image_url')
             ->get();
         
         return response()->json([

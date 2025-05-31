@@ -40,11 +40,11 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <select name="brand" class="form-select">
-                            <option value="">Все бренды</option>
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}" {{ request('brand') == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name }}
+                        <select name="manufacturer" class="form-select">
+                            <option value="">Все производители</option>
+                            @foreach($manufacturers as $manufacturer)
+                                <option value="{{ $manufacturer }}" {{ request('manufacturer') == $manufacturer ? 'selected' : '' }}>
+                                    {{ $manufacturer }}
                                 </option>
                             @endforeach
                         </select>
@@ -83,7 +83,7 @@
                             <th>Название</th>
                             <th>Артикул</th>
                             <th>Категория</th>
-                            <th>Бренд</th>
+                            <th>Производитель</th>
                             <th>Цена</th>
                             <th>Кол-во</th>
                             <th>Статус</th>
@@ -104,7 +104,7 @@
                                 <td>{{ $sparePart->name }}</td>
                                 <td>{{ $sparePart->article_number }}</td>
                                 <td>{{ $sparePart->category->name ?? 'Нет категории' }}</td>
-                                <td>{{ $sparePart->brand->name ?? 'Нет бренда' }}</td>
+                                <td>{{ $sparePart->manufacturer ?? 'Нет производителя' }}</td>
                                 <td>{{ number_format($sparePart->price, 2) }} ₽</td>
                                 <td>{{ $sparePart->stock_quantity }}</td>
                                 <td>

@@ -7,16 +7,16 @@ import { ru } from 'date-fns/locale';
 export default function UserRequests({ auth, requests }) {
     const getStatusBadge = (status) => {
         const statuses = {
-            'new': { text: 'Новый', bg: 'bg-blue-100', text: 'text-blue-800' },
-            'processing': { text: 'В обработке', bg: 'bg-yellow-100', text: 'text-yellow-800' },
-            'completed': { text: 'Выполнен', bg: 'bg-green-100', text: 'text-green-800' },
-            'cancelled': { text: 'Отменён', bg: 'bg-red-100', text: 'text-red-800' },
+            'new': { text: 'Новый', bg: 'bg-blue-100', textColor: 'text-blue-800' },
+            'processing': { text: 'В обработке', bg: 'bg-yellow-100', textColor: 'text-yellow-800' },
+            'completed': { text: 'Выполнен', bg: 'bg-green-100', textColor: 'text-green-800' },
+            'cancelled': { text: 'Отменён', bg: 'bg-red-100', textColor: 'text-red-800' },
         };
         
         const statusConfig = statuses[status] || statuses['new'];
         
         return (
-            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.textColor}`}>
                 {statusConfig.text}
             </span>
         );

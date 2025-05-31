@@ -28,6 +28,7 @@ return new class extends Migration
             $table->text('admin_comment')->nullable(); // Комментарий администратора
             $table->unsignedBigInteger('approved_by')->nullable(); // Кто из администраторов одобрил
             $table->timestamp('approved_at')->nullable(); // Когда одобрено
+            $table->json('data')->nullable(); // JSON данные для дополнительной информации
             $table->timestamps();
             
             // Внешние ключи

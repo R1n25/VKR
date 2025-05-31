@@ -85,7 +85,7 @@ class SparePartService
         // Находим запчасти той же категории
         $similarParts = SparePart::query()
             ->where('id', '!=', $sparePartId)
-            ->where('category', $sparePart->category)
+            ->where('category_id', $sparePart->category_id)
             ->where('is_available', true)
             ->where('stock_quantity', '>', 0)
             ->inRandomOrder()
@@ -150,7 +150,7 @@ class SparePartService
         
         // Применяем фильтры
         if (!empty($filters['category'])) {
-            $query->where('category', $filters['category']);
+            $query->where('category_id', $filters['category']);
         }
         
         if (!empty($filters['price_min'])) {

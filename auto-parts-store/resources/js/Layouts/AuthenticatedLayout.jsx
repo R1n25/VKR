@@ -41,6 +41,14 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <NavLink href={route('contacts')} active={route().current('contacts')}>
                                     Контакты
                                 </NavLink>
+                                <NavLink href={route('search')} active={route().current('search')}>
+                                    <div className="flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        Поиск
+                                    </div>
+                                </NavLink>
                             </div>
                         </div>
 
@@ -213,6 +221,20 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                             </svg>
                             Контакты
+                        </ResponsiveNavLink>
+                        <ResponsiveNavLink
+                            href={route('search')}
+                            active={route().current('search')}
+                            className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
+                                route().current('search')
+                                    ? 'bg-[#2a4075] text-white shadow-lg shadow-[#2a4075]/30 font-semibold'
+                                    : 'text-white hover:bg-indigo-900'
+                            }`}
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            Поиск
                         </ResponsiveNavLink>
                     </div>
 

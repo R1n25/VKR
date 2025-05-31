@@ -39,7 +39,7 @@ class CreateAdminUser extends Command
         $existingAdmin = User::where('email', $email)->first();
         
         if ($existingAdmin) {
-            if ($existingAdmin->is_admin) {
+            if ($existingAdmin->role === 'admin') {
                 $this->info("Администратор с email {$email} уже существует.");
                 
                 if ($this->confirm('Хотите обновить данные администратора?', false)) {
@@ -51,7 +51,7 @@ class CreateAdminUser extends Command
                 }
             } else {
                 if ($this->confirm("Пользователь с email {$email} существует, но не является администратором. Сделать его администратором?", true)) {
-                    $existingAdmin->is_admin = true;
+                    $existingAdmin->role = 'admin';
                     $existingAdmin->save();
                     
                     $this->info('Пользователь успешно назначен администратором.');
@@ -68,7 +68,7 @@ class CreateAdminUser extends Command
                 'email' => $email,
                 'password' => Hash::make($password),
                 'email_verified_at' => now(),
-                'is_admin' => true,
+                'role' => 'admin',
                 'markup_percent' => 0, // Нет наценки для администратора
             ]);
             

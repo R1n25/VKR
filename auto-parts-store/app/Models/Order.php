@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class Order extends Model
 {
@@ -163,29 +165,90 @@ class Order extends Model
     
     /**
      * Обновить статус заказа
+     * 
+     * @param string $newStatus Новый статус заказа
+     * @param int|null $userId ID пользователя, изменяющего статус
+     * @return $this
      */
     public function updateStatus($newStatus, $userId = null)
     {
         $oldStatus = $this->status;
+        
+        // Если статус не изменился, ничего не делаем
+        if ($oldStatus === $newStatus) {
+            return $this;
+        }
+        
+        // Проверяем валидность статуса
+        $validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
+        if (!in_array($newStatus, $validStatuses)) {
+            throw new \InvalidArgumentException("Недопустимый статус заказа: {$newStatus}");
+        }
+        
+        // Получаем данные пользователя
         $user = User::find($userId ?? auth()->id());
+        $userName = $user ? $user->name : 'Система';
         
-        // Добавляем запись в историю статусов
-        $statusHistory = $this->status_history ?? [];
-        $statusHistory[] = [
-            'from' => $oldStatus,
-            'to' => $newStatus,
-            'changed_at' => now()->toDateTimeString(),
-            'changed_by' => $user ? $user->name : 'Система',
-        ];
+        // Начинаем транзакцию для обеспечения целостности данных
+        DB::beginTransaction();
         
-        $this->update([
-            'status' => $newStatus,
-            'status_history' => $statusHistory,
-            'status_updated_at' => now(),
-            'status_updated_by' => $userId ?? auth()->id(),
-        ]);
-        
-        return $this;
+        try {
+            // Добавляем запись в историю статусов
+            $statusHistory = $this->status_history ?? [];
+            $statusHistory[] = [
+                'from' => $oldStatus,
+                'to' => $newStatus,
+                'changed_at' => now()->toDateTimeString(),
+                'changed_by' => $userName,
+                'user_id' => $userId ?? auth()->id(),
+            ];
+            
+            // Обновляем соответствующие поля в зависимости от статуса
+            $updates = [
+                'status' => $newStatus,
+                'status_history' => $statusHistory,
+                'status_updated_at' => now(),
+                'status_updated_by' => $userId ?? auth()->id(),
+            ];
+            
+            // Устанавливаем дополнительные временные метки для особых статусов
+            if ($newStatus === 'completed' && $oldStatus !== 'completed') {
+                $updates['completed_at'] = now();
+            } elseif ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
+                $updates['canceled_at'] = now();
+            }
+            
+            // Применяем обновления
+            $this->update($updates);
+            
+            // Фиксируем транзакцию
+            DB::commit();
+            
+            // Логируем изменение статуса
+            Log::info("Статус заказа #{$this->order_number} изменен с {$oldStatus} на {$newStatus}", [
+                'order_id' => $this->id,
+                'order_number' => $this->order_number,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'user_id' => $userId ?? auth()->id(),
+                'user_name' => $userName,
+            ]);
+            
+            return $this;
+            
+        } catch (\Exception $e) {
+            // Откатываем транзакцию в случае ошибки
+            DB::rollBack();
+            
+            // Логируем ошибку
+            Log::error("Ошибка при изменении статуса заказа #{$this->order_number}: " . $e->getMessage(), [
+                'order_id' => $this->id,
+                'exception' => $e,
+            ]);
+            
+            // Пробрасываем исключение дальше
+            throw $e;
+        }
     }
     
     /**

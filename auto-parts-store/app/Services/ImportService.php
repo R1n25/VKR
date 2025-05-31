@@ -43,8 +43,8 @@ class ImportService
                 continue;
             }
             
-            // Разделяем строку по разделителю ";"
-            $data = explode(';', $line);
+            // Разделяем строку по разделителю ","
+            $data = explode(',', $line);
             
             // Проверяем, что у нас достаточно данных
             if (count($data) < 4) {
@@ -54,7 +54,9 @@ class ImportService
             $brandName = trim($data[0]);
             $modelName = trim($data[1]);
             $yearFrom = (int)trim($data[2]);
-            $yearTo = trim($data[3]) === '-' ? null : (int)trim($data[3]);
+            $yearTo = isset($data[3]) && trim($data[3]) !== '-' ? (int)trim($data[3]) : null;
+            $country = isset($data[4]) ? trim($data[4]) : 'Unknown';
+            $isPopular = isset($data[5]) ? (bool)trim($data[5]) : false;
             
             // Создаем slug вручную (без использования Str::slug, которому требуется intl)
             $brandSlug = $this->createSlug($brandName);
@@ -65,8 +67,9 @@ class ImportService
                 [
                     'name' => $brandName,
                     'slug' => $brandSlug,
-                    'country' => 'Unknown',
-                    'description' => ''
+                    'country' => $country,
+                    'description' => '',
+                    'is_popular' => $isPopular
                 ]
             );
             
@@ -96,6 +99,7 @@ class ImportService
                 // Если модель уже существует, обновляем ее данные
                 $existingModel->year_from = $yearFrom;
                 $existingModel->year_to = $yearTo;
+                $existingModel->is_popular = $isPopular;
                 $existingModel->save();
             } else {
                 // Создаем новую модель
@@ -106,7 +110,7 @@ class ImportService
                     'description' => '',
                     'year_from' => $yearFrom,
                     'year_to' => $yearTo,
-                    'is_popular' => false
+                    'is_popular' => $isPopular
                 ]);
                 
                 $modelsCount++;

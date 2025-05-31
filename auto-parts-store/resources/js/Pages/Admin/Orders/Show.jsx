@@ -1,17 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import axios from 'axios';
 
-export default function Show({ auth, order }) {
+// Настройка axios для работы с CSRF-защитой
+axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
+axios.defaults.withCredentials = true;
+const token = document.querySelector('meta[name="csrf-token"]');
+if (token) {
+    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
+}
+
+export default function Show({ auth, order, availableStatuses }) {
     const [processing, setProcessing] = useState(false);
     const [statusError, setStatusError] = useState('');
     const [note, setNote] = useState('');
     const [noteError, setNoteError] = useState('');
     const [addingNote, setAddingNote] = useState(false);
     const [statusNote, setStatusNote] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState(order.status);
+    const [feedbackMessage, setFeedbackMessage] = useState(null);
+    const [messageType, setMessageType] = useState('success'); // 'success', 'error', 'info'
+    const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    
+    // Добавим отладочную информацию в консоль
+    useEffect(() => {
+        if (order) {
+            console.log("Данные заказа:", order);
+            console.log("Товары заказа:", order.direct_items);
+            
+            if (order.direct_items && order.direct_items.length > 0) {
+                console.log("Первый товар:", order.direct_items[0]);
+                console.log("Бренд:", order.direct_items[0].brand_name);
+                console.log("Артикул:", order.direct_items[0].part_number);
+                console.log("Описание:", order.direct_items[0].description);
+            }
+        }
+    }, [order]);
+
+    // Оставляем только эффект для сброса сообщения обратной связи
+    useEffect(() => {
+        if (feedbackMessage) {
+            const timer = setTimeout(() => {
+                setFeedbackMessage(null);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [feedbackMessage]);
 
     // Проверка наличия order
     if (!order) {
@@ -42,42 +79,36 @@ export default function Show({ auth, order }) {
 
     // Функция для получения текстового представления статуса заказа
     const getStatusText = (status) => {
-        switch (status) {
-            case 'pending':
-                return 'Ожидает обработки';
-            case 'processing':
-                return 'В обработке';
-            case 'shipped':
-                return 'Отправлен';
-            case 'delivered':
-                return 'Доставлен';
-            case 'completed':
-                return 'Выполнен';
-            case 'cancelled':
-                return 'Отменен';
-            default:
-                return status;
+        // Если передан объект availableStatuses с сервера, используем его
+        if (availableStatuses && availableStatuses[status]) {
+            return availableStatuses[status];
         }
+        
+        // Иначе используем встроенный перевод
+        const statuses = {
+            'pending': 'Ожидает обработки',
+            'processing': 'В обработке',
+            'shipped': 'Отправлен',
+            'delivered': 'Доставлен',
+            'completed': 'Выполнен',
+            'cancelled': 'Отменен'
+        };
+        
+        return statuses[status] || status;
     };
 
     // Функция для получения класса цвета статуса
     const getStatusColorClass = (status) => {
-        switch (status) {
-            case 'pending':
-                return 'bg-yellow-100 text-yellow-800';
-            case 'processing':
-                return 'bg-blue-100 text-blue-800';
-            case 'shipped':
-                return 'bg-purple-100 text-purple-800';
-            case 'delivered':
-                return 'bg-blue-200 text-blue-900';
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'cancelled':
-                return 'bg-red-100 text-red-800';
-            default:
-                return 'bg-gray-100 text-gray-800';
-        }
+        const classes = {
+            'pending': 'bg-blue-100 text-blue-800',
+            'processing': 'bg-yellow-100 text-yellow-800',
+            'shipped': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-indigo-100 text-indigo-800',
+            'completed': 'bg-green-100 text-green-800',
+            'cancelled': 'bg-red-100 text-red-800'
+        };
+        
+        return classes[status] || 'bg-gray-100 text-gray-800';
     };
 
     // Функция для форматирования даты
@@ -92,40 +123,112 @@ export default function Show({ auth, order }) {
 
     // Функция для получения текста способа оплаты
     const getPaymentMethodText = (method) => {
-        switch (method) {
-            case 'cash':
-                return 'Наличными при получении';
-            case 'card':
-                return 'Картой при получении';
-            case 'online':
-                return 'Онлайн-оплата';
-            default:
-                return method;
-        }
+        const methods = {
+            'cash': 'Наличными',
+            'card': 'Банковской картой',
+            'online': 'Онлайн-оплата',
+        };
+        
+        return methods[method] || method;
     };
 
     // Функция для обновления статуса заказа
-    const handleStatusChange = async (newStatus) => {
+    const handleStatusChange = async (e) => {
+        e.preventDefault();
+        
+        // Проверяем, изменился ли статус
+        if (selectedStatus === order.status) {
+            setFeedbackMessage('Статус не изменился, выберите другой статус');
+            setMessageType('info');
+            return;
+        }
+
         if (processing) return;
         
-        if (!confirm(`Изменить статус заказа на "${getStatusText(newStatus)}"?`)) {
+        if (!confirm(`Изменить статус заказа на "${getStatusText(selectedStatus)}"?`)) {
             return;
         }
         
         setProcessing(true);
         setStatusError('');
+        setFeedbackMessage(null);
         
         try {
-            await axios.put(route('admin.orders.update-status', order.id), {
+            const response = await axios.put(route('admin.orders.update-status', order.id), {
+                status: selectedStatus,
+                note: statusNote
+            });
+            
+            setStatusNote('');
+            setFeedbackMessage('Статус заказа успешно обновлен');
+            setMessageType('success');
+            
+            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
+            setTimeout(() => {
+                router.reload();
+            }, 1000);
+        } catch (error) {
+            console.error('Ошибка при обновлении статуса:', error);
+            
+            if (error.response && error.response.data && error.response.data.error) {
+                setStatusError(error.response.data.error);
+                setFeedbackMessage(error.response.data.error);
+            } else {
+                setStatusError('Не удалось обновить статус заказа.');
+                setFeedbackMessage('Не удалось обновить статус заказа.');
+            }
+            
+            setMessageType('error');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    // Функция для быстрого изменения статуса через кнопку
+    const handleQuickStatusChange = async (newStatus) => {
+        if (processing) return;
+        
+        if (newStatus === order.status) {
+            setFeedbackMessage('Заказ уже имеет этот статус');
+            setMessageType('info');
+            return;
+        }
+        
+        if (!confirm(`Изменить статус заказа на "${getStatusText(newStatus)}"?`)) {
+            return;
+        }
+        
+        setSelectedStatus(newStatus);
+        setProcessing(true);
+        setStatusError('');
+        setFeedbackMessage(null);
+        
+        try {
+            const response = await axios.put(route('admin.orders.update-status', order.id), {
                 status: newStatus,
                 note: statusNote
             });
             
             setStatusNote('');
-            router.reload();
+            setFeedbackMessage('Статус заказа успешно обновлен');
+            setMessageType('success');
+            
+            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
+            setTimeout(() => {
+                router.reload();
+            }, 1000);
         } catch (error) {
             console.error('Ошибка при обновлении статуса:', error);
-            setStatusError('Не удалось обновить статус заказа.');
+            
+            if (error.response && error.response.data && error.response.data.error) {
+                setStatusError(error.response.data.error);
+                setFeedbackMessage(error.response.data.error);
+            } else {
+                setStatusError('Не удалось обновить статус заказа.');
+                setFeedbackMessage('Не удалось обновить статус заказа.');
+            }
+            
+            setMessageType('error');
         } finally {
             setProcessing(false);
         }
@@ -142,21 +245,41 @@ export default function Show({ auth, order }) {
         
         setAddingNote(true);
         setNoteError('');
+        setFeedbackMessage(null);
         
         try {
-            await axios.post(route('admin.orders.add-note', order.id), {
+            const response = await axios.post(route('admin.orders.add-note', order.id), {
                 note: note
             });
             
             // Очищаем форму и обновляем страницу
             setNote('');
-            router.reload();
+            setFeedbackMessage('Комментарий успешно добавлен');
+            setMessageType('success');
+            
+            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
+            setTimeout(() => {
+                router.reload();
+            }, 1000);
         } catch (error) {
             console.error('Ошибка при добавлении заметки:', error);
-            setNoteError('Не удалось добавить заметку к заказу.');
+            
+            if (error.response && error.response.data && error.response.data.error) {
+                setNoteError(error.response.data.error);
+                setFeedbackMessage(error.response.data.error);
+            } else {
+                setNoteError('Не удалось добавить заметку к заказу.');
+                setFeedbackMessage('Не удалось добавить заметку к заказу.');
+            }
+            
+            setMessageType('error');
         } finally {
             setAddingNote(false);
         }
+    };
+
+    const formatPrice = (price) => {
+        return parseFloat(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     };
 
     return (
@@ -200,71 +323,88 @@ export default function Show({ auth, order }) {
                                     {/* Форма для изменения статуса */}
                                     <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
                                         <h3 className="text-md font-semibold mb-3">Управление статусом заказа</h3>
-                                        <div>
-                                            <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Выберите новый статус
-                                            </label>
-                                            <div className="flex items-center">
-                                                <select
-                                                    id="status-select"
-                                                    value={order.status}
-                                                    onChange={(e) => handleStatusChange(e.target.value)}
-                                                    disabled={processing}
-                                                    className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
-                                                >
-                                                    <option value="pending">Ожидает обработки</option>
-                                                    <option value="processing">В обработке</option>
-                                                    <option value="shipped">Отправлен</option>
-                                                    <option value="delivered">Доставлен</option>
-                                                    <option value="completed">Выполнен</option>
-                                                    <option value="cancelled">Отменен</option>
-                                                </select>
+                                        <form onSubmit={handleStatusChange}>
+                                            <div>
+                                                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Выберите новый статус
+                                                </label>
+                                                <div className="flex items-center">
+                                                    <select
+                                                        id="status-select"
+                                                        value={selectedStatus}
+                                                        onChange={(e) => setSelectedStatus(e.target.value)}
+                                                        disabled={processing}
+                                                        className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
+                                                    >
+                                                        {Object.entries(availableStatuses || {
+                                                            'pending': 'Ожидает обработки',
+                                                            'processing': 'В обработке',
+                                                            'shipped': 'Отправлен',
+                                                            'delivered': 'Доставлен',
+                                                            'completed': 'Выполнен',
+                                                            'cancelled': 'Отменен'
+                                                        }).map(([value, label]) => (
+                                                            <option key={value} value={value}>{label}</option>
+                                                        ))}
+                                                    </select>
+
+                                                    <button 
+                                                        type="submit"
+                                                        disabled={processing || selectedStatus === order.status}
+                                                        className="inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
+                                                    >
+                                                        {processing ? 'Обновление...' : 'Обновить статус'}
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
+                                            
+                                            <div className="mt-3">
+                                                <label htmlFor="status-note" className="block text-sm font-medium text-gray-700 mb-2">
+                                                    Комментарий к изменению статуса (необязательно)
+                                                </label>
+                                                <textarea
+                                                    id="status-note"
+                                                    value={statusNote}
+                                                    onChange={(e) => setStatusNote(e.target.value)}
+                                                    disabled={processing}
+                                                    rows={2}
+                                                    className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    placeholder="Добавьте комментарий к изменению статуса"
+                                                ></textarea>
+                                            </div>
+                                        </form>
                                         
-                                        <div className="mt-3">
-                                            <label htmlFor="status-note" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Комментарий к изменению статуса (необязательно)
-                                            </label>
-                                            <textarea
-                                                id="status-note"
-                                                value={statusNote}
-                                                onChange={(e) => setStatusNote(e.target.value)}
-                                                disabled={processing}
-                                                rows={2}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                                placeholder="Добавьте комментарий к изменению статуса"
-                                            ></textarea>
-                                        </div>
+                                        {/* Сообщение обратной связи */}
+                                        {feedbackMessage && (
+                                            <div className={`mt-3 p-2 rounded-md ${
+                                                messageType === 'success' ? 'bg-green-100 text-green-800' : 
+                                                messageType === 'error' ? 'bg-red-100 text-red-800' : 
+                                                'bg-blue-100 text-blue-800'
+                                            }`}>
+                                                {feedbackMessage}
+                                            </div>
+                                        )}
                                         
-                                        <div className="mt-4 grid grid-cols-3 gap-2">
+                                        <div className="mt-4 grid grid-cols-2 gap-4">
                                             <button 
                                                 type="button" 
-                                                onClick={() => handleStatusChange('processing')}
+                                                onClick={() => handleQuickStatusChange('processing')}
                                                 disabled={processing || order.status === 'processing'}
-                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
+                                                className="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
                                             >
-                                                В обработку
+                                                {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В обработку'}
                                             </button>
                                             <button 
                                                 type="button" 
-                                                onClick={() => handleStatusChange('shipped')}
-                                                disabled={processing || order.status === 'shipped'}
-                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-purple-700 focus:bg-purple-700 disabled:opacity-50 transition"
-                                            >
-                                                Отправить
-                                            </button>
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleStatusChange('completed')}
+                                                onClick={() => handleQuickStatusChange('completed')}
                                                 disabled={processing || order.status === 'completed'}
-                                                className="inline-flex justify-center items-center px-2 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
+                                                className="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
                                             >
-                                                Выполнен
+                                                {processing && selectedStatus === 'completed' ? 'Обновление...' : 'Выполнен'}
                                             </button>
                                         </div>
                                         
-                                        {statusError && (
+                                        {statusError && !feedbackMessage && (
                                             <p className="mt-3 text-sm text-red-600">{statusError}</p>
                                         )}
                                     </div>
@@ -415,103 +555,81 @@ export default function Show({ auth, order }) {
                                     <table className="min-w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Товар
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    №
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Бренд
+                                                </th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Артикул
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Товар
+                                                </th>
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Цена
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Количество
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Кол-во
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Сумма
                                                 </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {order.orderItems && order.orderItems.length > 0 ? (
-                                                order.orderItems.map((item) => (
-                                                    <tr key={item.id}>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center">
-                                                                {item.sparePart && item.sparePart.image_url && (
-                                                                    <img 
-                                                                        src={item.sparePart.image_url} 
-                                                                        alt={item.sparePart.name}
-                                                                        className="h-10 w-10 object-cover mr-3"
-                                                                    />
-                                                                )}
-                                                                <div>
-                                                                    <p className="text-sm font-medium text-gray-900">
-                                                                        {item.sparePart ? item.sparePart.name : (item.part_name || `Товар #${item.spare_part_id || item.part_id || 'N/A'}`)}
-                                                                    </p>
-                                                                    {item.sparePart && item.sparePart.brand && (
-                                                                        <p className="text-xs text-gray-500">
-                                                                            {item.sparePart.brand.name}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
+                                                order.orderItems.map((item, index) => (
+                                                    <tr key={`orderItem-${item.id}`}>
+                                                        <td className="px-4 py-2">{index + 1}</td>
+                                                        <td className="px-4 py-2">
+                                                            {item.sparePart?.brand?.name || item.brand_name || (item.manufacturer || '')}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.sparePart ? item.sparePart.part_number : (item.part_number || '-')}
+                                                        <td className="px-4 py-2">
+                                                            {item.sparePart?.part_number || item.part_number || ''}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.price} руб.
+                                                        <td className="px-4 py-2">
+                                                            {item.sparePart?.name || item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.quantity} шт.
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                            {(item.price * item.quantity).toFixed(2)} руб.
-                                                        </td>
+                                                        <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
+                                                        <td className="px-4 py-2">{item.quantity}</td>
+                                                        <td className="px-4 py-2">{formatPrice(item.price * item.quantity)} ₽</td>
                                                     </tr>
                                                 ))
                                             ) : order.direct_items && order.direct_items.length > 0 ? (
-                                                order.direct_items.map((item) => (
-                                                    <tr key={item.id}>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="flex items-center">
-                                                                <div>
-                                                                    <p className="text-sm font-medium text-gray-900">
-                                                                        {item.part_name || `Товар #${item.spare_part_id || item.part_id || 'N/A'}`}
-                                                                    </p>
-                                                                </div>
-                                                            </div>
+                                                order.direct_items.map((item, index) => (
+                                                    <tr key={`directItem-${index}`}>
+                                                        <td className="px-4 py-2">{index + 1}</td>
+                                                        <td className="px-4 py-2">
+                                                            {item.brand_name || item.manufacturer || ''}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.part_number || '-'}
+                                                        <td className="px-4 py-2">
+                                                            {item.part_number || ''}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.price} руб.
+                                                        <td className="px-4 py-2">
+                                                            {item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {item.quantity} шт.
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                            {(item.price * item.quantity).toFixed(2)} руб.
-                                                        </td>
+                                                        <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
+                                                        <td className="px-4 py-2">{item.quantity}</td>
+                                                        <td className="px-4 py-2">{formatPrice(item.price * item.quantity)} ₽</td>
                                                     </tr>
                                                 ))
                                             ) : (
                                                 <tr>
-                                                    <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                                                        Товары в заказе не найдены
+                                                    <td colSpan={7} className="px-4 py-2 text-center">
+                                                        Товары не найдены
                                                     </td>
                                                 </tr>
                                             )}
                                         </tbody>
                                         <tfoot className="bg-gray-50">
                                             <tr>
-                                                <td colSpan="4" className="px-6 py-4 text-right text-sm font-medium">
+                                                <td colSpan="6" className="px-6 py-4 text-right text-sm font-medium">
                                                     Итого:
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                    {order.total || 0} руб.
+                                                    {formatPrice(order.total || 0)} руб.
                                                 </td>
                                             </tr>
                                         </tfoot>
