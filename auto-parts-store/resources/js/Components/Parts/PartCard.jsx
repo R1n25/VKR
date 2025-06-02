@@ -36,17 +36,27 @@ export default function PartCard({ part }) {
             </Link>
 
             <div className="p-4">
-                <Link href={route('parts.show', part.id)}>
-                    <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-300 mb-1">
-                        {part.part_number}
-                    </h3>
-                    <p className="text-sm text-gray-700">
-                        {part.manufacturer}
-                    </p>
-                </Link>
+                <div className="flex justify-between items-start mb-2">
+                    <Link href={route('parts.show', part.id)}>
+                        <h3 className="text-lg font-semibold text-gray-900 hover:text-blue-600 transition-colors duration-300">
+                            {part.name}
+                        </h3>
+                    </Link>
+                </div>
                 
-                <p className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {part.name}
+                <div className="mb-2">
+                    <span className="text-xs text-gray-500 mr-1">Артикул:</span>
+                    <Link 
+                        href={`/search?q=${part.part_number}`}
+                        className="text-xs font-medium text-blue-600 hover:underline hover:text-blue-800"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {part.part_number}
+                    </Link>
+                </div>
+                
+                <p className="text-sm text-gray-600 mb-2">
+                    {part.manufacturer}
                 </p>
                 
                 <div className="flex justify-between items-center mt-4">

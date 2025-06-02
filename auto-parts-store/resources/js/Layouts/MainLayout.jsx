@@ -4,21 +4,38 @@ import ApplicationLogo from '@/Components/ApplicationLogo';
 import CartIcon from '@/Components/CartIcon';
 import SearchIcon from '@/Components/SearchIcon';
 import CircleDotIcon from '@/Components/CircleDotIcon';
+import { useState, useRef, useEffect } from 'react';
 
 const MainLayout = ({ auth, children }) => {
     const { url } = usePage();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Закрывать выпадающее меню при клике вне его
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownRef]);
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen flex flex-col bg-gray-100">
             {/* Верхняя навигация */}
             <nav className="bg-white border-b border-gray-100 shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             {/* Логотип */}
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto fill-current text-gray-800" />
+                                    <ApplicationLogo className="block h-16 w-auto sm:h-16 xs:h-12" variant="default" />
                                 </Link>
                             </div>
 
@@ -95,15 +112,49 @@ const MainLayout = ({ auth, children }) => {
 
                             {/* Пользовательское меню */}
                             {auth?.user ? (
-                                <div className="ml-3 relative">
+                                <div className="ml-3 relative" ref={dropdownRef}>
                                     <div className="flex items-center">
-                                        <Link
-                                            href={route('dashboard')}
+                                        <button
+                                            onClick={() => setDropdownOpen(!dropdownOpen)}
                                             className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                         >
                                             {auth.user.name}
-                                        </Link>
+                                            <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
                                     </div>
+                                    
+                                    {dropdownOpen && (
+                                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                                            <Link
+                                                href={route('profile.edit')}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            >
+                                                Личный кабинет
+                                            </Link>
+                                            <Link
+                                                href={route('orders.index')}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            >
+                                                Мои заказы
+                                            </Link>
+                                            <Link
+                                                href={route('finances')}
+                                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            >
+                                                Финансы
+                                            </Link>
+                                            <Link
+                                                href={route('logout')}
+                                                method="post"
+                                                as="button"
+                                                className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                            >
+                                                Выход
+                                            </Link>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="flex items-center space-x-2">
@@ -127,13 +178,15 @@ const MainLayout = ({ auth, children }) => {
             </nav>
 
             {/* Основной контент */}
-            <main className="py-4">
-                {children}
+            <main className="py-4 flex-grow">
+                <div className="min-content-width">
+                    {children}
+                </div>
             </main>
 
             {/* Футер */}
-            <footer className="bg-white border-t border-gray-200 py-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <footer className="bg-white border-t border-gray-200 py-8 mt-auto">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <div>
                             <h3 className="text-lg font-semibold mb-4">О компании</h3>

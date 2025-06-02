@@ -15,9 +15,36 @@ class BrandController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        $brands = CarBrand::all();
+        $query = CarBrand::query();
+        
+        // Фильтрация по популярным брендам
+        if ($request->has('popular') && $request->popular) {
+            $query->where('is_popular', true);
+        }
+        
+        // Поиск по названию или стране
+        if ($request->has('q') && $request->q) {
+            $searchTerm = $request->q;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%")
+                  ->orWhere('country', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Пагинация или получение всех записей
+        if ($request->has('per_page')) {
+            $brands = $query->paginate($request->per_page);
+        } else {
+            $brands = $query->get();
+        }
+        
+        // Обработка данных - удаление кавычек из имен брендов
+        $brands = $brands->map(function($brand) {
+            $brand->name = preg_replace('/^"(.+)"$/', '$1', $brand->name);
+            return $brand;
+        });
         
         return response()->json([
             'status' => 'success',

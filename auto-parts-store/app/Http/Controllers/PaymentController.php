@@ -34,6 +34,9 @@ class PaymentController extends Controller
                 ->paginate(10);
                 
             $stats = $this->paymentService->getUserPaymentStats();
+            
+            // Обновляем баланс в статистике, чтобы он соответствовал текущему балансу пользователя
+            $stats['balance'] = $user->balance;
         } else {
             // Для администратора показываем все платежи
             $payments = Payment::with(['order', 'paymentMethod', 'user'])
@@ -46,7 +49,8 @@ class PaymentController extends Controller
         return Inertia::render('Finances/Index', [
             'payments' => $payments,
             'stats' => $stats,
-            'isAdmin' => $user->is_admin
+            'isAdmin' => $user->is_admin,
+            'user_balance' => $user->balance
         ]);
     }
     

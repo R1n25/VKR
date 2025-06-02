@@ -50,13 +50,6 @@
                         </select>
                     </div>
                     <div class="col-md-2">
-                        <select name="status" class="form-select">
-                            <option value="">Все статусы</option>
-                            <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Активные</option>
-                            <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Неактивные</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
                         <select name="sort" class="form-select">
                             <option value="id" {{ request('sort') == 'id' ? 'selected' : '' }}>По ID</option>
                             <option value="name" {{ request('sort') == 'name' ? 'selected' : '' }}>По названию</option>
@@ -86,7 +79,6 @@
                             <th>Производитель</th>
                             <th>Цена</th>
                             <th>Кол-во</th>
-                            <th>Статус</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -107,17 +99,6 @@
                                 <td>{{ $sparePart->manufacturer ?? 'Нет производителя' }}</td>
                                 <td>{{ number_format($sparePart->price, 2) }} ₽</td>
                                 <td>{{ $sparePart->stock_quantity }}</td>
-                                <td>
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input toggle-status" type="checkbox" role="switch" 
-                                            id="status-{{ $sparePart->id }}" 
-                                            data-id="{{ $sparePart->id }}" 
-                                            {{ $sparePart->is_active ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="status-{{ $sparePart->id }}">
-                                            <span class="status-text">{{ $sparePart->is_active ? 'Активна' : 'Неактивна' }}</span>
-                                        </label>
-                                    </div>
-                                </td>
                                 <td>
                                     <div class="btn-group" role="group">
                                         <a href="{{ route('admin.spare-parts.show', $sparePart->id) }}" class="btn btn-sm btn-info">
@@ -183,39 +164,6 @@
         filterInputs.forEach(input => {
             input.addEventListener('change', function() {
                 filterForm.submit();
-            });
-        });
-        
-        // Обработка переключения статуса
-        const toggleStatusSwitches = document.querySelectorAll('.toggle-status');
-        
-        toggleStatusSwitches.forEach(toggle => {
-            toggle.addEventListener('change', function() {
-                const sparePartId = this.dataset.id;
-                const statusText = this.parentElement.querySelector('.status-text');
-                
-                fetch(`{{ url('admin/spare-parts') }}/${sparePartId}/toggle-status`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({})
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        statusText.textContent = data.is_active ? 'Активна' : 'Неактивна';
-                    } else {
-                        this.checked = !this.checked;
-                        alert('Произошла ошибка при изменении статуса');
-                    }
-                })
-                .catch(error => {
-                    this.checked = !this.checked;
-                    console.error('Error:', error);
-                    alert('Произошла ошибка при изменении статуса');
-                });
             });
         });
     });

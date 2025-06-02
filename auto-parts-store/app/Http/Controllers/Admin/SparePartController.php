@@ -25,7 +25,7 @@ class SparePartController extends Controller
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('article_number', 'like', "%{$search}%")
+                  ->orWhere('part_number', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
@@ -36,10 +36,6 @@ class SparePartController extends Controller
         
         if ($request->filled('manufacturer')) {
             $query->where('manufacturer', $request->input('manufacturer'));
-        }
-        
-        if ($request->filled('status')) {
-            $query->where('is_active', $request->input('status') === 'active' ? 1 : 0);
         }
         
         // Сортировка
@@ -64,7 +60,10 @@ class SparePartController extends Controller
     {
         $categories = PartCategory::all();
         $brands = CarBrand::all();
-        $carModels = CarModel::orderBy('brand')->orderBy('name')->get();
+        $carModels = CarModel::with('brand')
+                    ->orderBy('brand_id')
+                    ->orderBy('name')
+                    ->get();
         
         return view('admin.spare-parts.create', compact('categories', 'brands', 'carModels'));
     }
@@ -82,7 +81,7 @@ class SparePartController extends Controller
             'stock_quantity' => 'required|integer|min:0',
             'category_id' => 'required|exists:part_categories,id',
             'brand_id' => 'required|exists:car_brands,id',
-            'is_active' => 'boolean',
+            'is_available' => 'boolean',
             'image' => 'nullable|image|max:2048',
             'compatible_car_models' => 'nullable|array',
             'compatible_car_models.*' => 'exists:car_models,id',
@@ -95,7 +94,7 @@ class SparePartController extends Controller
         }
         
         // Установка статуса активности
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_available'] = $request->has('is_available');
         
         // Создание запчасти
         $sparePart = SparePart::create($validated);
@@ -126,7 +125,10 @@ class SparePartController extends Controller
     {
         $categories = PartCategory::all();
         $brands = CarBrand::all();
-        $carModels = CarModel::orderBy('brand')->orderBy('name')->get();
+        $carModels = CarModel::with('brand')
+                    ->orderBy('brand_id')
+                    ->orderBy('name')
+                    ->get();
         
         // Получение ID совместимых моделей
         $compatibleCarIds = $sparePart->compatibleCars()->pluck('car_model_id')->toArray();
@@ -147,7 +149,7 @@ class SparePartController extends Controller
             'stock_quantity' => 'required|integer|min:0',
             'category_id' => 'required|exists:part_categories,id',
             'brand_id' => 'required|exists:car_brands,id',
-            'is_active' => 'boolean',
+            'is_available' => 'boolean',
             'image' => 'nullable|image|max:2048',
             'compatible_car_models' => 'nullable|array',
             'compatible_car_models.*' => 'exists:car_models,id',
@@ -165,7 +167,7 @@ class SparePartController extends Controller
         }
         
         // Установка статуса активности
-        $validated['is_active'] = $request->has('is_active');
+        $validated['is_available'] = $request->has('is_available');
         
         // Обновление запчасти
         $sparePart->update($validated);
@@ -186,43 +188,73 @@ class SparePartController extends Controller
      */
     public function destroy(SparePart $sparePart)
     {
-        // Проверка на наличие связанных заказов
-        if ($sparePart->orderItems()->count() > 0) {
+        try {
+            // Проверка на наличие связанных заказов
+            if ($sparePart->orderItems()->count() > 0) {
+                if (request()->header('X-Inertia')) {
+                    return back()->with('error', 'Невозможно удалить запчасть, так как она связана с заказами');
+                }
+                
+                return redirect()->route('admin.spare-parts.index')
+                    ->with('error', 'Невозможно удалить запчасть, так как она связана с заказами');
+            }
+            
+            // Удаление изображения
+            if ($sparePart->image) {
+                Storage::disk('public')->delete($sparePart->image);
+            }
+            
+            // Удаление связей с моделями автомобилей
+            if (method_exists($sparePart, 'compatibleCarModels')) {
+                $sparePart->compatibleCarModels()->detach();
+            }
+            
+            if (method_exists($sparePart, 'carModels')) {
+                $sparePart->carModels()->detach();
+            }
+            
+            // Удаление связей с аналогами
+            if (method_exists($sparePart, 'analogs')) {
+                $sparePart->analogs()->delete();
+            }
+            
+            if (method_exists($sparePart, 'analogFor')) {
+                $sparePart->analogFor()->delete();
+            }
+            
+            // Удаление запчасти
+            $sparePart->delete();
+            
+            if (request()->header('X-Inertia')) {
+                return back()->with('success', 'Запчасть успешно удалена');
+            }
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Запчасть успешно удалена'
+                ]);
+            }
+            
             return redirect()->route('admin.spare-parts.index')
-                ->with('error', 'Невозможно удалить запчасть, так как она связана с заказами');
+                ->with('success', 'Запчасть успешно удалена');
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при удалении запчасти: ' . $e->getMessage());
+            
+            if (request()->header('X-Inertia')) {
+                return back()->with('error', 'Ошибка при удалении запчасти: ' . $e->getMessage());
+            }
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ошибка при удалении запчасти: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->route('admin.spare-parts.index')
+                ->with('error', 'Ошибка при удалении запчасти: ' . $e->getMessage());
         }
-        
-        // Удаление изображения
-        if ($sparePart->image) {
-            Storage::disk('public')->delete($sparePart->image);
-        }
-        
-        // Удаление связей с моделями автомобилей
-        $sparePart->compatibleCars()->detach();
-        
-        // Удаление связей с аналогами
-        $sparePart->analogs()->detach();
-        $sparePart->parentAnalogs()->detach();
-        
-        // Удаление запчасти
-        $sparePart->delete();
-        
-        return redirect()->route('admin.spare-parts.index')
-            ->with('success', 'Запчасть успешно удалена');
-    }
-    
-    /**
-     * Быстрое изменение статуса активности
-     */
-    public function toggleStatus(SparePart $sparePart)
-    {
-        $sparePart->is_active = !$sparePart->is_active;
-        $sparePart->save();
-        
-        return response()->json([
-            'success' => true,
-            'is_active' => $sparePart->is_active,
-        ]);
     }
 
     /**
@@ -237,7 +269,7 @@ class SparePartController extends Controller
             $search = $request->input('search');
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('article_number', 'like', "%{$search}%")
+                  ->orWhere('part_number', 'like', "%{$search}%")
                   ->orWhere('description', 'like', "%{$search}%");
             });
         }
@@ -264,5 +296,288 @@ class SparePartController extends Controller
             'categories' => $categories,
             'filters' => $request->only(['search', 'category_id', 'manufacturer', 'sort', 'direction']),
         ]);
+    }
+
+    /**
+     * Отображение страницы управления аналогами запчасти
+     * 
+     * @param int $id ID запчасти
+     * @return \Inertia\Response
+     */
+    public function manageAnalogs($id)
+    {
+        $sparePart = SparePart::with(['analogs.analogSparePart'])->findOrFail($id);
+        
+        // Получаем ID уже добавленных аналогов
+        $existingAnalogIds = $sparePart->analogs->pluck('analog_spare_part_id')->toArray();
+        
+        // Также добавляем ID самой запчасти в исключения
+        $excludeIds = array_merge($existingAnalogIds, [$id]);
+        
+        // Получаем список возможных аналогов (той же категории, не включая уже добавленные)
+        $potentialAnalogs = SparePart::where('category_id', $sparePart->category_id)
+            ->whereNotIn('id', $excludeIds)
+            ->where('is_available', true)
+            ->orderBy('name')
+            ->get();
+        
+        return inertia('Admin/SpareParts/ManageAnalogs', [
+            'sparePart' => $sparePart,
+            'existingAnalogs' => $sparePart->analogs->map(function ($analog) {
+                return [
+                    'id' => $analog->id,
+                    'analog_id' => $analog->analog_spare_part_id,
+                    'name' => $analog->analogSparePart->name,
+                    'part_number' => $analog->analogSparePart->part_number,
+                    'manufacturer' => $analog->analogSparePart->manufacturer,
+                    'is_direct' => $analog->is_direct,
+                    'notes' => $analog->notes
+                ];
+            }),
+            'potentialAnalogs' => $potentialAnalogs->map(function ($part) {
+                return [
+                    'id' => $part->id,
+                    'name' => $part->name,
+                    'part_number' => $part->part_number,
+                    'manufacturer' => $part->manufacturer
+                ];
+            })
+        ]);
+    }
+    
+    /**
+     * Добавление аналога к запчасти
+     * 
+     * @param \Illuminate\Http\Request $request
+     * @param int $id ID запчасти
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function addAnalog(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'analog_id' => 'required|exists:spare_parts,id',
+            'is_direct' => 'boolean',
+            'notes' => 'nullable|string|max:255'
+        ]);
+        
+        $sparePart = SparePart::findOrFail($id);
+        
+        // Проверяем, что аналог еще не добавлен
+        $exists = \App\Models\SparePartAnalog::where('spare_part_id', $id)
+            ->where('analog_spare_part_id', $validated['analog_id'])
+            ->exists();
+            
+        if ($exists) {
+            return redirect()->back()->with('error', 'Этот аналог уже добавлен');
+        }
+        
+        // Добавляем аналог
+        $analog = new \App\Models\SparePartAnalog();
+        $analog->spare_part_id = $id;
+        $analog->analog_spare_part_id = $validated['analog_id'];
+        $analog->is_direct = $validated['is_direct'] ?? true;
+        $analog->notes = $validated['notes'] ?? null;
+        $analog->save();
+        
+        // Если это прямой аналог, добавляем обратную связь
+        if ($analog->is_direct) {
+            \App\Models\SparePartAnalog::updateOrCreate(
+                [
+                    'spare_part_id' => $validated['analog_id'],
+                    'analog_spare_part_id' => $id,
+                ],
+                [
+                    'is_direct' => true,
+                    'notes' => $validated['notes'] ?? null,
+                ]
+            );
+        }
+        
+        return redirect()->back()->with('success', 'Аналог успешно добавлен');
+    }
+    
+    /**
+     * Удаление аналога запчасти
+     * 
+     * @param int $id ID запчасти
+     * @param int $analogId ID записи аналога
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function removeAnalog($id, $analogId)
+    {
+        $analog = \App\Models\SparePartAnalog::where('spare_part_id', $id)
+            ->where('id', $analogId)
+            ->firstOrFail();
+            
+        // Получаем данные перед удалением
+        $analogSparePartId = $analog->analog_spare_part_id;
+        $isDirect = $analog->is_direct;
+        
+        // Удаляем аналог
+        $analog->delete();
+        
+        // Если это был прямой аналог, удаляем и обратную связь
+        if ($isDirect) {
+            \App\Models\SparePartAnalog::where('spare_part_id', $analogSparePartId)
+                ->where('analog_spare_part_id', $id)
+                ->delete();
+        }
+        
+        return redirect()->back()->with('success', 'Аналог успешно удален');
+    }
+
+    /**
+     * Отображение формы создания запчасти через Inertia.js
+     */
+    public function createInertia()
+    {
+        $categories = PartCategory::all();
+        
+        // Получаем уникальные производители запчастей вместо брендов автомобилей
+        $manufacturers = SparePart::distinct()->pluck('manufacturer')->filter()->values();
+        
+        $carModels = CarModel::with('brand')
+                    ->orderBy('brand_id')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(function($model) {
+                        // Убираем кавычки из имени бренда
+                        if ($model->brand && $model->brand->name) {
+                            $model->brand->name = preg_replace('/^"(.+)"$/', '$1', $model->brand->name);
+                        }
+                        return $model;
+                    });
+        
+        return inertia('Admin/SpareParts/Create', [
+            'categories' => $categories,
+            'manufacturers' => $manufacturers,
+            'carModels' => $carModels
+        ]);
+    }
+
+    /**
+     * Сохранение новой запчасти через Inertia.js
+     */
+    public function storeInertia(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'part_number' => 'required|string|max:100|unique:spare_parts',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'category_id' => 'required|exists:part_categories,id',
+            'manufacturer' => 'required|string|max:255',
+            'is_available' => 'boolean',
+            'image' => 'nullable|image|max:2048',
+            'compatible_car_models' => 'nullable|array',
+            'compatible_car_models.*' => 'exists:car_models,id',
+        ]);
+        
+        // Обработка изображения
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('spare_parts', 'public');
+            $validated['image'] = $imagePath;
+        }
+        
+        // Создание запчасти
+        $sparePart = SparePart::create($validated);
+        
+        // Добавление совместимых моделей автомобилей
+        if ($request->has('compatible_car_models')) {
+            $sparePart->compatibleCars()->attach($request->input('compatible_car_models'));
+        }
+        
+        return redirect()->route('admin.spare-parts.inertia')
+            ->with('success', 'Запчасть успешно добавлена');
+    }
+
+    /**
+     * Отображение детальной информации о запчасти через Inertia.js
+     */
+    public function showInertia(SparePart $sparePart)
+    {
+        $sparePart->load(['category', 'carModels', 'analogs.analogSparePart']);
+        
+        return inertia('Admin/SpareParts/Show', [
+            'sparePart' => $sparePart
+        ]);
+    }
+
+    /**
+     * Отображение формы редактирования запчасти через Inertia.js
+     */
+    public function editInertia(SparePart $sparePart)
+    {
+        $categories = PartCategory::all();
+        
+        // Получаем уникальные производители запчастей
+        $manufacturers = SparePart::distinct()->pluck('manufacturer')->filter()->values();
+        
+        $carModels = CarModel::with('brand')
+                    ->orderBy('brand_id')
+                    ->orderBy('name')
+                    ->get()
+                    ->map(function($model) {
+                        // Убираем кавычки из имени бренда
+                        if ($model->brand && $model->brand->name) {
+                            $model->brand->name = preg_replace('/^"(.+)"$/', '$1', $model->brand->name);
+                        }
+                        return $model;
+                    });
+        
+        // Получение ID совместимых моделей
+        $compatibleCarIds = $sparePart->carModels()->pluck('car_models.id')->toArray();
+        
+        return inertia('Admin/SpareParts/Edit', [
+            'sparePart' => $sparePart,
+            'categories' => $categories,
+            'manufacturers' => $manufacturers,
+            'carModels' => $carModels,
+            'compatibleCarIds' => $compatibleCarIds
+        ]);
+    }
+
+    /**
+     * Обновление запчасти через Inertia.js
+     */
+    public function updateInertia(Request $request, SparePart $sparePart)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'part_number' => 'required|string|max:100|unique:spare_parts,part_number,' . $sparePart->id,
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'category_id' => 'required|exists:part_categories,id',
+            'manufacturer' => 'required|string|max:255',
+            'image' => 'nullable|image|max:2048',
+            'compatible_car_models' => 'nullable|array',
+            'compatible_car_models.*' => 'exists:car_models,id',
+        ]);
+        
+        // Обработка изображения
+        if ($request->hasFile('image')) {
+            // Удаление старого изображения
+            if ($sparePart->image_url) {
+                Storage::disk('public')->delete($sparePart->image_url);
+            }
+            
+            $imagePath = $request->file('image')->store('spare_parts', 'public');
+            $validated['image_url'] = $imagePath;
+        }
+        
+        // Обновление запчасти
+        $sparePart->update($validated);
+        
+        // Обновление совместимых моделей автомобилей
+        if ($request->has('compatible_car_models')) {
+            $sparePart->carModels()->sync($request->input('compatible_car_models'));
+        } else {
+            $sparePart->carModels()->detach();
+        }
+        
+        return redirect()->route('admin.spare-parts.show-inertia', $sparePart->id)
+            ->with('success', 'Запчасть успешно обновлена');
     }
 } 

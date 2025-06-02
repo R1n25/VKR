@@ -34,6 +34,12 @@ class CarModelController extends Controller
         
         $models = $query->get();
         
+        // Удаляем кавычки из названий моделей
+        $models = $models->map(function($model) {
+            $model->name = preg_replace('/^"(.+)"$/', '$1', $model->name);
+            return $model;
+        });
+        
         return response()->json([
             'status' => 'success',
             'data' => $models
@@ -59,6 +65,11 @@ class CarModelController extends Controller
                 'status' => 'error',
                 'message' => 'Модель не найдена'
             ], 404);
+        }
+        
+        // Удаляем кавычки из названия модели
+        if ($model->name) {
+            $model->name = preg_replace('/^"(.+)"$/', '$1', $model->name);
         }
         
         return response()->json([

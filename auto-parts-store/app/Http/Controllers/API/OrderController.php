@@ -206,11 +206,12 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         
         $validated = $request->validate([
-            'status' => 'required|string|in:pending,processing,completed,cancelled',
+            'status' => 'required|string|in:pending,processing,ready_for_pickup,ready_for_delivery,shipping,delivered,returned,shipped,completed,cancelled',
         ]);
         
-        // Если заказ отменен, возвращаем запчасти на склад
-        if ($validated['status'] === 'cancelled' && $order->status !== 'cancelled') {
+        // Если заказ отменен или возвращен, возвращаем запчасти на склад
+        if (($validated['status'] === 'returned' || $validated['status'] === 'cancelled') 
+            && $order->status !== 'returned' && $order->status !== 'cancelled') {
             DB::transaction(function () use ($order) {
                 foreach ($order->orderItems as $item) {
                     $part = $item->sparePart;

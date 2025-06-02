@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function FinancesIndex({ auth, payments, stats, isAdmin }) {
+export default function FinancesIndex({ auth, payments, stats, isAdmin, user_balance }) {
     // Функция для форматирования даты
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -33,6 +33,10 @@ export default function FinancesIndex({ auth, payments, stats, isAdmin }) {
         return statusClasses[status] || 'bg-gray-100 text-gray-800';
     };
 
+    // Используем актуальный баланс пользователя
+    const balance = user_balance !== undefined ? user_balance : (isAdmin ? stats.net_income : stats.balance);
+    const balanceClass = balance < 0 ? 'text-red-700' : 'text-blue-700';
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -41,7 +45,7 @@ export default function FinancesIndex({ auth, payments, stats, isAdmin }) {
             <Head title="Финансы" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto sm:px-6 lg:px-8">
                     {/* Статистика финансов */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
                         <div className="p-6">
@@ -65,10 +69,10 @@ export default function FinancesIndex({ auth, payments, stats, isAdmin }) {
                                     <p className="text-2xl font-bold text-yellow-700">{stats.pending_payments} руб.</p>
                                 </div>
                                 
-                                <div className="bg-blue-50 p-4 rounded-lg">
+                                <div className={`bg-${balance < 0 ? 'red' : 'blue'}-50 p-4 rounded-lg`}>
                                     <p className="text-sm text-gray-500">Баланс</p>
-                                    <p className="text-2xl font-bold text-blue-700">
-                                        {isAdmin ? stats.net_income : stats.balance} руб.
+                                    <p className={`text-2xl font-bold ${balanceClass}`}>
+                                        {balance} руб.
                                     </p>
                                 </div>
                             </div>

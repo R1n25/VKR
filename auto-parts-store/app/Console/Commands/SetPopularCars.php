@@ -114,21 +114,32 @@ class SetPopularCars extends Command
         
         // Устанавливаем популярные модели
         foreach ($this->popularModels as $brandName => $models) {
-            // Получаем ID бренда
-            $brand = CarBrand::where('name', $brandName)->first();
+            // Получаем ID бренда (учитываем возможные кавычки в названии)
+            $brand = CarBrand::where(function($query) use ($brandName) {
+                $query->where('name', $brandName)
+                      ->orWhere('name', '"'.$brandName.'"');
+            })->first();
             
             if ($brand) {
                 foreach ($models as $modelName) {
-                    $updated = DB::table('car_models')
+                    // Ищем модели, которые могут иметь кавычки в названии
+                    $modelsWithQuotes = DB::table('car_models')
                         ->where('brand_id', $brand->id)
-                        ->where('name', $modelName)
+                        ->where(function($query) use ($modelName) {
+                            $query->where('name', $modelName)
+                                  ->orWhere('name', '"'.$modelName.'"');
+                        })
                         ->update(['is_popular' => true]);
                     
-                    if ($updated) {
-                        $counter++;
-                        $this->line("- Модель {$brandName} {$modelName} установлена как популярная");
+                    if ($modelsWithQuotes) {
+                        $counter += $modelsWithQuotes;
+                        $this->line("- Модель {$brandName} {$modelName} установлена как популярная ({$modelsWithQuotes} шт.)");
+                    } else {
+                        $this->warn("- Модель {$brandName} {$modelName} не найдена");
                     }
                 }
+            } else {
+                $this->warn("- Бренд {$brandName} не найден");
             }
         }
         

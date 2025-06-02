@@ -91,8 +91,42 @@ class PaymentService
             // Устанавливаем дату платежа или возврата, в зависимости от статуса
             if ($status === 'completed' && !$payment->payment_date) {
                 $payment->payment_date = $data['payment_date'] ?? now();
+                
+                // Если это пополнение баланса (не связано с заказом), добавляем средства на баланс
+                if (!$payment->order_id && $payment->user_id) {
+                    $userBalanceService = app(UserBalanceService::class);
+                    $user = $payment->user;
+                    $userBalanceService->addToBalance(
+                        $user, 
+                        $payment->amount, 
+                        "Пополнение баланса (платеж #{$payment->id})",
+                        ['payment_id' => $payment->id]
+                    );
+                }
             } elseif ($status === 'refunded' && !$payment->refund_date) {
                 $payment->refund_date = $data['refund_date'] ?? now();
+                
+                // Если это возврат средств за пополнение баланса, списываем с баланса
+                if (!$payment->order_id && $payment->user_id && $oldStatus === 'completed') {
+                    $userBalanceService = app(UserBalanceService::class);
+                    $user = $payment->user;
+                    
+                    try {
+                        $userBalanceService->subtractFromBalance(
+                            $user, 
+                            $payment->amount, 
+                            "Возврат средств (платеж #{$payment->id})",
+                            ['payment_id' => $payment->id]
+                        );
+                    } catch (\Exception $e) {
+                        // Если на балансе недостаточно средств, логируем ошибку, но продолжаем
+                        \Log::warning("Невозможно списать средства с баланса при возврате платежа #{$payment->id}: " . $e->getMessage(), [
+                            'payment_id' => $payment->id,
+                            'user_id' => $user->id,
+                            'amount' => $payment->amount,
+                        ]);
+                    }
+                }
             }
             
             // Добавляем примечание, если оно предоставлено
@@ -115,8 +149,8 @@ class PaymentService
                 
                 // Если платеж был возвращен, обновляем статус заказа
                 if ($status === 'refunded' && $oldStatus === 'completed') {
-                    if ($order->status !== 'cancelled') {
-                        $order->updateStatus('cancelled');
+                    if ($order->status !== 'returned') {
+                        $order->updateStatus('returned');
                     }
                 }
             }

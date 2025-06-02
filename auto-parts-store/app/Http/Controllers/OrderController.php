@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Services\UserBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -23,7 +24,7 @@ class OrderController extends Controller
         }
         
         // Показываем только заказы текущего пользователя
-        $orders = Order::with(['orderItems.sparePart', 'payments'])
+        $orders = Order::with(['orderItems.sparePart', 'payments', 'user'])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -84,7 +85,7 @@ class OrderController extends Controller
         $order = Order::findOrFail($id);
         
         $validated = $request->validate([
-            'status' => 'required|in:pending,processing,completed,cancelled',
+            'status' => 'required|in:pending,processing,ready_for_pickup,ready_for_delivery,shipping,delivered,returned,shipped,completed,cancelled',
             'note' => 'nullable|string',
         ]);
         
@@ -95,5 +96,33 @@ class OrderController extends Controller
         }
         
         return redirect()->back()->with('success', 'Статус заказа успешно обновлен.');
+    }
+
+    /**
+     * Оплата заказа с баланса пользователя
+     */
+    public function payFromBalance(Request $request, $id)
+    {
+        $user = Auth::user();
+        
+        // Находим заказ и проверяем права доступа
+        $order = Order::where('user_id', $user->id)->findOrFail($id);
+        
+        // Получаем сумму к оплате
+        $amount = $request->input('amount');
+        if (!$amount) {
+            $amount = $order->getRemainingAmount();
+        }
+        
+        try {
+            $userBalanceService = app(UserBalanceService::class);
+            $payment = $userBalanceService->payOrderFromBalance($order, $amount);
+            
+            return redirect()->route('orders.show', $order->id)
+                ->with('success', "Заказ успешно оплачен с баланса на сумму {$amount} руб.");
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Ошибка при оплате заказа: ' . $e->getMessage());
+        }
     }
 } 

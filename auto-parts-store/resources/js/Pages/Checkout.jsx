@@ -4,24 +4,19 @@ import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Checkout({ auth }) {
+export default function Checkout({ auth, balance }) {
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+    const [orderResult, setOrderResult] = useState(null);
     
     const [formData, setFormData] = useState({
         customer_name: auth.user ? `${auth.user.name}` : '',
         email: auth.user ? auth.user.email : '',
         phone: '',
         address: '',
-        shipping_name: auth.user ? `${auth.user.name}` : '',
-        shipping_phone: '',
-        shipping_address: '',
-        shipping_city: '',
-        shipping_zip: '',
-        payment_method: 'cash',
         notes: ''
     });
 
@@ -63,48 +58,27 @@ export default function Checkout({ auth }) {
         setError('');
         
         try {
-            // Преобразуем корзину в формат для отправки на сервер
-            const items = cart.map(item => ({
-                spare_part_id: item.id,
-                quantity: item.quantity
-            }));
-            
-            // Копируем данные из адреса в shipping, если они не заданы
-            const shippingData = {
-                shipping_name: formData.shipping_name || formData.customer_name,
-                shipping_phone: formData.shipping_phone || formData.phone,
-                shipping_address: formData.shipping_address || formData.address,
-                shipping_city: formData.shipping_city || '',
-                shipping_zip: formData.shipping_zip || ''
-            };
-            
-            // Если пользователь авторизован, добавляем его ID
-            const orderData = {
-                ...formData,
-                ...shippingData,
-                items,
-                // Гарантируем, что customer_name не будет пустым
-                customer_name: formData.customer_name.trim() || 'Гость'
-            };
-            
-            if (auth.user) {
-                orderData.user_id = auth.user.id;
-            }
-            
-            // Отладочная информация
-            console.log("Отправляемые данные заказа:", orderData);
-            
             // Отправляем запрос на создание заказа
-            const response = await axios.post('/api/orders', orderData);
-            
-            // Отладочная информация
-            console.log("Ответ от сервера:", response.data);
+            const response = await axios.post(route('checkout.store'), {
+                cart_items: cart,
+                customer_name: formData.customer_name,
+                email: formData.email,
+                phone: formData.phone,
+                address: formData.address,
+                notes: formData.notes
+            });
             
             // Очищаем корзину
             localStorage.removeItem('cart');
             
             // Устанавливаем флаг успешного создания заказа
             setSuccess(true);
+            setOrderResult(response.data);
+            
+            // Обновляем баланс в локальном хранилище, если пользователь авторизован
+            if (auth.user && response.data.new_balance !== undefined) {
+                localStorage.setItem('user_balance', response.data.new_balance);
+            }
             
         } catch (err) {
             console.error('Ошибка при оформлении заказа:', err);
@@ -139,15 +113,32 @@ export default function Checkout({ auth }) {
                             <div className="text-center py-10">
                                 <div className="bg-green-100 text-green-700 p-4 rounded-md mb-6">
                                     <h3 className="text-xl font-semibold mb-2">Заказ успешно оформлен!</h3>
-                                    <p>Мы свяжемся с вами в ближайшее время для подтверждения заказа.</p>
+                                    <p>Номер заказа: {orderResult?.order_number || 'N/A'}</p>
+                                    <p>Сумма заказа: {orderResult?.total || totalAmount} руб.</p>
+                                    {auth.user && (
+                                        <p className="mt-2">
+                                            Ваш текущий баланс: <span className={orderResult?.new_balance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                                                {orderResult?.new_balance || balance} руб.
+                                            </span>
+                                        </p>
+                                    )}
                                 </div>
                                 
-                                <Link
-                                    href="/"
-                                    className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    Вернуться в магазин
-                                </Link>
+                                <div className="flex justify-center space-x-4">
+                                    <Link
+                                        href={route('orders.show', orderResult?.order_id)}
+                                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    >
+                                        Просмотреть заказ
+                                    </Link>
+                                    
+                                    <Link
+                                        href="/"
+                                        className="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-800 uppercase tracking-widest hover:bg-gray-300 focus:bg-gray-300 active:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                    >
+                                        Вернуться в магазин
+                                    </Link>
+                                </div>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -248,25 +239,63 @@ export default function Checkout({ auth }) {
                                 <div className="bg-gray-50 p-6 rounded-lg">
                                     <h3 className="text-lg font-semibold mb-4">Ваш заказ</h3>
                                     
-                                    <div className="space-y-4 mb-6">
-                                        {cart.map(item => (
-                                            <div key={item.id} className="flex justify-between">
-                                                <div>
-                                                    <p className="font-medium">{item.name}</p>
-                                                    <p className="text-gray-600 text-sm">{item.quantity} шт. × {item.price} руб.</p>
-                                                </div>
-                                                <div className="font-semibold">
-                                                    {(item.price * item.quantity).toFixed(2)} руб.
+                                    <div className="space-y-4">
+                                        {cart.map((item) => (
+                                            <div key={`${item.id}-${item.name}`} className="flex items-start">
+                                                {item.image && (
+                                                    <img 
+                                                        src={item.image} 
+                                                        alt={item.name} 
+                                                        className="w-16 h-16 object-cover rounded mr-3"
+                                                    />
+                                                )}
+                                                <div className="flex-1">
+                                                    <h4 className="text-sm font-medium">{item.name}</h4>
+                                                    <p className="text-xs text-gray-500">{item.article}</p>
+                                                    <div className="flex justify-between mt-1">
+                                                        <p className="text-sm text-gray-600">{item.quantity} шт.</p>
+                                                        <p className="text-sm font-medium">{(item.price * item.quantity).toFixed(2)} руб.</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))}
                                     </div>
                                     
-                                    <div className="border-t border-gray-200 pt-4 mt-4">
-                                        <div className="flex justify-between items-center text-lg font-bold">
-                                            <span>Итого:</span>
-                                            <span className="text-indigo-600">{totalAmount.toFixed(2)} руб.</span>
+                                    <div className="border-t border-gray-200 mt-4 pt-4">
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm text-gray-600">Товары:</span>
+                                            <span className="text-sm font-medium">{totalAmount.toFixed(2)} руб.</span>
                                         </div>
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm text-gray-600">Доставка:</span>
+                                            <span className="text-sm font-medium">0.00 руб.</span>
+                                        </div>
+                                        <div className="flex justify-between font-bold mt-2 pt-2 border-t border-gray-200">
+                                            <span>Итого:</span>
+                                            <span>{totalAmount.toFixed(2)} руб.</span>
+                                        </div>
+                                        
+                                        {auth.user && (
+                                            <div className="mt-4 pt-2 border-t border-gray-200">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-sm">Ваш баланс:</span>
+                                                    <span className={balance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                                                        {balance} руб.
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-2">
+                                                    <span className="text-sm">После оплаты:</span>
+                                                    <span className={(balance - totalAmount) < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                                                        {(balance - totalAmount).toFixed(2)} руб.
+                                                    </span>
+                                                </div>
+                                                {(balance - totalAmount) < 0 && (
+                                                    <p className="text-xs text-gray-600 mt-2">
+                                                        Сумма заказа превышает ваш баланс. Заказ будет оформлен с отрицательным балансом (в долг).
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -276,23 +305,23 @@ export default function Checkout({ auth }) {
             </div>
         </div>
     );
-    
-    // Заголовок для страницы
-    const header = <h2 className="font-semibold text-xl text-gray-800 leading-tight">Оформление заказа</h2>;
-    
-    // Используем соответствующий layout в зависимости от того, авторизован пользователь или нет
-    return auth.user ? (
-        <AuthenticatedLayout user={auth.user} header={header}>
+
+    return (
+        <>
             <Head title="Оформление заказа" />
-            {content}
-        </AuthenticatedLayout>
-    ) : (
-        <GuestLayout>
-            <Head title="Оформление заказа" />
-            <div className="mb-6">
-                {header}
-            </div>
-            {content}
-        </GuestLayout>
+            
+            {auth.user ? (
+                <AuthenticatedLayout
+                    user={auth.user}
+                    header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Оформление заказа</h2>}
+                >
+                    {content}
+                </AuthenticatedLayout>
+            ) : (
+                <GuestLayout>
+                    {content}
+                </GuestLayout>
+            )}
+        </>
     );
 } 

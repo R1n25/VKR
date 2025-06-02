@@ -180,7 +180,13 @@ class Order extends Model
         }
         
         // Проверяем валидность статуса
-        $validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'];
+        $validStatuses = [
+            // Новые статусы
+            'pending', 'processing', 'ready_for_pickup', 'ready_for_delivery', 'shipping', 'delivered', 'returned',
+            // Старые статусы для совместимости
+            'shipped', 'completed', 'cancelled'
+        ];
+        
         if (!in_array($newStatus, $validStatuses)) {
             throw new \InvalidArgumentException("Недопустимый статус заказа: {$newStatus}");
         }

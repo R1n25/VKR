@@ -7,6 +7,7 @@ use Inertia\Inertia;
 use App\Services\SparePartService;
 use App\Services\BrandService;
 use App\Services\CategoryService;
+use App\Models\SparePart;
 
 class PartsController extends Controller
 {
@@ -60,33 +61,47 @@ class PartsController extends Controller
     }
 
     /**
-     * Поиск запчастей
+     * Поиск запчастей по категории, производителю или названию
      */
     public function search(Request $request)
     {
-        // Получаем поисковый запрос из параметра q
-        $query = $request->input('q');
+        // Проверяем оба параметра - q (с фронтенда) и query (для обратной совместимости)
+        $searchQueryParam = null;
+        if ($request->filled('q')) {
+            $searchQueryParam = $request->input('q');
+        } elseif ($request->filled('query')) {
+            $searchQueryParam = $request->input('query');
+        }
         
         // Проверяем, является ли пользователь администратором
         $isAdmin = auth()->check() && auth()->user()->is_admin;
         
-        // Поиск запчастей с учетом роли пользователя
-        $parts = $this->sparePartService->searchParts($query, $isAdmin);
+        // Используем сервис для поиска запчастей
+        $spareParts = $this->sparePartService->searchSpareParts($searchQueryParam, $isAdmin);
         
-        // Поиск брендов
-        $brands = $this->brandService->searchBrands($query);
+        // Логируем результаты поиска для отладки
+        \Log::info("Поиск: '{$searchQueryParam}', Найдено: " . $spareParts->count());
         
-        // Поиск категорий
-        $categories = $this->categoryService->searchCategories($query);
+        // Получение категорий для фильтрации
+        $categories = \App\Models\PartCategory::orderBy('name')->get();
+        
+        // Получение производителей для фильтрации
+        $manufacturers = SparePart::select('manufacturer')
+            ->distinct()
+            ->where('is_available', true)
+            ->whereNotNull('manufacturer')
+            ->orderBy('manufacturer')
+            ->pluck('manufacturer');
         
         return Inertia::render('Search', [
             'auth' => [
                 'user' => auth()->user(),
             ],
-            'searchQuery' => $query,
-            'spareParts' => $parts,
-            'brands' => $brands,
+            'spareParts' => $spareParts,
             'categories' => $categories,
+            'manufacturers' => $manufacturers,
+            'filters' => $request->only(['q', 'query', 'category_id', 'manufacturer', 'car_model_id', 'price_min', 'price_max', 'sort_by', 'sort_order']),
+            'searchQuery' => $searchQueryParam,
             'isAdmin' => $isAdmin
         ]);
     }
@@ -146,38 +161,19 @@ class PartsController extends Controller
         }
         
         // Проверяем, является ли пользователь администратором
-        $isAdmin = auth()->check() && auth()->user()->is_admin;
+        $isAdmin = auth()->check() && auth()->user()->role === 'admin';
         
-        // Ищем запчасти с указанным артикулом в нашей основной базе данных
-        $parts = \App\Models\SparePart::where('article_number', 'like', '%' . $articleNumber . '%')
-            ->where(function ($query) use ($isAdmin) {
-                if (!$isAdmin) {
-                    $query->where('is_active', true);
-                }
-            })
-            ->get();
+        // Используем сервис для поиска запчастей по артикулу
+        $results = $this->sparePartService->searchSpareParts($articleNumber, $isAdmin);
         
-        // Ищем аналоги для найденных запчастей
-        $analogs = [];
+        // Разделяем результаты на основные и аналоги
+        $parts = $results->filter(function ($part) {
+            return $part->is_exact_match && !$part->is_analog;
+        })->values();
         
-        foreach ($parts as $part) {
-            // Получаем аналоги из таблицы аналогов
-            $partAnalogs = \App\Models\SparePartAnalog::where('spare_part_id', $part->id)
-                ->with(['analogSparePart' => function ($query) use ($isAdmin) {
-                    if (!$isAdmin) {
-                        $query->where('is_active', true);
-                    }
-                }])
-                ->get()
-                ->pluck('analogSparePart')
-                ->filter()
-                ->toArray();
-            
-            $analogs = array_merge($analogs, $partAnalogs);
-        }
-        
-        // Удаляем дубликаты аналогов
-        $uniqueAnalogs = collect($analogs)->unique('id')->values()->all();
+        $analogs = $results->filter(function ($part) {
+            return $part->is_analog;
+        })->values();
         
         return Inertia::render('Parts/FindByArticle', [
             'auth' => [
@@ -185,7 +181,7 @@ class PartsController extends Controller
             ],
             'articleNumber' => $articleNumber,
             'parts' => $parts,
-            'analogs' => $uniqueAnalogs,
+            'analogs' => $analogs,
             'isAdmin' => $isAdmin
         ]);
     }

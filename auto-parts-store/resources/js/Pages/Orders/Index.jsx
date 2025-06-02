@@ -13,9 +13,12 @@ export default function Orders({ auth, orders }) {
     const getStatusText = (status) => {
         const statusMap = {
             'pending': 'Ожидает обработки',
-            'processing': 'В обработке',
-            'completed': 'Выполнен',
-            'cancelled': 'Отменен'
+            'processing': 'В работе',
+            'ready_for_pickup': 'Готов к выдаче',
+            'ready_for_delivery': 'Готов к доставке',
+            'shipping': 'В доставке',
+            'delivered': 'Выдано',
+            'returned': 'Возвращен'
         };
         
         return statusMap[status] || status;
@@ -26,8 +29,11 @@ export default function Orders({ auth, orders }) {
         const statusClasses = {
             'pending': 'bg-yellow-100 text-yellow-800',
             'processing': 'bg-blue-100 text-blue-800',
-            'completed': 'bg-green-100 text-green-800',
-            'cancelled': 'bg-red-100 text-red-800'
+            'ready_for_pickup': 'bg-green-100 text-green-800',
+            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
+            'shipping': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-green-200 text-green-900',
+            'returned': 'bg-red-100 text-red-800'
         };
         
         return statusClasses[status] || 'bg-gray-100 text-gray-800';
@@ -63,7 +69,7 @@ export default function Orders({ auth, orders }) {
             <Head title="Заказы" />
 
             <div className="py-12">
-                <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             {orders.length === 0 ? (
@@ -87,6 +93,9 @@ export default function Orders({ auth, orders }) {
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
                                                     Дата
                                                 </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[15%]">
+                                                    Клиент
+                                                </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                                                     Сумма
                                                 </th>
@@ -108,10 +117,18 @@ export default function Orders({ auth, orders }) {
                                             {orders.map((order) => (
                                                 <tr key={order.id}>
                                                     <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                        {order.order_number || `#${order.id}`}
+                                                        <Link
+                                                            href={`/orders/${order.id}`}
+                                                            className="text-indigo-600 hover:underline"
+                                                        >
+                                                            {order.order_number || `#${order.id}`}
+                                                        </Link>
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         {formatDate(order.created_at)}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                        {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500">
                                                         {order.total || order.total_amount} руб.
@@ -142,7 +159,7 @@ export default function Orders({ auth, orders }) {
                                                                 href={route('orders.add-payment', order.id)}
                                                                 className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                             >
-                                                                Оплатить
+                                                                Добавить оплату
                                                             </Link>
                                                         )}
                                                     </td>

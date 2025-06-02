@@ -7,6 +7,7 @@ export default function OrderShow({ auth, order }) {
     const [addingToCart, setAddingToCart] = useState(false);
     const [cartSuccess, setCartSuccess] = useState(false);
     const [error, setError] = useState('');
+    const [payingFromBalance, setPayingFromBalance] = useState(false);
     
     const { data, setData, post, processing, reset } = useForm({
         status: order.status,
@@ -23,11 +24,12 @@ export default function OrderShow({ auth, order }) {
     const getStatusText = (status) => {
         const statusMap = {
             'pending': 'Ожидает обработки',
-            'processing': 'В обработке',
-            'shipped': 'Отправлен',
-            'delivered': 'Доставлен',
-            'completed': 'Выполнен',
-            'cancelled': 'Отменен'
+            'processing': 'В работе',
+            'ready_for_pickup': 'Готов к выдаче',
+            'ready_for_delivery': 'Готов к доставке',
+            'shipping': 'В доставке',
+            'delivered': 'Выдано',
+            'returned': 'Возвращен'
         };
         
         return statusMap[status] || status;
@@ -38,10 +40,11 @@ export default function OrderShow({ auth, order }) {
         const statusClasses = {
             'pending': 'bg-yellow-100 text-yellow-800',
             'processing': 'bg-blue-100 text-blue-800',
-            'shipped': 'bg-purple-100 text-purple-800',
-            'delivered': 'bg-blue-200 text-blue-900',
-            'completed': 'bg-green-100 text-green-800',
-            'cancelled': 'bg-red-100 text-red-800'
+            'ready_for_pickup': 'bg-green-100 text-green-800',
+            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
+            'shipping': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-green-200 text-green-900',
+            'returned': 'bg-red-100 text-red-800'
         };
         
         return statusClasses[status] || 'bg-gray-100 text-gray-800';
@@ -100,6 +103,24 @@ export default function OrderShow({ auth, order }) {
         }
     };
 
+    // Функция для оплаты заказа с баланса
+    const payFromBalance = () => {
+        if (payingFromBalance) return;
+        
+        setPayingFromBalance(true);
+        setError('');
+        
+        post(route('orders.pay-from-balance', order.id), {
+            onSuccess: () => {
+                setPayingFromBalance(false);
+            },
+            onError: (errors) => {
+                setError(errors.message || 'Произошла ошибка при оплате с баланса');
+                setPayingFromBalance(false);
+            }
+        });
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -138,38 +159,38 @@ export default function OrderShow({ auth, order }) {
                                         <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
                                             <div
                                                 style={{ 
-                                                    width: order.status === 'cancelled' ? '0%' :
+                                                    width: order.status === 'returned' ? '0%' :
                                                         order.status === 'pending' ? '20%' :
                                                         order.status === 'processing' ? '40%' :
-                                                        order.status === 'shipped' ? '60%' :
-                                                        order.status === 'delivered' ? '80%' :
-                                                        order.status === 'completed' ? '100%' : '0%'
+                                                        order.status === 'ready_for_pickup' ? '60%' :
+                                                        order.status === 'ready_for_delivery' ? '80%' :
+                                                        order.status === 'shipping' ? '100%' : '0%'
                                                 }}
                                                 className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-indigo-500 transition-all duration-500"
                                             ></div>
                                         </div>
                                         <div className="flex justify-between text-xs text-gray-600">
-                                            <div className={`text-center ${order.status === 'pending' || order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                            <div className={`text-center ${order.status === 'pending' || order.status === 'processing' || order.status === 'ready_for_pickup' || order.status === 'ready_for_delivery' || order.status === 'shipping' ? 'font-bold text-indigo-700' : ''}`}>
                                                 Заказ принят
                                             </div>
-                                            <div className={`text-center ${order.status === 'processing' || order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
+                                            <div className={`text-center ${order.status === 'processing' || order.status === 'ready_for_pickup' || order.status === 'ready_for_delivery' || order.status === 'shipping' ? 'font-bold text-indigo-700' : ''}`}>
                                                 В обработке
                                             </div>
-                                            <div className={`text-center ${order.status === 'shipped' || order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
-                                                Отправлен
+                                            <div className={`text-center ${order.status === 'ready_for_pickup' || order.status === 'ready_for_delivery' || order.status === 'shipping' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Готов к выдаче
                                             </div>
-                                            <div className={`text-center ${order.status === 'delivered' || order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
-                                                Доставлен
+                                            <div className={`text-center ${order.status === 'ready_for_delivery' || order.status === 'shipping' ? 'font-bold text-indigo-700' : ''}`}>
+                                                Готов к доставке
                                             </div>
-                                            <div className={`text-center ${order.status === 'completed' ? 'font-bold text-indigo-700' : ''}`}>
-                                                Выполнен
+                                            <div className={`text-center ${order.status === 'shipping' ? 'font-bold text-indigo-700' : ''}`}>
+                                                В доставке
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    {order.status === 'cancelled' && (
+                                    {order.status === 'returned' && (
                                         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                                            <p className="text-red-800 font-medium">Заказ был отменен</p>
+                                            <p className="text-red-800 font-medium">Заказ был возвращен</p>
                                         </div>
                                     )}
                                     
@@ -405,12 +426,49 @@ export default function OrderShow({ auth, order }) {
                                                     <span className="font-medium text-red-600">{order.remaining_amount || order.total_amount || order.total} руб.</span>
                                                 </div>
                                                 
-                                                <Link
-                                                    href={route('orders.add-payment', order.id)}
-                                                    className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 block text-center mt-2"
-                                                >
-                                                    Добавить платеж
-                                                </Link>
+                                                {/* Баланс пользователя */}
+                                                {auth.user && auth.user.balance !== undefined && (
+                                                    <div className="flex justify-between items-center mb-3">
+                                                        <span className="text-gray-600">Ваш баланс:</span>
+                                                        <span className="font-medium text-blue-600">{auth.user.balance} руб.</span>
+                                                    </div>
+                                                )}
+                                                
+                                                {/* Кнопки оплаты */}
+                                                <div className="space-y-2">
+                                                    {/* Кнопка оплаты с баланса */}
+                                                    {auth.user && auth.user.balance !== undefined && 
+                                                     order.payment_status !== 'paid' && 
+                                                     order.remaining_amount > 0 && 
+                                                     auth.user.balance > 0 && (
+                                                        <button
+                                                            onClick={payFromBalance}
+                                                            disabled={payingFromBalance || auth.user.balance < order.remaining_amount}
+                                                            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                                                        >
+                                                            {payingFromBalance ? 'Выполняется...' : 
+                                                             auth.user.balance < order.remaining_amount ? 
+                                                             `Оплатить с баланса ${auth.user.balance} руб.` : 
+                                                             `Оплатить с баланса ${order.remaining_amount} руб.`}
+                                                        </button>
+                                                    )}
+                                                    
+                                                    {/* Кнопка добавления платежа */}
+                                                    {order.payment_status !== 'paid' && (
+                                                        <Link
+                                                            href={route('orders.add-payment', order.id)}
+                                                            className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                                        >
+                                                            Добавить оплату
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                                
+                                                {error && (
+                                                    <div className="mt-3 text-sm text-red-600">
+                                                        {error}
+                                                    </div>
+                                                )}
                                             </div>
                                             
                                             {/* Комментарии */}
@@ -442,12 +500,6 @@ export default function OrderShow({ auth, order }) {
                                                 {cartSuccess && (
                                                     <div className="mt-3 text-sm text-green-600">
                                                         Товары добавлены в корзину
-                                                    </div>
-                                                )}
-                                                
-                                                {error && (
-                                                    <div className="mt-3 text-sm text-red-600">
-                                                        {error}
                                                     </div>
                                                 )}
                                             </div>

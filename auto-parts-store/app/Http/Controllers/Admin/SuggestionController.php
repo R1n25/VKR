@@ -8,6 +8,8 @@ use App\Models\SparePartCompatibility;
 use App\Models\UserSuggestion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class SuggestionController extends Controller
 {
@@ -24,22 +26,33 @@ class SuggestionController extends Controller
                 
                 // Проверяем, нужно ли создать новую запчасть
                 if (!empty($suggestionData['need_create_part']) && $suggestionData['need_create_part']) {
-                    // Создаем новую запчасть из предложенных данных
-                    $newPart = new \App\Models\SparePart();
-                    $newPart->name = $suggestionData['analog_description'];
-                    $newPart->part_number = strtoupper($suggestionData['analog_article']);
-                    $newPart->manufacturer = $suggestionData['analog_brand'];
-                    $newPart->slug = \Illuminate\Support\Str::slug($suggestionData['analog_brand'] . '-' . $suggestionData['analog_article']);
-                    $newPart->description = $suggestionData['analog_description'];
-                    $newPart->price = 0; // Цена будет установлена позже
-                    $newPart->stock_quantity = 0; // Количество будет установлено позже
-                    $newPart->is_available = false; // Запчасть недоступна, пока не будет заполнена информация
-                    $newPart->category_id = $suggestion->sparePart->category_id; // Используем ту же категорию
-                    $newPart->save();
+                    // Проверяем, существует ли уже запчасть с таким артикулом
+                    $partNumber = strtoupper($suggestionData['analog_article']);
+                    $existingPart = \App\Models\SparePart::where('part_number', $partNumber)
+                        ->first();
                     
-                    // Обновляем suggestion с новым ID запчасти
-                    $suggestion->analog_spare_part_id = $newPart->id;
-                    $suggestion->save();
+                    if ($existingPart) {
+                        // Если запчасть уже существует, используем её ID
+                        $suggestion->analog_spare_part_id = $existingPart->id;
+                        $suggestion->save();
+                    } else {
+                        // Создаем новую запчасть из предложенных данных
+                        $newPart = new \App\Models\SparePart();
+                        $newPart->name = $suggestionData['analog_description'];
+                        $newPart->part_number = $partNumber;
+                        $newPart->manufacturer = $suggestionData['analog_brand'];
+                        $newPart->slug = \Illuminate\Support\Str::slug($suggestionData['analog_brand'] . '-' . $partNumber);
+                        $newPart->description = $suggestionData['analog_description'];
+                        $newPart->price = 0; // Цена будет установлена позже
+                        $newPart->stock_quantity = 0; // Количество будет установлено позже
+                        $newPart->is_available = false; // Запчасть недоступна, пока не будет заполнена информация
+                        $newPart->category_id = $suggestion->sparePart->category_id; // Используем ту же категорию
+                        $newPart->save();
+                        
+                        // Обновляем suggestion с новым ID запчасти
+                        $suggestion->analog_spare_part_id = $newPart->id;
+                        $suggestion->save();
+                    }
                 }
                 
                 // Создаем запись об аналоге
@@ -98,12 +111,12 @@ class SuggestionController extends Controller
             
             DB::commit();
             
-            return redirect()->route('admin.suggestions.index')
+            return redirect()->route('admin.suggestions.inertia')
                 ->with('success', 'Предложение успешно одобрено.');
         } catch (\Exception $e) {
             DB::rollBack();
             
-            return redirect()->route('admin.suggestions.index')
+            return redirect()->route('admin.suggestions.inertia')
                 ->with('error', 'Ошибка при одобрении предложения: ' . $e->getMessage());
         }
     }
@@ -118,6 +131,23 @@ class SuggestionController extends Controller
             ->paginate(20);
         
         return view('admin.suggestions.index', compact('suggestions'));
+    }
+
+    /**
+     * Отображение списка предложений пользователей через Inertia
+     */
+    public function indexInertia()
+    {
+        $suggestions = UserSuggestion::with(['user', 'sparePart', 'analogSparePart', 'carModel', 'approvedBy'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Inertia::render('Admin/Suggestions/Index', [
+            'suggestions' => $suggestions,
+            'auth' => [
+                'user' => Auth::user()
+            ]
+        ]);
     }
 
     /**
@@ -139,6 +169,32 @@ class SuggestionController extends Controller
     }
 
     /**
+     * Отображение детальной информации о предложении через Inertia
+     */
+    public function showInertia(UserSuggestion $suggestion)
+    {
+        $suggestion->load(['user', 'sparePart', 'analogSparePart', 'carModel.brand']);
+
+        $analogTypeText = '';
+        if ($suggestion->suggestion_type == 'analog' && isset($suggestion->data['analog_type'])) {
+            $analogTypes = [
+                'direct' => 'Прямой аналог',
+                'indirect' => 'Непрямой аналог',
+                'universal' => 'Универсальный аналог'
+            ];
+            $analogTypeText = $analogTypes[$suggestion->data['analog_type']] ?? 'Неизвестный тип';
+        }
+
+        return Inertia::render('Admin/Suggestions/Show', [
+            'suggestion' => $suggestion,
+            'analogTypeText' => $analogTypeText,
+            'auth' => [
+                'user' => Auth::user()
+            ]
+        ]);
+    }
+
+    /**
      * Отклонение предложения пользователя
      */
     public function reject(Request $request, UserSuggestion $suggestion)
@@ -153,7 +209,7 @@ class SuggestionController extends Controller
         $suggestion->approved_at = now();
         $suggestion->save();
         
-        return redirect()->route('admin.suggestions.index')
+        return redirect()->route('admin.suggestions.inertia')
             ->with('success', 'Предложение отклонено.');
     }
 
@@ -169,10 +225,10 @@ class SuggestionController extends Controller
             // Удаляем предложение
             $suggestion->delete();
             
-            return redirect()->route('admin.suggestions.index')
+            return redirect()->route('admin.suggestions.inertia')
                 ->with('success', "Предложение {$suggestionType} успешно удалено.");
         } catch (\Exception $e) {
-            return redirect()->route('admin.suggestions.index')
+            return redirect()->route('admin.suggestions.inertia')
                 ->with('error', 'Ошибка при удалении предложения: ' . $e->getMessage());
         }
     }

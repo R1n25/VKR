@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CatalogManagerController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Admin\PartCategoryController;
+use App\Http\Controllers\CheckoutController;
 
 /*
 |--------------------------------------------------------------------------
@@ -61,7 +62,18 @@ Route::get('/models/{id}', function ($id) {
 // Маршруты для запчастей
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
 Route::get('/search', [PartsController::class, 'search'])->name('search');
-// Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
+Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
+
+// Тестовый маршрут для отладки поиска
+Route::get('/search-debug', function (Illuminate\Http\Request $request) {
+    $controller = app()->make(App\Http\Controllers\PartsController::class);
+    $result = $controller->search($request);
+    return response()->json([
+        'request' => $request->all(),
+        'response_type' => get_class($result),
+        'data' => $result
+    ]);
+})->name('search.debug');
 
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -98,29 +110,19 @@ Route::get('/cart', function () {
 })->name('cart');
 
 // Маршрут для оформления заказа
-Route::get('/checkout', function () {
-    return Inertia::render('Checkout', [
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->name('checkout');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 
 // Маршрут для обработки формы заказа
-Route::post('/checkout', function (Request $request) {
-    // Простая обработка заказа для локального сервера
-    return response()->json([
-        'success' => true,
-        'message' => 'Заказ успешно создан',
-        'order_id' => rand(1000, 9999)
-    ]);
-})->name('checkout.store');
+Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
 
 // Маршрут для просмотра списка заказов (требуется аутентификация)
 Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth'])->name('orders.index');
 
 // Маршрут для просмотра деталей заказа (требуется аутентификация)
 Route::get('/orders/{id}', [OrderController::class, 'show'])->middleware(['auth'])->name('orders.show');
+
+// Маршрут для оплаты заказа с баланса пользователя
+Route::post('/orders/{id}/pay-from-balance', [OrderController::class, 'payFromBalance'])->name('orders.pay-from-balance');
 
 // Маршруты для информационных страниц
 Route::get('/news', [InfoController::class, 'news'])->name('news');
@@ -158,8 +160,17 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     
     // Управление запчастями
     Route::resource('spare-parts', App\Http\Controllers\Admin\SparePartController::class);
-    Route::post('spare-parts/{sparePart}/toggle-status', [App\Http\Controllers\Admin\SparePartController::class, 'toggleStatus'])->name('spare-parts.toggle-status');
     Route::get('spare-parts-inertia', [App\Http\Controllers\Admin\SparePartController::class, 'indexInertia'])->name('spare-parts.inertia');
+    Route::get('spare-parts-create', [App\Http\Controllers\Admin\SparePartController::class, 'createInertia'])->name('spare-parts.create-inertia');
+    Route::post('spare-parts-store', [App\Http\Controllers\Admin\SparePartController::class, 'storeInertia'])->name('spare-parts.store-inertia');
+    Route::get('spare-parts-show/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'showInertia'])->name('spare-parts.show-inertia');
+    Route::get('spare-parts-edit/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'editInertia'])->name('spare-parts.edit-inertia');
+    Route::put('spare-parts-update/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateInertia'])->name('spare-parts.update-inertia');
+    
+    // Управление аналогами запчастей
+    Route::get('spare-parts/{sparePart}/analogs', [App\Http\Controllers\Admin\SparePartController::class, 'manageAnalogs'])->name('spare-parts.analogs');
+    Route::post('spare-parts/{sparePart}/add-analog', [App\Http\Controllers\Admin\SparePartController::class, 'addAnalog'])->name('spare-parts.add-analog');
+    Route::delete('spare-parts/{sparePart}/analogs/{analogId}', [App\Http\Controllers\Admin\SparePartController::class, 'removeAnalog'])->name('spare-parts.remove-analog');
     
     // Управление VIN-запросами
     Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('vin-requests.index');
@@ -195,6 +206,8 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::put('/payment-methods/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'updatePaymentMethod'])->name('payment-methods.update');
 
     // Управление предложениями пользователей
+    Route::get('/suggestions-inertia', [App\Http\Controllers\Admin\SuggestionController::class, 'indexInertia'])->name('suggestions.inertia');
+    Route::get('/suggestions-show-inertia/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'showInertia'])->name('suggestions.show-inertia')->whereNumber('suggestion');
     Route::get('/suggestions', [App\Http\Controllers\Admin\SuggestionController::class, 'index'])->name('suggestions.index');
     Route::get('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'show'])->name('suggestions.show');
     Route::post('/suggestions/{suggestion}/approve', [App\Http\Controllers\Admin\SuggestionController::class, 'approve'])->name('suggestions.approve');
@@ -211,6 +224,13 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
 
     // Управление категориями запчастей
     Route::resource('part-categories', PartCategoryController::class);
+
+    // Управление финансами пользователей
+    Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('finances.index');
+    Route::get('/finances/users/{user}', [\App\Http\Controllers\Admin\FinanceController::class, 'show'])->name('finances.show');
+    Route::get('/finances/users/{user}/create', [\App\Http\Controllers\Admin\FinanceController::class, 'create'])->name('finances.create');
+    Route::post('/finances/users/{user}', [\App\Http\Controllers\Admin\FinanceController::class, 'store'])->name('finances.store');
+    Route::patch('/finances/users/{user}/balance', [\App\Http\Controllers\Admin\FinanceController::class, 'updateBalance'])->name('finances.update-balance');
 });
 
 require __DIR__.'/auth.php';

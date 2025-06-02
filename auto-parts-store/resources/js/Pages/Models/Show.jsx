@@ -91,11 +91,11 @@ export default function ModelShow({ auth, modelId }) {
             user={auth.user}
             header={
                 <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                    {loading ? 'Загрузка модели...' : model ? `${model.brand.name} ${model.name}` : 'Модель'}
+                    {loading ? 'Загрузка модели...' : model ? `${model.brand.name.replace(/^"(.+)"$/, '$1')} ${model.name}` : 'Модель'}
                 </h2>
             }
         >
-            <Head title={loading ? 'Модель автомобиля' : model ? `${model.brand.name} ${model.name}` : 'Модель'} />
+            <Head title={loading ? 'Модель автомобиля' : model ? `${model.brand.name.replace(/^"(.+)"$/, '$1')} ${model.name}` : 'Модель'} />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -135,7 +135,7 @@ export default function ModelShow({ auth, modelId }) {
                                                     href={`/brands/${model.brand.id}`} 
                                                     className="hover:text-indigo-600"
                                                 >
-                                                    {model.brand.name}
+                                                    {model.brand.name.replace(/^"(.+)"$/, '$1')}
                                                 </Link>
                                             </li>
                                             <li className="flex items-center">
@@ -153,12 +153,12 @@ export default function ModelShow({ auth, modelId }) {
                                             {model.image_url && (
                                                 <img 
                                                     src={model.image_url} 
-                                                    alt={`${model.brand.name} ${model.name}`}
+                                                    alt={`${model.brand.name.replace(/^"(.+)"$/, '$1')} ${model.name}`}
                                                     className="h-auto w-48 rounded-lg mr-6"
                                                 />
                                             )}
                                             <div>
-                                                <h1 className="text-2xl font-bold text-gray-900 mb-2">{model.brand.name} {model.name}</h1>
+                                                <h1 className="text-2xl font-bold text-gray-900 mb-2">{model.brand.name.replace(/^"(.+)"$/, '$1')} {model.name}</h1>
                                                 
                                                 {model.years && (
                                                     <p className="text-gray-600 mb-2">
@@ -213,7 +213,7 @@ export default function ModelShow({ auth, modelId }) {
                                         {/* Список запчастей */}
                                         <div className="md:col-span-3">
                                             <div className="flex justify-between items-center mb-6">
-                                                <h3 className="text-lg font-semibold">Запчасти для {model.brand.name} {model.name}</h3>
+                                                <h3 className="text-lg font-semibold">Запчасти для {model.brand.name.replace(/^"(.+)"$/, '$1')} {model.name}</h3>
                                                 
                                                 <div className="flex items-center">
                                                     <label htmlFor="sort" className="mr-2 text-sm text-gray-600">Сортировка:</label>

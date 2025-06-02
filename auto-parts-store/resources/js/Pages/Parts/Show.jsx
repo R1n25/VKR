@@ -139,7 +139,12 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                                         
                                         <div className="mb-4">
                                             <span className="text-gray-600">Артикул: </span>
-                                            <span className="font-semibold">{part.part_number}</span>
+                                            <Link
+                                                href={`/search?q=${part.part_number}`}
+                                                className="font-semibold text-blue-600 hover:underline hover:text-blue-800"
+                                            >
+                                                {part.part_number}
+                                            </Link>
                                         </div>
                                         
                                         <div className="mb-4">

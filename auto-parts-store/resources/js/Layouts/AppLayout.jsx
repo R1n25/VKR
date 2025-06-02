@@ -1,21 +1,38 @@
 import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import ApplicationLogo from '@/Components/ApplicationLogo';
+import { useState, useRef, useEffect } from 'react';
 
 export default function AppLayout({ children }) {
     const { auth } = usePage().props;
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Закрывать выпадающее меню при клике вне его
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [dropdownRef]);
     
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen flex flex-col bg-gray-100">
             {/* Навигационная панель */}
             <nav className="bg-white border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16">
                         <div className="flex">
                             {/* Логотип */}
                             <div className="shrink-0 flex items-center">
                                 <Link href="/">
-                                    <ApplicationLogo className="block h-9 w-auto" />
+                                    <ApplicationLogo className="block h-16 w-auto sm:h-16 xs:h-12" variant="default" />
                                 </Link>
                             </div>
 
@@ -61,12 +78,49 @@ export default function AppLayout({ children }) {
                                         </svg>
                                         Корзина
                                     </Link>
-                                    <Link 
-                                        href={route('dashboard')} 
-                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition"
-                                    >
-                                        {auth.user.name}
-                                    </Link>
+                                    <div className="relative" ref={dropdownRef}>
+                                        <button
+                                            onClick={() => setDropdownOpen(!dropdownOpen)}
+                                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition"
+                                        >
+                                            {auth.user.name}
+                                            <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </button>
+                                        
+                                        {dropdownOpen && (
+                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
+                                                <Link
+                                                    href={route('dashboard')}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                >
+                                                    Личный кабинет
+                                                </Link>
+                                                <Link
+                                                    href={route('orders.index')}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                >
+                                                    Мои заказы
+                                                </Link>
+                                                <Link
+                                                    href={route('finances.index')}
+                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                >
+                                                    Финансы
+                                                </Link>
+                                                <hr className="my-1" />
+                                                <Link
+                                                    href={route('logout')}
+                                                    method="post"
+                                                    as="button"
+                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                                >
+                                                    Выход
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center space-x-4">
@@ -98,16 +152,20 @@ export default function AppLayout({ children }) {
                 </div>
             </nav>
 
-            {/* Основное содержимое страницы */}
-            <main>{children}</main>
+            {/* Page Content */}
+            <main className="flex-grow">
+                <div className="min-content-width">
+                    {children}
+                </div>
+            </main>
 
             {/* Футер */}
-            <footer className="bg-white border-t border-gray-200 py-8">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <footer className="bg-white border-t border-gray-200 py-8 mt-auto">
+                <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="md:flex md:justify-between">
                         <div className="mb-6 md:mb-0">
                             <Link href="/" className="flex items-center">
-                                <ApplicationLogo className="h-8 w-auto" />
+                                <ApplicationLogo className="h-16 w-auto sm:h-14 xs:h-10" variant="dark" />
                                 <span className="ml-3 text-xl font-semibold">Авто Запчасти</span>
                             </Link>
                             <p className="mt-2 text-sm text-gray-500">

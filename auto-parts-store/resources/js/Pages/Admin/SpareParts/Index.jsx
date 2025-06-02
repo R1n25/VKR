@@ -1,10 +1,40 @@
-import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 export default function Index({ auth, spareParts, categories, filters }) {
+    const page = usePage();
+    const [notification, setNotification] = useState(null);
+    
+    // Обработка флеш-сообщений
+    useEffect(() => {
+        const flash = page.props.flash || {};
+        
+        if (flash.success) {
+            setNotification({ type: 'success', message: flash.success });
+            
+            // Автоматически скрыть уведомление через 3 секунды
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 3000);
+            
+            return () => clearTimeout(timer);
+        }
+        
+        if (flash.error) {
+            setNotification({ type: 'error', message: flash.error });
+            
+            // Автоматически скрыть уведомление через 3 секунды
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 3000);
+            
+            return () => clearTimeout(timer);
+        }
+    }, [page.props.flash]);
+
     const [searchParams, setSearchParams] = useState({
         search: filters.search || '',
         category_id: filters.category_id || '',
@@ -62,12 +92,59 @@ export default function Index({ auth, spareParts, categories, filters }) {
     // Получить уникальные производители из запчастей
     const manufacturers = [...new Set(spareParts.data.map(part => part.manufacturer).filter(Boolean))];
 
+    const handleDelete = (id) => {
+        if (confirm('Вы действительно хотите удалить эту запчасть? Это действие нельзя будет отменить.')) {
+            router.delete(route('admin.spare-parts.destroy', { spare_part: id }), {
+                onSuccess: () => {
+                    // Показываем уведомление об успешном удалении
+                    setNotification({ type: 'success', message: 'Запчасть успешно удалена' });
+                },
+                onError: (errors) => {
+                    setNotification({ type: 'error', message: 'Ошибка при удалении запчасти: ' + (errors.message || 'Неизвестная ошибка') });
+                }
+            });
+        }
+    };
+
+    // Компонент уведомления
+    const Notification = ({ type, message }) => {
+        const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
+        
+        return (
+            <div className={`fixed top-4 right-4 px-4 py-3 rounded border ${bgColor} max-w-md z-50`}>
+                <div className="flex items-center">
+                    {type === 'success' ? (
+                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                    ) : (
+                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    )}
+                    <span>{message}</span>
+                    <button 
+                        onClick={() => setNotification(null)} 
+                        className="ml-auto"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <AdminLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Запчасти</h2>}
         >
             <Head title="Управление запчастями" />
+            
+            {/* Отображение уведомления */}
+            {notification && <Notification type={notification.type} message={notification.message} />}
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -166,7 +243,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             Сбросить
                                         </button>
                                         <Link
-                                            href={route('admin.spare-parts.create')}
+                                            href={route('admin.spare-parts.create-inertia')}
                                             className="ml-auto px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                         >
                                             Добавить запчасть
@@ -197,9 +274,9 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             <th
                                                 scope="col"
                                                 className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[15%]"
-                                                onClick={() => handleSort('article_number')}
+                                                onClick={() => handleSort('part_number')}
                                             >
-                                                Артикул {getSortIcon('article_number')}
+                                                Артикул {getSortIcon('part_number')}
                                             </th>
                                             <th
                                                 scope="col"
@@ -231,12 +308,6 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             </th>
                                             <th
                                                 scope="col"
-                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
-                                            >
-                                                Статус
-                                            </th>
-                                            <th
-                                                scope="col"
                                                 className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]"
                                             >
                                                 Действия
@@ -254,7 +325,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                                         {part.name}
                                                     </td>
                                                     <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.article_number}
+                                                        {part.part_number}
                                                     </td>
                                                     <td className="px-2 py-3 text-sm text-gray-500">
                                                         {part.category ? part.category.name : '-'}
@@ -268,34 +339,40 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                                     <td className="px-2 py-3 text-sm text-gray-500 text-center">
                                                         {part.stock_quantity}
                                                     </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.is_active ? (
-                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
-                                                        ) : (
-                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
-                                                        )}
-                                                    </td>
                                                     <td className="px-2 py-3 text-sm font-medium">
                                                         <div className="flex flex-col space-y-1 items-center">
                                                             <Link
-                                                                href={route('admin.spare-parts.edit', part.id)}
+                                                                href={route('admin.spare-parts.edit-inertia', part.id)}
                                                                 className="text-indigo-600 hover:text-indigo-900"
                                                             >
                                                                 Изменить
                                                             </Link>
                                                             <Link
-                                                                href={route('admin.spare-parts.show', part.id)}
+                                                                href={route('admin.spare-parts.show-inertia', part.id)}
                                                                 className="text-green-600 hover:text-green-900"
                                                             >
                                                                 Просмотр
                                                             </Link>
+                                                            <Link
+                                                                href={route('admin.spare-parts.analogs', part.id)}
+                                                                className="text-purple-600 hover:text-purple-900"
+                                                            >
+                                                                Аналоги
+                                                            </Link>
+                                                            <button
+                                                                onClick={() => handleDelete(part.id)}
+                                                                className="text-red-600 hover:text-red-900"
+                                                                type="button"
+                                                            >
+                                                                Удалить
+                                                            </button>
                                                         </div>
                                                     </td>
                                                 </tr>
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
+                                                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
                                                     Запчасти не найдены
                                                 </td>
                                             </tr>

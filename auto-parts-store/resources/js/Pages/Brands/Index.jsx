@@ -127,7 +127,7 @@ export default function BrandsIndex({ auth, brands: initialBrands }) {
                                         >
                                             <div className="relative w-full aspect-square mb-4 flex items-center justify-center">
                                                 <span className="text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-all duration-300 text-center font-sans tracking-wider transform group-hover:scale-105">
-                                                    {brand.name}
+                                                    {brand.name.replace(/^"(.+)"$/, '$1')}
                                                 </span>
                                                 {brand.vin_required && (
                                                     <div className="absolute top-0 right-0">

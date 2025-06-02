@@ -13,6 +13,10 @@ class SparePartService
 {
     // Процент наценки по умолчанию для обычных пользователей и гостей
     const DEFAULT_MARKUP_PERCENT = 25.0;
+    
+    // Свойства для хранения ID точных совпадений и аналогов
+    protected $exactMatchIds = [];
+    protected $analogIds = [];
 
     /**
      * Получить популярные запчасти для отображения на главной странице
@@ -112,22 +116,124 @@ class SparePartService
     {
         $query = $query ?? '';
         
-        $spareParts = SparePart::query()
-            ->where(function (Builder $builder) use ($query) {
+        // Проверяем, не выглядит ли запрос как артикул
+        $isArticleSearch = preg_match('/^[A-Za-z0-9-]+$/', trim($query));
+        
+        $sparePartsQuery = SparePart::query();
+        
+        if ($isArticleSearch) {
+            // Если запрос похож на артикул, ищем только по артикулу
+            $partNumber = trim($query);
+            $sparePartsQuery->where(function (Builder $builder) use ($partNumber) {
+                $builder->where('part_number', $partNumber)
+                    ->orWhere('part_number', 'like', "{$partNumber}%") // Начинается с
+                    ->orWhere(DB::raw('LOWER(part_number)'), 'like', strtolower("{$partNumber}%")); // Без учета регистра
+            });
+            
+            // Находим точные соответствия артикулу
+            $exactMatchParts = SparePart::where('part_number', $partNumber)
+                ->orWhere(DB::raw('LOWER(part_number)'), strtolower($partNumber))
+                ->get();
+            
+            if ($exactMatchParts->isNotEmpty()) {
+                // Если найдены точные совпадения, собираем их ID для поиска аналогов
+                $exactMatchIds = $exactMatchParts->pluck('id')->toArray();
+                
+                // Находим ID всех аналогов для найденных запчастей, включая транзитивные связи
+                $allAnalogIds = [];
+                foreach ($exactMatchIds as $exactMatchId) {
+                    $analogIds = $this->findAllAnalogIds($exactMatchId);
+                    $allAnalogIds = array_merge($allAnalogIds, $analogIds);
+                }
+                
+                // Удаляем дубликаты и исключаем ID точных совпадений
+                $uniqueAnalogIds = array_diff(array_unique($allAnalogIds), $exactMatchIds);
+                
+                // Сбрасываем предыдущий запрос и используем ID для поиска
+                $allIds = array_merge($exactMatchIds, $uniqueAnalogIds);
+                $sparePartsQuery = SparePart::whereIn('id', $allIds);
+                
+                // Запоминаем списки ID для последующего определения аналогов
+                $this->exactMatchIds = $exactMatchIds;
+                $this->analogIds = $uniqueAnalogIds;
+                
+                // Добавляем отладочную информацию
+                \Log::info("Поиск по артикулу: {$partNumber}");
+                \Log::info("Найдено точных совпадений: " . count($exactMatchIds));
+                \Log::info("Найдено аналогов (включая транзитивные): " . count($uniqueAnalogIds));
+            }
+            
+            // Фильтруем только доступные товары и с положительным количеством
+            $sparePartsQuery->where('is_available', true)
+                ->where('stock_quantity', '>', 0);
+        } else {
+            // Если запрос не похож на артикул, выполняем обычный поиск
+            $sparePartsQuery->where(function (Builder $builder) use ($query) {
                 $builder->where('name', 'like', "%{$query}%")
                     ->orWhere('part_number', 'like', "%{$query}%")
-                    ->orWhere('part_number', $query) // Точное совпадение артикула
-                    ->orWhere(DB::raw('LOWER(part_number)'), 'like', '%' . strtolower($query) . '%') // Поиск без учета регистра
-                    ->orWhere(DB::raw('LOWER(part_number)'), strtolower($query)) // Точное совпадение без учета регистра
                     ->orWhere('manufacturer', 'like', "%{$query}%")
                     ->orWhere('description', 'like', "%{$query}%");
             })
-            ->with('carModels')
-            ->get();
+            ->where('is_available', true)
+            ->where('stock_quantity', '>', 0);
+        }
+        
+        $spareParts = $sparePartsQuery->with(['carModels', 'analogs.analogSparePart'])->get();
 
         // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
         if ($markupPercent === null) {
             $markupPercent = $this->getUserMarkupPercent();
+        }
+
+        // Отладочная информация для проверки работы механизма аналогов
+        \Log::info("Поиск по запросу: " . $query);
+        \Log::info("Найдено запчастей: " . $spareParts->count());
+        
+        // Маркируем результаты поиска (основные запчасти и аналоги)
+        if ($isArticleSearch) {
+            if (!empty($this->exactMatchIds) && !empty($this->analogIds)) {
+                // Маркируем запчасти на основе сохраненных ID
+                $spareParts->transform(function ($part) {
+                    $part->is_exact_match = in_array($part->id, $this->exactMatchIds);
+                    $part->is_analog = in_array($part->id, $this->analogIds);
+                    
+                    // Добавляем отладочную информацию
+                    \Log::info("Запчасть {$part->id} ({$part->part_number}): " . 
+                        ($part->is_exact_match ? "точное совпадение" : "аналог"));
+                    
+                    return $part;
+                });
+            } else {
+                // Явно отмечаем все аналоги, даже если они не были найдены через ID
+                // Находим первую точную запчасть
+                $mainPart = $spareParts->first(function ($part) use ($query) {
+                    return strtolower($part->part_number) === strtolower(trim($query));
+                });
+                
+                if ($mainPart) {
+                    \Log::info("Основная запчасть: {$mainPart->part_number} (ID: {$mainPart->id})");
+                    
+                    // Остальные будут аналогами
+                    $spareParts->transform(function ($part) use ($mainPart) {
+                        if ($part->id !== $mainPart->id) {
+                            $part->is_analog = true;
+                            $part->is_exact_match = false;
+                            \Log::info("Помечаем как аналог: {$part->part_number} (ID: {$part->id})");
+                        } else {
+                            $part->is_exact_match = true;
+                            $part->is_analog = false;
+                        }
+                        return $part;
+                    });
+                }
+            }
+        } else {
+            // Для обычного поиска не разделяем на аналоги
+            $spareParts->transform(function ($part) {
+                $part->is_exact_match = true;
+                $part->is_analog = false;
+                return $part;
+            });
         }
 
         return $this->formatSparePartsWithPrices($spareParts, $isAdmin, $markupPercent);
@@ -267,8 +373,10 @@ class SparePartService
     /**
      * Алиас для getSparePartById
      */
-    public function getPartById(int $id, bool $isAdmin = false, ?float $markupPercent = null)
+    public function getPartById(mixed $id, bool $isAdmin = false, ?float $markupPercent = null)
     {
+        // Преобразуем $id в целое число
+        $id = (int) $id;
         return $this->getSparePartById($id, $isAdmin, $markupPercent);
     }
     
@@ -302,5 +410,53 @@ class SparePartService
     public function getPartsByCarModel(int $carModelId, array $filters = [], bool $isAdmin = false, ?float $markupPercent = null)
     {
         return $this->getSparePartsByCarModel($carModelId, $filters, $isAdmin, $markupPercent);
+    }
+
+    /**
+     * Найти все аналоги запчасти, включая транзитивные связи
+     * (аналоги аналогов)
+     * 
+     * @param int $sparePartId ID запчасти
+     * @param array $visitedIds Массив уже обработанных ID (для предотвращения циклов)
+     * @param int $depth Текущая глубина рекурсии
+     * @param int $maxDepth Максимальная глубина рекурсии
+     * @return array Массив ID аналогов
+     */
+    protected function findAllAnalogIds(int $sparePartId, array $visitedIds = [], int $depth = 0, int $maxDepth = 2): array
+    {
+        // Предотвращаем бесконечную рекурсию
+        if ($depth >= $maxDepth || in_array($sparePartId, $visitedIds)) {
+            return [];
+        }
+        
+        // Добавляем текущую запчасть в список посещенных
+        $visitedIds[] = $sparePartId;
+        
+        // Находим прямые аналоги
+        $directAnalogIds = DB::table('spare_part_analogs')
+            ->where('spare_part_id', $sparePartId)
+            ->pluck('analog_spare_part_id')
+            ->toArray();
+            
+        // Находим обратные аналоги (запчасти, для которых текущая является аналогом)
+        $reverseAnalogIds = DB::table('spare_part_analogs')
+            ->where('analog_spare_part_id', $sparePartId)
+            ->pluck('spare_part_id')
+            ->toArray();
+            
+        // Объединяем прямые и обратные аналоги
+        $allDirectAnalogIds = array_merge($directAnalogIds, $reverseAnalogIds);
+        $allAnalogIds = $allDirectAnalogIds;
+        
+        // Рекурсивно находим аналоги для каждого найденного аналога
+        foreach ($allDirectAnalogIds as $analogId) {
+            if (!in_array($analogId, $visitedIds)) {
+                $transitiveAnalogIds = $this->findAllAnalogIds($analogId, $visitedIds, $depth + 1, $maxDepth);
+                $allAnalogIds = array_merge($allAnalogIds, $transitiveAnalogIds);
+            }
+        }
+        
+        // Удаляем дубликаты и возвращаем уникальные ID
+        return array_unique($allAnalogIds);
     }
 } 

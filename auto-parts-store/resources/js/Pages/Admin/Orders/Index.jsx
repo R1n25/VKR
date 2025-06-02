@@ -62,15 +62,17 @@ export default function Index({ auth, orders, filters, ordersCount }) {
             case 'pending':
                 return 'Ожидает обработки';
             case 'processing':
-                return 'В обработке';
-            case 'shipped':
-                return 'Отправлен';
+                return 'В работе';
+            case 'ready_for_pickup':
+                return 'Готов к выдаче';
+            case 'ready_for_delivery':
+                return 'Готов к доставке';
+            case 'shipping':
+                return 'В доставке';
             case 'delivered':
-                return 'Доставлен';
-            case 'completed':
-                return 'Выполнен';
-            case 'cancelled':
-                return 'Отменен';
+                return 'Выдано';
+            case 'returned':
+                return 'Возвращен';
             default:
                 return status || 'Неизвестно';
         }
@@ -83,13 +85,15 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                 return 'bg-yellow-100 text-yellow-800';
             case 'processing':
                 return 'bg-blue-100 text-blue-800';
-            case 'shipped':
+            case 'ready_for_pickup':
+                return 'bg-green-100 text-green-800';
+            case 'ready_for_delivery':
+                return 'bg-indigo-100 text-indigo-800';
+            case 'shipping':
                 return 'bg-purple-100 text-purple-800';
             case 'delivered':
-                return 'bg-blue-200 text-blue-900';
-            case 'completed':
-                return 'bg-green-100 text-green-800';
-            case 'cancelled':
+                return 'bg-green-200 text-green-900';
+            case 'returned':
                 return 'bg-red-100 text-red-800';
             default:
                 return 'bg-gray-100 text-gray-800';
@@ -114,7 +118,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
             <Head title="Управление заказами" />
 
             <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                <div className="max-w-8xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 text-gray-900">
                             {/* Отладочная информация */}
@@ -170,11 +174,12 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                             >
                                                 <option value="">Все статусы</option>
                                                 <option value="pending">Ожидает обработки</option>
-                                                <option value="processing">В обработке</option>
-                                                <option value="shipped">Отправлен</option>
-                                                <option value="delivered">Доставлен</option>
-                                                <option value="completed">Выполнен</option>
-                                                <option value="cancelled">Отменен</option>
+                                                <option value="processing">В работе</option>
+                                                <option value="ready_for_pickup">Готов к выдаче</option>
+                                                <option value="ready_for_delivery">Готов к доставке</option>
+                                                <option value="shipping">В доставке</option>
+                                                <option value="delivered">Выдано</option>
+                                                <option value="returned">Возвращен</option>
                                             </select>
                                         </div>
                                         
@@ -273,7 +278,12 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                     <tr key={order.id}>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm font-medium text-indigo-600">
-                                                                {order.order_number || `№${order.id}`}
+                                                                <Link
+                                                                    href={route('admin.orders.show', order.id)}
+                                                                    className="hover:underline"
+                                                                >
+                                                                    {order.order_number || `№${order.id}`}
+                                                                </Link>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -283,10 +293,10 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm text-gray-900">
-                                                                {order.shipping_name || order.customer_name}
+                                                                {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
                                                             </div>
                                                             <div className="text-sm text-gray-500">
-                                                                {order.shipping_phone || order.phone}
+                                                                {order.shipping_phone || order.phone || 'Н/Д'}
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -310,7 +320,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                                     href={isAdmin ? route('admin.orders.add-payment', order.id) : route('orders.add-payment', order.id)}
                                                                     className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                                 >
-                                                                    Оплатить
+                                                                    Добавить оплату
                                                                 </Link>
                                                             )}
                                                         </td>

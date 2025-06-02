@@ -2,6 +2,36 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link } from '@inertiajs/react';
 
 export default function Dashboard({ auth, stats, recentSuggestions, recentOrders }) {
+    // Функция для получения текстового статуса заказа
+    const getStatusText = (status) => {
+        const statusMap = {
+            'pending': 'Ожидает обработки',
+            'processing': 'В работе',
+            'ready_for_pickup': 'Готов к выдаче',
+            'ready_for_delivery': 'Готов к доставке',
+            'shipping': 'В доставке',
+            'delivered': 'Выдано',
+            'returned': 'Возвращен'
+        };
+        
+        return statusMap[status] || status;
+    };
+
+    // Функция для получения класса цвета статуса
+    const getStatusClass = (status) => {
+        const statusClasses = {
+            'pending': 'bg-yellow-100 text-yellow-800',
+            'processing': 'bg-blue-100 text-blue-800',
+            'ready_for_pickup': 'bg-green-100 text-green-800',
+            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
+            'shipping': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-green-200 text-green-900',
+            'returned': 'bg-red-100 text-red-800'
+        };
+        
+        return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    };
+
     return (
         <AdminLayout
             user={auth.user}
@@ -71,7 +101,7 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <p className="text-gray-600">Управление пользователями и настройка индивидуальных наценок</p>
                             </Link>
                             
-                            <Link href={route('admin.spare-parts.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
+                            <Link href={route('admin.spare-parts.inertia')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
                                 <div className="flex items-center mb-3">
                                     <div className="bg-[#eef2ff] p-3 rounded-lg">
                                         <svg className="w-6 h-6 text-[#2a4075]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -96,11 +126,11 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <p className="text-gray-600">Управление предложениями пользователей</p>
                             </Link>
                             
-                            <Link href={route('finances.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
+                            <Link href={route('admin.finances.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
                                 <div className="flex items-center mb-3">
                                     <div className="bg-[#eef2ff] p-3 rounded-lg">
                                         <svg className="w-6 h-6 text-[#2a4075]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </div>
                                     <h3 className="ml-3 text-lg font-semibold text-[#2a4075]">Финансы</h3>
@@ -128,17 +158,22 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                         <tbody className="divide-y divide-gray-200">
                                             {recentOrders.map(order => (
                                                 <tr key={order.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{order.id}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                        <Link 
+                                                            href={route('admin.orders.show', order.id)}
+                                                            className="text-indigo-600 hover:underline"
+                                                        >
+                                                            {order.order_number || `№${order.id}`}
+                                                        </Link>
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(order.created_at).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.shipping_name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.total_amount} ₽</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                                            ${order.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                                            order.status === 'processing' ? 'bg-blue-100 text-blue-800' : 
-                                                            order.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                                            order.status === 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                            {order.status}
+                                                        {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{order.total || order.total_amount || 0} ₽</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                                                            {getStatusText(order.status)}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">

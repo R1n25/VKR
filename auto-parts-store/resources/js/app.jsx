@@ -1,4 +1,5 @@
-import '../css/app.css';
+// Убираем импорт CSS здесь, так как он обрабатывается через vite.config.js
+// import '../css/app.css';
 import './bootstrap';
 
 import React from 'react';

@@ -36,6 +36,11 @@ class AdminController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(5)
             ->get();
+            
+        // Добавляем информацию о суммах платежей
+        foreach ($recentOrders as $order) {
+            $order->total_paid = $order->getTotalPaidAmount();
+        }
         
         return Inertia::render('Admin/Dashboard', [
             'stats' => $stats,

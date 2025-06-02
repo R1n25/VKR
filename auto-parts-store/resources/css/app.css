@@ -1,3 +1,75 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Пользовательские классы */
+@layer utilities {
+    .max-w-8xl {
+        max-width: 88rem; /* 1408px - шире чем max-w-7xl (80rem/1280px) */
+    }
+}
+
+/* Добавляем стили для адаптивности при максимальном отдалении */
+@media (max-width: 640px) {
+    .container {
+        padding-left: 0.5rem;
+        padding-right: 0.5rem;
+    }
+    
+    /* Уменьшаем размер шрифта для мобильных устройств */
+    html {
+        font-size: 14px;
+    }
+}
+
+/* Стили для очень маленьких экранов */
+@media (max-width: 360px) {
+    .xs\:h-10 {
+        height: 2.5rem;
+    }
+    
+    .xs\:h-12 {
+        height: 3rem;
+    }
+    
+    html {
+        font-size: 12px;
+    }
+}
+
+/* Обеспечиваем минимальную ширину для контейнеров контента */
+.min-content-width {
+    min-width: 320px;
+    width: 100%;
+}
+
+/* Стили для прикрепления футера к низу страницы */
+html, body {
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+body > div#app > div {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex-grow: 1;
+}
+
+footer.mt-auto {
+    margin-top: auto;
+}
+
+/* Для поддержки IE11 и других старых браузеров */
+.sticky-footer {
+    position: sticky;
+    bottom: 0;
+    width: 100%;
+}

@@ -14,16 +14,25 @@ class CarBrandController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $brands = CarBrand::with('carModels')
-            ->orderBy('name', 'asc')
-            ->get();
-            
-        return response()->json([
-            'status' => 'success',
-            'data' => $brands
-        ]);
+        $query = CarBrand::query();
+        
+        // Фильтрация по популярным брендам
+        if ($request->has('popular') && $request->popular) {
+            $query->where('is_popular', true);
+        }
+        
+        // Получаем бренды
+        $brands = $query->get();
+        
+        // Удаляем кавычки из названий брендов
+        $brands = $brands->map(function($brand) {
+            $brand->name = preg_replace('/^"(.+)"$/', '$1', $brand->name);
+            return $brand;
+        });
+        
+        return response()->json(['data' => $brands]);
     }
 
     /**

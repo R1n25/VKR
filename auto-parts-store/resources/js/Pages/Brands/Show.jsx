@@ -89,7 +89,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                                 <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                 </svg>
-                                                <span className="font-medium text-gray-900">{brand.name}</span>
+                                                <span className="font-medium text-gray-900">{brand.name.replace(/^"(.+)"$/, '$1')}</span>
                                             </li>
                                         </ol>
                                     </nav>
@@ -100,12 +100,12 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                             {brand.logo_url && (
                                                 <img 
                                                     src={brand.logo_url} 
-                                                    alt={`Логотип ${brand.name}`}
+                                                    alt={`Логотип ${brand.name.replace(/^"(.+)"$/, '$1')}`}
                                                     className="h-20 mr-6"
                                                 />
                                             )}
                                             <div>
-                                                <h1 className="text-2xl font-bold text-gray-900 mb-2">{brand.name}</h1>
+                                                <h1 className="text-2xl font-bold text-gray-900 mb-2">{brand.name.replace(/^"(.+)"$/, '$1')}</h1>
                                                 {brand.country && (
                                                     <p className="text-gray-600">Страна: {brand.country}</p>
                                                 )}
@@ -122,7 +122,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                     {/* Модели автомобилей */}
                                     <div>
                                         <div className="flex justify-between items-center mb-6">
-                                            <h3 className="text-lg font-semibold">Модели {brand.name}</h3>
+                                            <h3 className="text-lg font-semibold">Модели {brand.name.replace(/^"(.+)"$/, '$1')}</h3>
                                             
                                             <div className="flex items-center space-x-4">
                                                 <button 
@@ -173,7 +173,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                                         </div>
                                                         
                                                         <div className="p-4">
-                                                            <h4 className="font-medium text-gray-900 group-hover:text-green-600">{model.name}</h4>
+                                                            <h4 className="font-medium text-gray-900 group-hover:text-green-600">{model.name.replace(/^"(.+)"$/, '$1')}</h4>
                                                             
                                                             {model.years && (
                                                                 <p className="text-sm text-gray-500 mt-1">

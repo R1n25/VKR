@@ -392,15 +392,15 @@ export default function Show({ auth, order, availableStatuses }) {
                                                 disabled={processing || order.status === 'processing'}
                                                 className="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
                                             >
-                                                {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В обработку'}
+                                                {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В работу'}
                                             </button>
                                             <button 
                                                 type="button" 
-                                                onClick={() => handleQuickStatusChange('completed')}
-                                                disabled={processing || order.status === 'completed'}
+                                                onClick={() => handleQuickStatusChange('delivered')}
+                                                disabled={processing || order.status === 'delivered'}
                                                 className="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
                                             >
-                                                {processing && selectedStatus === 'completed' ? 'Обновление...' : 'Выполнен'}
+                                                {processing && selectedStatus === 'delivered' ? 'Обновление...' : 'Выдано'}
                                             </button>
                                         </div>
                                         
@@ -636,6 +636,15 @@ export default function Show({ auth, order, availableStatuses }) {
                                     </table>
                                 </div>
                             </div>
+
+                            {order.payment_status !== 'paid' && (
+                                <Link
+                                    href={route('admin.orders.add-payment', order.id)}
+                                    className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                >
+                                    Добавить оплату
+                                </Link>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -21,7 +21,17 @@ class BrandService
             $query->where('is_popular', true);
         }
         
-        return $query->orderBy('name')->get();
+        $brands = $query->orderBy('name')->get();
+        
+        // Удаляем кавычки из названий
+        $brands = $brands->map(function($brand) {
+            if ($brand->name) {
+                $brand->name = preg_replace('/^"(.+)"$/', '$1', $brand->name);
+            }
+            return $brand;
+        });
+        
+        return $brands;
     }
     
     /**
@@ -32,7 +42,14 @@ class BrandService
      */
     public function getBrandById(int $id)
     {
-        return CarBrand::with('carModels')->findOrFail($id);
+        $brand = CarBrand::with('carModels')->findOrFail($id);
+        
+        // Удаляем кавычки из названия
+        if ($brand->name) {
+            $brand->name = preg_replace('/^"(.+)"$/', '$1', $brand->name);
+        }
+        
+        return $brand;
     }
     
     /**

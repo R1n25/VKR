@@ -144,6 +144,14 @@ class SparePart extends Model
     }
 
     /**
+     * Получить элементы заказов, связанные с этой запчастью
+     */
+    public function orderItems()
+    {
+        return $this->hasMany(\App\Models\OrderItem::class, 'spare_part_id');
+    }
+
+    /**
      * Проверить, совместима ли запчасть с указанной моделью автомобиля и годом выпуска
      */
     public function isCompatibleWith($carModelId, $year = null)
@@ -212,5 +220,15 @@ class SparePart extends Model
         }
         
         return $array;
+    }
+
+    /**
+     * Получить все модели автомобилей, совместимые с этой запчастью.
+     * 
+     * Этот метод используется для обратной совместимости.
+     */
+    public function compatibleCars(): BelongsToMany
+    {
+        return $this->carModels();
     }
 } 

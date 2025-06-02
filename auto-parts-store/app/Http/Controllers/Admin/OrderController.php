@@ -40,7 +40,12 @@ class OrderController extends Controller
         }
         
         if ($request->filled('customer_name')) {
-            $query->where('shipping_name', 'like', '%' . $request->customer_name . '%');
+            $query->where(function($q) use ($request) {
+                $q->where('shipping_name', 'like', '%' . $request->customer_name . '%')
+                  ->orWhereHas('user', function($query) use ($request) {
+                      $query->where('name', 'like', '%' . $request->customer_name . '%');
+                  });
+            });
         }
         
         $orders = $query->orderBy('created_at', 'desc')
@@ -127,6 +132,7 @@ class OrderController extends Controller
             return Inertia::render('Admin/Orders/Show', [
                 'order' => $order,
                 'page_title' => 'Заказ №' . $order->order_number,
+                'availableStatuses' => $this->getAvailableStatuses(),
             ]);
         } catch (\Exception $e) {
             Log::error('Ошибка при просмотре заказа', [
@@ -370,12 +376,14 @@ class OrderController extends Controller
     private function getAvailableStatuses()
     {
         return [
+            // Новые статусы
             'pending' => 'Ожидает обработки',
-            'processing' => 'В обработке',
-            'shipped' => 'Отправлен',
-            'delivered' => 'Доставлен',
-            'completed' => 'Выполнен',
-            'cancelled' => 'Отменен',
+            'processing' => 'В работе',
+            'ready_for_pickup' => 'Готов к выдаче',
+            'ready_for_delivery' => 'Готов к доставке',
+            'shipping' => 'В доставке',
+            'delivered' => 'Выдано',
+            'returned' => 'Возвращен',
         ];
     }
 }
