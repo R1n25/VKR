@@ -24,7 +24,21 @@ class OrderController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Order::with('orderItems.part');
+        // Добавляем отладочную информацию
+        \Log::info('Запрос на получение заказов', [
+            'auth_check' => auth()->check(),
+            'auth_id' => auth()->id(),
+            'request_user_id' => $request->user_id,
+            'request_params' => $request->all()
+        ]);
+        
+        // Загружаем заказы с детальной информацией о товарах и запчастях
+        $query = Order::with([
+            'orderItems.sparePart', 
+            'orderItems.sparePart.category',
+            'orderItems.sparePart.brand',
+            'user'
+        ]);
         
         // Фильтр по статусу
         if ($request->has('status')) {
@@ -38,24 +52,77 @@ class OrderController extends Controller
             $limit = 10;
         }
         
-        // Фильтр по пользователю - если пользователь авторизован, показываем только его заказы
+        // Получаем ID пользователя из разных источников
+        $userId = null;
+        
         if (auth()->check()) {
-            $query->where('user_id', auth()->id());
+            $userId = auth()->id();
+            \Log::info('Пользователь авторизован', ['user_id' => $userId]);
         } elseif ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
+            $userId = $request->user_id;
+            \Log::info('Использую user_id из запроса', ['user_id' => $userId]);
+        }
+        
+        // Если имеем ID пользователя, фильтруем заказы
+        if ($userId) {
+            $query->where('user_id', $userId);
+            \Log::info('Фильтрую заказы по user_id', [
+                'user_id' => $userId,
+                'sql' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
         } else {
-            // Если пользователь не авторизован и не указан user_id, возвращаем пустой результат
+            // Если пользователь не авторизован и не указан user_id, возвращаем пустой массив
+            \Log::warning('Нет user_id для фильтрации, возвращаю пустой массив');
             return response()->json([
                 'success' => true,
-                'data' => []
+                'data' => [],
+                'total' => 0,
+                'per_page' => $limit,
+                'current_page' => 1,
+                'last_page' => 1,
+                'from' => 0,
+                'to' => 0
             ]);
         }
         
         $orders = $query->orderBy('created_at', 'desc')->paginate($limit);
         
+        // Отладочная информация о полученных заказах
+        \Log::info('Получены заказы', [
+            'count' => $orders->count(),
+            'total' => $orders->total(),
+            'first_order_id' => $orders->count() > 0 ? $orders->first()->id : null,
+            'sample' => $orders->count() > 0 ? $orders->first()->toArray() : 'Нет заказов'
+        ]);
+        
+        // Подготовка данных заказов для ответа
+        $ordersData = collect($orders->items())->map(function ($order) {
+            // Преобразуем числовые значения для корректного отображения
+            $order->total = floatval($order->total);
+            
+            // Если есть товары в заказе, форматируем их цены
+            if ($order->orderItems) {
+                foreach ($order->orderItems as $item) {
+                    $item->price = floatval($item->price);
+                    if ($item->sparePart) {
+                        $item->sparePart->price = floatval($item->sparePart->price);
+                    }
+                }
+            }
+            
+            return $order;
+        });
+        
         return response()->json([
             'success' => true,
-            'data' => $orders
+            'data' => $ordersData,
+            'total' => $orders->total(),
+            'per_page' => $orders->perPage(),
+            'current_page' => $orders->currentPage(),
+            'last_page' => $orders->lastPage(),
+            'from' => $orders->firstItem() ?: 0,
+            'to' => $orders->lastItem() ?: 0
         ]);
     }
 
@@ -190,7 +257,39 @@ class OrderController extends Controller
      */
     public function show(string $id)
     {
-        $order = Order::with('orderItems.sparePart')->findOrFail($id);
+        // Загружаем заказ с детальной информацией
+        $order = Order::with([
+            'orderItems.sparePart', 
+            'orderItems.sparePart.category',
+            'orderItems.sparePart.brand',
+            'payments.paymentMethod',
+            'user'
+        ])->findOrFail($id);
+        
+        // Преобразуем числовые значения для корректного отображения
+        $order->total = floatval($order->total);
+        
+        // Добавляем статус оплаты и информацию о платежах
+        $order->payment_status = $order->getPaymentStatus();
+        $order->total_paid = $order->getTotalPaidAmount();
+        $order->remaining_amount = $order->getRemainingAmount();
+        
+        // Если есть товары в заказе, форматируем их цены
+        if ($order->orderItems) {
+            foreach ($order->orderItems as $item) {
+                $item->price = floatval($item->price);
+                if ($item->sparePart) {
+                    $item->sparePart->price = floatval($item->sparePart->price);
+                }
+            }
+        }
+        
+        // Если есть платежи, форматируем суммы
+        if ($order->payments) {
+            foreach ($order->payments as $payment) {
+                $payment->amount = floatval($payment->amount);
+            }
+        }
         
         return response()->json([
             'success' => true,

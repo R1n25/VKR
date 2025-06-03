@@ -337,4 +337,12 @@ class Order extends Model
         
         return $classes[$this->getPaymentStatus()] ?? 'bg-gray-100 text-gray-800';
     }
+    
+    /**
+     * Получить историю статусов заказа
+     */
+    public function getStatusHistory()
+    {
+        return $this->status_history ?? [];
+    }
 }

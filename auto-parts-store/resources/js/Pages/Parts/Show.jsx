@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PartCard from '@/Components/Parts/PartCard';
+import { formatPrice } from '@/utils/helpers';
 
 export default function PartShow({ auth, part, similarParts = [], recommendedAnalogs = [] }) {
     const [quantity, setQuantity] = useState(1);
@@ -10,20 +11,6 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
     
     // Получаем информацию о пользователе и его роли
     const isAdmin = auth.user && auth.user.is_admin;
-
-    // Функция для форматирования цены
-    const formatPrice = (price) => {
-        if (!price) return '0.00';
-        
-        // Проверяем, является ли цена строкой или числом
-        if (typeof price === 'string') {
-            // Уже строка, просто возвращаем
-            return price;
-        } else {
-            // Преобразуем в строку с двумя знаками после запятой
-            return Number(price).toFixed(2);
-        }
-    };
 
     const handleQuantityChange = (e) => {
         const value = parseInt(e.target.value);

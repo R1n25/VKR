@@ -1,17 +1,8 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import { formatPrice } from '@/utils/helpers';
 
 export default function PartCard({ part }) {
-    // Функция для форматирования цены
-    const formatPrice = (price) => {
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }).format(price);
-    };
-
     // Проверка наличия товара
     const isInStock = part.stock_qty > 0;
 
@@ -62,7 +53,7 @@ export default function PartCard({ part }) {
                 <div className="flex justify-between items-center mt-4">
                     <div>
                         <p className="text-xl font-bold text-gray-900">
-                            {formatPrice(part.price)}
+                            {formatPrice(part.price)} ₽
                         </p>
                         
                         <div className="mt-1">

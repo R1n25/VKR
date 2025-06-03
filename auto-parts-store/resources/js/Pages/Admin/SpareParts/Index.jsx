@@ -106,6 +106,33 @@ export default function Index({ auth, spareParts, categories, filters }) {
         }
     };
 
+    const handleActivateAll = () => {
+        if (confirm('Вы действительно хотите активировать все запчасти?')) {
+            router.post(route('admin.spare-parts.set-all-active'), {}, {
+                onSuccess: () => {
+                    // Показываем уведомление об успешной активации
+                    setNotification({ type: 'success', message: 'Все запчасти успешно активированы' });
+                    
+                    // Создаем таймер для автоматического скрытия уведомления
+                    const timer = setTimeout(() => {
+                        setNotification(null);
+                    }, 3000);
+                    
+                    // Перезагружаем страницу для обновления данных
+                    router.reload({ only: ['spareParts'] });
+                },
+                onError: (errors) => {
+                    setNotification({ type: 'error', message: 'Ошибка при активации запчастей: ' + (errors.message || 'Неизвестная ошибка') });
+                    
+                    // Создаем таймер для автоматического скрытия уведомления об ошибке
+                    setTimeout(() => {
+                        setNotification(null);
+                    }, 3000);
+                }
+            });
+        }
+    };
+
     // Компонент уведомления
     const Notification = ({ type, message }) => {
         const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
@@ -248,6 +275,13 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                         >
                                             Добавить запчасть
                                         </Link>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleActivateAll()}
+                                            className="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                        >
+                                            Активировать все
+                                        </button>
                                     </div>
                                 </form>
                             </div>
@@ -308,6 +342,12 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             </th>
                                             <th
                                                 scope="col"
+                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
+                                            >
+                                                Статус
+                                            </th>
+                                            <th
+                                                scope="col"
                                                 className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]"
                                             >
                                                 Действия
@@ -338,6 +378,13 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                                     </td>
                                                     <td className="px-2 py-3 text-sm text-gray-500 text-center">
                                                         {part.stock_quantity}
+                                                    </td>
+                                                    <td className="px-2 py-3 text-sm text-gray-500">
+                                                        {part.is_available ? (
+                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
+                                                        ) : (
+                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-2 py-3 text-sm font-medium">
                                                         <div className="flex flex-col space-y-1 items-center">
@@ -372,7 +419,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             ))
                                         ) : (
                                             <tr>
-                                                <td colSpan="8" className="px-6 py-4 text-center text-gray-500">
+                                                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
                                                     Запчасти не найдены
                                                 </td>
                                             </tr>

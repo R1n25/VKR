@@ -13,15 +13,46 @@ export default function Dashboard({ auth }) {
             if (!auth.user) return;
             
             try {
+                console.log('Отправка запроса на получение заказов для пользователя:', auth.user.id);
                 const response = await axios.get('/api/orders', {
                     params: { limit: 5 }
                 });
-                setRecentOrders(response.data.data);
+                
+                // Добавляем отладочную информацию
+                console.log('API запрос:', '/api/orders?limit=5');
+                console.log('API ответ:', response);
+                console.log('API данные:', response.data);
+                console.log('API данные.data:', response.data.data);
+                console.log('API данные.success:', response.data.success);
+                console.log('API текущий пользователь:', auth.user);
+                
+                // Проверяем формат ответа
+                if (response.data && response.data.success) {
+                    // Если есть данные в формате data
+                    if (Array.isArray(response.data.data)) {
+                        console.log('Установка данных заказов из массива:', response.data.data);
+                        setRecentOrders(response.data.data);
+                    } else if (response.data.data && Array.isArray(response.data.data.data)) {
+                        // Поддержка старого формата ответа, где данные были внутри data.data
+                        console.log('Установка данных заказов из вложенного массива:', response.data.data.data);
+                        setRecentOrders(response.data.data.data);
+                    } else {
+                        // Если формат ответа некорректный, устанавливаем пустой массив
+                        console.log('Некорректный формат ответа, установка пустого массива');
+                        setRecentOrders([]);
+                    }
+                } else {
+                    // Если ответ неуспешный, устанавливаем пустой массив
+                    console.log('Неуспешный ответ API, установка пустого массива');
+                    setRecentOrders([]);
+                }
+                
                 setLoadingOrders(false);
             } catch (err) {
                 console.error('Ошибка при получении последних заказов:', err);
                 setErrorOrders('Не удалось загрузить информацию о последних заказах.');
                 setLoadingOrders(false);
+                setRecentOrders([]);
             }
         };
         
@@ -38,9 +69,15 @@ export default function Dashboard({ auth }) {
     const getStatusText = (status) => {
         const statusMap = {
             'new': 'Новый',
+            'pending': 'Ожидает обработки',
             'processing': 'В обработке',
+            'ready_for_pickup': 'Готов к выдаче',
+            'ready_for_delivery': 'Готов к доставке',
+            'shipping': 'В пути',
             'shipped': 'Отправлен',
             'delivered': 'Доставлен',
+            'completed': 'Завершен',
+            'returned': 'Возвращен',
             'cancelled': 'Отменен'
         };
         
@@ -51,9 +88,15 @@ export default function Dashboard({ auth }) {
     const getStatusClass = (status) => {
         const statusClasses = {
             'new': 'bg-blue-100 text-blue-800',
+            'pending': 'bg-yellow-100 text-yellow-800',
             'processing': 'bg-yellow-100 text-yellow-800',
+            'ready_for_pickup': 'bg-indigo-100 text-indigo-800',
+            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
+            'shipping': 'bg-purple-100 text-purple-800',
             'shipped': 'bg-purple-100 text-purple-800',
             'delivered': 'bg-green-100 text-green-800',
+            'completed': 'bg-green-100 text-green-800',
+            'returned': 'bg-red-100 text-red-800',
             'cancelled': 'bg-red-100 text-red-800'
         };
         
@@ -216,6 +259,9 @@ export default function Dashboard({ auth }) {
                                                     Дата
                                                 </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Товары
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Сумма
                                                 </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -230,13 +276,41 @@ export default function Dashboard({ auth }) {
                                             {recentOrders.map((order) => (
                                                 <tr key={order.id}>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        #{order.id}
+                                                        #{order.order_number || order.id}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {formatDate(order.created_at)}
                                                     </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                                        {order.order_items && order.order_items.length > 0 ? (
+                                                            <div className="max-h-24 overflow-y-auto">
+                                                                {order.order_items.map((item, idx) => (
+                                                                    <div key={idx} className="mb-2 last:mb-0">
+                                                                        <div className="font-medium">{item.part_name || (item.spare_part && item.spare_part.name)}</div>
+                                                                        <div className="text-xs text-gray-400">
+                                                                            Артикул: {item.part_number || (item.spare_part && item.spare_part.part_number)}
+                                                                        </div>
+                                                                        {(item.spare_part && item.spare_part.brand) && (
+                                                                            <div className="text-xs text-gray-400">
+                                                                                Производитель: {item.spare_part.brand}
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="text-xs">
+                                                                            {item.quantity} x {item.price ? `${Number(item.price).toFixed(2)} руб.` : ''}
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-gray-400">Нет данных</span>
+                                                        )}
+                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {order.total_amount} руб.
+                                                        {typeof order.total === 'number' 
+                                                            ? `${order.total.toFixed(2)} руб.` 
+                                                            : order.total_price 
+                                                                ? `${Number(order.total_price).toFixed(2)} руб.` 
+                                                                : `${order.total || 0} руб.`}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>

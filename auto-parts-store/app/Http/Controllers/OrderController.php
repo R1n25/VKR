@@ -24,7 +24,13 @@ class OrderController extends Controller
         }
         
         // Показываем только заказы текущего пользователя
-        $orders = Order::with(['orderItems.sparePart', 'payments', 'user'])
+        $orders = Order::with([
+                'orderItems.sparePart', 
+                'orderItems.sparePart.category',
+                'orderItems.sparePart.brand',
+                'payments', 
+                'user'
+            ])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -34,6 +40,14 @@ class OrderController extends Controller
             $order->payment_status = $order->getPaymentStatus();
             $order->total_paid = $order->getTotalPaidAmount();
             $order->remaining_amount = $order->getRemainingAmount();
+            
+            // Форматируем числовые значения для корректного отображения
+            foreach ($order->orderItems as $item) {
+                $item->price = floatval($item->price);
+                if ($item->sparePart) {
+                    $item->sparePart->price = floatval($item->sparePart->price);
+                }
+            }
         }
         
         return Inertia::render('Orders/Index', [
@@ -55,7 +69,12 @@ class OrderController extends Controller
         }
         
         // Пользователь может просматривать только свои заказы
-        $order = Order::with(['orderItems.sparePart', 'payments.paymentMethod'])
+        $order = Order::with([
+                'orderItems.sparePart.category', 
+                'orderItems.sparePart.brand',
+                'payments.paymentMethod',
+                'user'
+            ])
             ->where('user_id', $user->id)
             ->findOrFail($id);
         
@@ -63,6 +82,27 @@ class OrderController extends Controller
         $order->payment_status = $order->getPaymentStatus();
         $order->total_paid = $order->getTotalPaidAmount();
         $order->remaining_amount = $order->getRemainingAmount();
+        
+        // Получаем историю статусов заказа, если она есть
+        $order->status_history = $order->getStatusHistory();
+        
+        // Получаем комментарии к заказу
+        $order->notes_json = $order->getNotes();
+        
+        // Форматируем числовые значения для корректного отображения
+        foreach ($order->orderItems as $item) {
+            $item->price = floatval($item->price);
+            if ($item->sparePart) {
+                $item->sparePart->price = floatval($item->sparePart->price);
+            }
+        }
+        
+        // Если есть платежи, форматируем суммы
+        if ($order->payments) {
+            foreach ($order->payments as $payment) {
+                $payment->amount = floatval($payment->amount);
+            }
+        }
         
         return Inertia::render('Orders/Show', [
             'order' => $order,

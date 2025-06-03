@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import axios from 'axios';
+import { formatPrice } from '@/utils/helpers';
 
 // Настройка axios для работы с CSRF-защитой
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -20,7 +21,7 @@ export default function Show({ auth, order, availableStatuses }) {
     const [noteError, setNoteError] = useState('');
     const [addingNote, setAddingNote] = useState(false);
     const [statusNote, setStatusNote] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState(order.status);
+    const [selectedStatus, setSelectedStatus] = useState(order.status || 'pending');
     const [feedbackMessage, setFeedbackMessage] = useState(null);
     const [messageType, setMessageType] = useState('success'); // 'success', 'error', 'info'
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
@@ -276,10 +277,6 @@ export default function Show({ auth, order, availableStatuses }) {
         } finally {
             setAddingNote(false);
         }
-    };
-
-    const formatPrice = (price) => {
-        return parseFloat(price).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     };
 
     return (

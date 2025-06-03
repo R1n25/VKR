@@ -344,13 +344,13 @@ export default function Dashboard({ auth, vinRequests }) {
                                             {recentOrders.map((order) => (
                                                 <tr key={order.id}>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                        #{order.id}
+                                                        #{order.order_number || order.id}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {formatDate(order.created_at)}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {order.total_amount} руб.
+                                                        {Number(order.total || 0).toFixed(2)} руб.
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>

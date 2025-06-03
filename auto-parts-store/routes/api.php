@@ -61,9 +61,13 @@ Route::post('cart/update', [CartController::class, 'updateQuantity']);
 Route::post('cart/clear', [CartController::class, 'clearCart']);
 Route::post('cart/add-order', [CartController::class, 'addOrderToCart']);
 
-// Маршруты для заказов
-Route::get('orders', [OrderController::class, 'index']);
-Route::get('orders/{id}', [OrderController::class, 'show']);
+// Маршруты для заказов с поддержкой веб-сессии
+Route::middleware(['web'])->group(function () {
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::get('orders/{id}', [OrderController::class, 'show']);
+});
+
+// Остальные маршруты для заказов без дополнительных middleware
 Route::post('orders', [OrderController::class, 'store']);
 Route::put('orders/{id}', [OrderController::class, 'update']);
 Route::delete('orders/{id}', [OrderController::class, 'destroy']); 

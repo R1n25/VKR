@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Head, Link, router, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { formatPrice } from '@/utils/helpers';
 
 export default function Search(props) {
     // Деструктурируем пропсы
@@ -73,20 +74,6 @@ export default function Search(props) {
     const handleSearch = (e) => {
         e.preventDefault();
         router.get('/search', { q: data.q });
-    };
-
-    // Функция для форматирования цены
-    const formatPrice = (price) => {
-        if (!price) return '0.00';
-        
-        // Проверяем, является ли цена строкой или числом
-        if (typeof price === 'string') {
-            // Уже строка, просто возвращаем
-            return price;
-        } else {
-            // Преобразуем в строку с двумя знаками после запятой
-            return Number(price).toFixed(2);
-        }
     };
 
     // Компонент карточки товара

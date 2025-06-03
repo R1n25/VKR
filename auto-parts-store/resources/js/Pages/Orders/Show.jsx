@@ -257,6 +257,30 @@ export default function OrderShow({ auth, order }) {
                                                     <p className="text-sm text-gray-500">Адрес доставки</p>
                                                     <p className="font-medium">{order.address}</p>
                                                 </div>
+                                                
+                                                <div>
+                                                    <p className="text-sm text-gray-500">Способ оплаты</p>
+                                                    <p className="font-medium">
+                                                        {order.payment_method === 'cash' ? 'Наличными при получении' : 
+                                                         order.payment_method === 'card' ? 'Картой при получении' : 
+                                                         order.payment_method === 'online' ? 'Онлайн оплата' : 
+                                                         'Не указан'}
+                                                    </p>
+                                                </div>
+                                                
+                                                {order.shipping_method && (
+                                                    <div>
+                                                        <p className="text-sm text-gray-500">Способ доставки</p>
+                                                        <p className="font-medium">{order.shipping_method}</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {order.notes && (
+                                                    <div className="sm:col-span-2">
+                                                        <p className="text-sm text-gray-500">Примечание к заказу</p>
+                                                        <p className="font-medium">{order.notes}</p>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                         
@@ -275,6 +299,9 @@ export default function OrderShow({ auth, order }) {
                                                                 Артикул
                                                             </th>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Производитель
+                                                            </th>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                                 Цена
                                                             </th>
                                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -289,8 +316,8 @@ export default function OrderShow({ auth, order }) {
                                                         {order.orderItems.map((item) => (
                                                             <tr key={item.id}>
                                                                 <td className="px-6 py-4">
-                                                                    <div className="flex items-center">
-                                                                        {item.sparePart.image_url && (
+                                                                    <div className="flex items-start">
+                                                                        {item.sparePart && item.sparePart.image_url && (
                                                                             <img 
                                                                                 src={item.sparePart.image_url}
                                                                                 alt={item.sparePart.name}
@@ -298,18 +325,25 @@ export default function OrderShow({ auth, order }) {
                                                                             />
                                                                         )}
                                                                         <div>
-                                                                            <p className="font-medium text-gray-900">{item.sparePart.name}</p>
-                                                                            {item.sparePart.brand && (
-                                                                                <p className="text-xs text-gray-500">{item.sparePart.brand.name}</p>
+                                                                            <p className="font-medium text-gray-900">
+                                                                                {item.part_name || (item.sparePart && item.sparePart.name) || "Нет названия"}
+                                                                            </p>
+                                                                            {item.sparePart && item.sparePart.description && (
+                                                                                <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                                                                                    {item.sparePart.description}
+                                                                                </p>
                                                                             )}
                                                                         </div>
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {item.sparePart.part_number}
+                                                                    {item.part_number || (item.sparePart && item.sparePart.part_number) || "—"}
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    {item.price} руб.
+                                                                    {(item.sparePart && item.sparePart.manufacturer) || "—"}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                    {Number(item.price).toFixed(2)} руб.
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                                     {item.quantity}
@@ -366,7 +400,7 @@ export default function OrderShow({ auth, order }) {
                                                                         {payment.payment_method ? payment.payment_method.name : 'Н/Д'}
                                                                     </td>
                                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                        {payment.amount} руб.
+                                                                        {Number(payment.amount || 0).toFixed(2)} руб.
                                                                     </td>
                                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(payment.status)}`}>
@@ -398,19 +432,19 @@ export default function OrderShow({ auth, order }) {
                                             <div className="space-y-3 mb-4">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Сумма товаров</span>
-                                                    <span className="font-medium">{order.total_amount || order.total} руб.</span>
+                                                    <span className="font-medium">{Number(order.total || 0).toFixed(2)} руб.</span>
                                                 </div>
                                                 
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Доставка</span>
-                                                    <span className="font-medium">0 руб.</span>
+                                                    <span className="font-medium">0.00 руб.</span>
                                                 </div>
                                             </div>
                                             
                                             <div className="border-t border-gray-200 pt-4 mt-4">
                                                 <div className="flex justify-between items-center text-lg font-bold">
                                                     <span>Итого:</span>
-                                                    <span className="text-indigo-600">{order.total_amount || order.total} руб.</span>
+                                                    <span className="text-indigo-600">{Number(order.total || 0).toFixed(2)} руб.</span>
                                                 </div>
                                             </div>
                                             
@@ -419,18 +453,18 @@ export default function OrderShow({ auth, order }) {
                                                 <h4 className="font-medium mb-3">Статус оплаты</h4>
                                                 <div className="flex justify-between items-center mb-2">
                                                     <span className="text-gray-600">Оплачено:</span>
-                                                    <span className="font-medium text-green-600">{order.total_paid || 0} руб.</span>
+                                                    <span className="font-medium text-green-600">{Number(order.total_paid || 0).toFixed(2)} руб.</span>
                                                 </div>
                                                 <div className="flex justify-between items-center mb-3">
                                                     <span className="text-gray-600">Осталось оплатить:</span>
-                                                    <span className="font-medium text-red-600">{order.remaining_amount || order.total_amount || order.total} руб.</span>
+                                                    <span className="font-medium text-red-600">{Number(order.remaining_amount || order.total || 0).toFixed(2)} руб.</span>
                                                 </div>
                                                 
                                                 {/* Баланс пользователя */}
                                                 {auth.user && auth.user.balance !== undefined && (
                                                     <div className="flex justify-between items-center mb-3">
                                                         <span className="text-gray-600">Ваш баланс:</span>
-                                                        <span className="font-medium text-blue-600">{auth.user.balance} руб.</span>
+                                                        <span className="font-medium text-blue-600">{Number(auth.user.balance).toFixed(2)} руб.</span>
                                                     </div>
                                                 )}
                                                 
@@ -451,16 +485,6 @@ export default function OrderShow({ auth, order }) {
                                                              `Оплатить с баланса ${auth.user.balance} руб.` : 
                                                              `Оплатить с баланса ${order.remaining_amount} руб.`}
                                                         </button>
-                                                    )}
-                                                    
-                                                    {/* Кнопка добавления платежа */}
-                                                    {order.payment_status !== 'paid' && (
-                                                        <Link
-                                                            href={route('orders.add-payment', order.id)}
-                                                            className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                                        >
-                                                            Добавить оплату
-                                                        </Link>
                                                     )}
                                                 </div>
                                                 

@@ -1,8 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Orders({ auth, orders }) {
+    // Состояние для отслеживания открытых/закрытых деталей заказов
+    const [expandedOrders, setExpandedOrders] = useState({});
+    
+    // Функция для переключения состояния раскрытия заказа
+    const toggleOrderDetails = (orderId) => {
+        setExpandedOrders(prev => ({
+            ...prev,
+            [orderId]: !prev[orderId]
+        }));
+    };
+    
     // Функция для форматирования даты
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
@@ -108,62 +119,157 @@ export default function Orders({ auth, orders }) {
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     Статус оплаты
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[14%]">
-                                                    Действия
-                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {orders.map((order) => (
-                                                <tr key={order.id}>
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                        <Link
-                                                            href={`/orders/${order.id}`}
-                                                            className="text-indigo-600 hover:underline"
-                                                        >
-                                                            {order.order_number || `#${order.id}`}
-                                                        </Link>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {formatDate(order.created_at)}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {order.total || order.total_amount} руб.
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {order.total_paid || 0} руб.
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
-                                                            {getStatusText(order.status)}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusClass(order.payment_status)}`}>
-                                                            {getPaymentStatusText(order.payment_status)}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-sm">
-                                                        <Link
-                                                            href={`/orders/${order.id}`}
-                                                            className="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-2"
-                                                        >
-                                                            Подробнее
-                                                        </Link>
-                                                        
-                                                        {order.payment_status !== 'paid' && (
-                                                            <Link
-                                                                href={route('orders.add-payment', order.id)}
-                                                                className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                                            >
-                                                                Добавить оплату
-                                                            </Link>
-                                                        )}
-                                                    </td>
-                                                </tr>
+                                                <React.Fragment key={order.id}>
+                                                    <tr className={expandedOrders[order.id] ? "bg-gray-50" : ""}>
+                                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                                            <div className="flex items-center">
+                                                                <button 
+                                                                    onClick={() => toggleOrderDetails(order.id)}
+                                                                    className="mr-2 text-indigo-600 focus:outline-none"
+                                                                >
+                                                                    {expandedOrders[order.id] ? (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                                        </svg>
+                                                                    ) : (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                        </svg>
+                                                                    )}
+                                                                </button>
+                                                                <Link href={`/orders/${order.id}`} className="text-indigo-600 hover:underline">
+                                                                    {order.order_number || `#${order.id}`}
+                                                                </Link>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                            {formatDate(order.created_at)}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                            {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                            {Number(order.total || 0).toFixed(2)} руб.
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                            {Number(order.total_paid || 0).toFixed(2)} руб.
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                                                                {getStatusText(order.status)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusClass(order.payment_status)}`}>
+                                                                {getPaymentStatusText(order.payment_status)}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    
+                                                    {/* Развернутые детали заказа */}
+                                                    {expandedOrders[order.id] && order.order_items && order.order_items.length > 0 && (
+                                                        <tr>
+                                                            <td colSpan="7" className="px-6 py-4 bg-gray-50">
+                                                                <div className="border-t border-gray-200 pt-4">
+                                                                    <h4 className="text-sm font-medium text-gray-900 mb-3">Товары в заказе</h4>
+                                                                    <div className="overflow-x-auto">
+                                                                        <table className="min-w-full divide-y divide-gray-200">
+                                                                            <thead className="bg-gray-100">
+                                                                                <tr>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Наименование
+                                                                                    </th>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Артикул
+                                                                                    </th>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Производитель
+                                                                                    </th>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Цена
+                                                                                    </th>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Кол-во
+                                                                                    </th>
+                                                                                    <th scope="col" className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                                        Сумма
+                                                                                    </th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                                                {order.order_items.map((item) => (
+                                                                                    <tr key={item.id}>
+                                                                                        <td className="px-4 py-2 text-sm text-gray-900">
+                                                                                            {item.part_name || (item.spare_part && item.spare_part.name) || 'Н/Д'}
+                                                                                        </td>
+                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
+                                                                                            {item.part_number || (item.spare_part && item.spare_part.part_number) || 'Н/Д'}
+                                                                                        </td>
+                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
+                                                                                            {(item.spare_part && item.spare_part.manufacturer) || 'Н/Д'}
+                                                                                        </td>
+                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
+                                                                                            {Number(item.price || 0).toFixed(2)} руб.
+                                                                                        </td>
+                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
+                                                                                            {item.quantity}
+                                                                                        </td>
+                                                                                        <td className="px-4 py-2 text-sm font-medium text-gray-900">
+                                                                                            {Number((item.price || 0) * (item.quantity || 0)).toFixed(2)} руб.
+                                                                                        </td>
+                                                                                    </tr>
+                                                                                ))}
+                                                                            </tbody>
+                                                                            <tfoot className="bg-gray-50">
+                                                                                <tr>
+                                                                                    <td colSpan="5" className="px-4 py-2 text-sm font-medium text-right text-gray-900">
+                                                                                        Итого:
+                                                                                    </td>
+                                                                                    <td className="px-4 py-2 text-sm font-bold text-gray-900">
+                                                                                        {Number(order.total || 0).toFixed(2)} руб.
+                                                                                    </td>
+                                                                                </tr>
+                                                                            </tfoot>
+                                                                        </table>
+                                                                    </div>
+                                                                    
+                                                                    {/* Информация о доставке */}
+                                                                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                                        <div>
+                                                                            <h5 className="text-sm font-medium text-gray-900 mb-2">Информация о доставке</h5>
+                                                                            <p className="text-sm text-gray-600">
+                                                                                <span className="font-medium">Адрес:</span> {order.shipping_address || order.address || 'Не указан'}
+                                                                            </p>
+                                                                            {order.shipping_method && (
+                                                                                <p className="text-sm text-gray-600">
+                                                                                    <span className="font-medium">Способ доставки:</span> {order.shipping_method}
+                                                                                </p>
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <h5 className="text-sm font-medium text-gray-900 mb-2">Информация об оплате</h5>
+                                                                            <p className="text-sm text-gray-600">
+                                                                                <span className="font-medium">Способ оплаты:</span> {
+                                                                                    order.payment_method === 'cash' ? 'Наличными при получении' : 
+                                                                                    order.payment_method === 'card' ? 'Картой при получении' : 
+                                                                                    order.payment_method === 'online' ? 'Онлайн оплата' : 
+                                                                                    'Не указан'
+                                                                                }
+                                                                            </p>
+                                                                            <p className="text-sm text-gray-600">
+                                                                                <span className="font-medium">Оплачено:</span> {Number(order.total_paid || 0).toFixed(2)} руб. из {Number(order.total || 0).toFixed(2)} руб.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                </React.Fragment>
                                             ))}
                                         </tbody>
                                     </table>
