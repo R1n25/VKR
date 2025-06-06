@@ -3,14 +3,61 @@ import { Head } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { FormattedPrice } from '@/utils/helpers';
 import axios from 'axios';
+import AddToCartButton from '@/Components/AddToCartButton';
 
 const Show = ({ auth, sparePart, isAdmin }) => {
     const [analogs, setAnalogs] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [partData, setPartData] = useState(sparePart);
+    const [quantityLoading, setQuantityLoading] = useState(false);
+    const [availableQuantity, setAvailableQuantity] = useState(0);
+    const [isAvailable, setIsAvailable] = useState(false);
 
     useEffect(() => {
         loadAnalogs();
-    }, [sparePart.part_number]);
+        updateQuantity();
+        
+        // Добавляем слушатель события обновления товара
+        const handleProductUpdate = (event) => {
+            if (event.detail && event.detail.productId === sparePart.id) {
+                console.log('Обновление количества товара после добавления в корзину');
+                updateQuantity();
+            }
+        };
+        
+        window.addEventListener('productUpdated', handleProductUpdate);
+        
+        // Удаляем слушатель при размонтировании компонента
+        return () => {
+            window.removeEventListener('productUpdated', handleProductUpdate);
+        };
+    }, [sparePart.part_number, sparePart.id]);
+
+    // Функция для обновления количества товара
+    const updateQuantity = async () => {
+        try {
+            setQuantityLoading(true);
+            const response = await axios.get(`/api/spare-parts/${sparePart.id}/info`);
+            if (response.data && response.data.success) {
+                setAvailableQuantity(response.data.stock_quantity);
+                setIsAvailable(response.data.is_available);
+                
+                // Обновляем данные о товаре
+                setPartData(prevData => ({
+                    ...prevData,
+                    stock_quantity: response.data.stock_quantity,
+                    is_available: response.data.is_available,
+                    price: response.data.price
+                }));
+                
+                console.log('Обновлены данные о товаре:', response.data);
+            }
+        } catch (error) {
+            console.error('Ошибка при обновлении информации о товаре:', error);
+        } finally {
+            setQuantityLoading(false);
+        }
+    };
 
     const loadAnalogs = async () => {
         try {
@@ -69,8 +116,10 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                                 <div>
                                     <p className="text-gray-600">Наличие:</p>
                                     <p className="font-semibold">
-                                        {sparePart.is_available ? (
-                                            <span className="text-green-600">{sparePart.stock_quantity} шт.</span>
+                                        {quantityLoading ? (
+                                            <span className="text-gray-500">Обновление...</span>
+                                        ) : isAvailable ? (
+                                            <span className="text-green-600">{availableQuantity} шт.</span>
                                         ) : (
                                             <span className="text-red-600">Нет в наличии</span>
                                         )}
@@ -87,18 +136,23 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                                 <div>
                                     <p className="text-gray-600">Цена:</p>
                                     <FormattedPrice 
-                                        value={sparePart.price} 
+                                        value={partData.price} 
                                         className="text-2xl font-bold text-primary"
                                     />
                                 </div>
                                 
-                                {sparePart.is_available && (
-                                    <button
-                                        className="bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary-dark transition-colors"
-                                        onClick={() => {/* Добавить в корзину */}}
-                                    >
-                                        В корзину
-                                    </button>
+                                {isAvailable && (
+                                    <AddToCartButton 
+                                        sparePart={{
+                                            id: partData.id,
+                                            name: partData.name,
+                                            price: partData.price,
+                                            image: partData.image_url,
+                                            stock: availableQuantity
+                                        }}
+                                        user={auth.user}
+                                        className="w-40"
+                                    />
                                 )}
                             </div>
                         </div>

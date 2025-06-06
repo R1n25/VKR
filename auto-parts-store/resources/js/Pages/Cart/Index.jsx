@@ -1,10 +1,54 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import axios from 'axios';
 
 export default function Index({ auth, cart, cartItems }) {
     const [loading, setLoading] = useState(false);
+    const [items, setItems] = useState(cartItems || []);
+    const [totalPrice, setTotalPrice] = useState(cart?.total_price || 0);
+    const [updatingItemId, setUpdatingItemId] = useState(null);
+
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return auth.user ? `cart_${auth.user.id}` : 'cart_guest';
+    };
+
+    // Обновляем локальное состояние при изменении пропсов
+    useEffect(() => {
+        setItems(cartItems || []);
+        setTotalPrice(cart?.total_price || 0);
+    }, [cartItems, cart]);
+
+    // Обновляем localStorage при изменении items
+    useEffect(() => {
+        if (items.length > 0) {
+            // Преобразуем данные в формат, подходящий для localStorage
+            const localCartItems = items.map(item => ({
+                id: item.spare_part_id,
+                name: item.sparePart.name,
+                price: item.price,
+                image: item.sparePart.image_url,
+                quantity: item.quantity,
+                stock: item.sparePart.stock_quantity
+            }));
+            
+            const storageKey = getStorageKey();
+            localStorage.setItem(storageKey, JSON.stringify(localCartItems));
+            
+            // Явно генерируем событие обновления корзины
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { cart: localCartItems, storageKey },
+                bubbles: true
+            }));
+        }
+    }, [items]);
+
+    // Функция для обновления общей суммы
+    const updateTotalPrice = () => {
+        const newTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        setTotalPrice(newTotal.toFixed(2));
+    };
 
     const handleQuantityChange = async (cartItemId, quantity) => {
         if (quantity <= 0) {
@@ -12,33 +56,71 @@ export default function Index({ auth, cart, cartItems }) {
             return;
         }
 
-        setLoading(true);
+        // Находим товар в списке
+        const itemIndex = items.findIndex(item => item.id === cartItemId);
+        if (itemIndex === -1) return;
+
+        // Проверяем, не превышает ли количество доступный остаток
+        const maxQuantity = items[itemIndex].sparePart.stock_quantity;
+        if (quantity > maxQuantity) {
+            quantity = maxQuantity;
+        }
+
+        // Обновляем локальное состояние для мгновенной обратной связи
+        const updatedItems = [...items];
+        updatedItems[itemIndex].quantity = quantity;
+        setItems(updatedItems);
+        updateTotalPrice();
+
+        // Отправляем запрос на сервер
+        setUpdatingItemId(cartItemId);
         try {
             const response = await axios.put(route('cart.update-quantity'), {
                 cart_item_id: cartItemId,
                 quantity: quantity
             });
             
-            // Обновляем страницу для отображения актуальных данных
-            router.reload();
+            // Обновляем событие для CartIcon
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
         } catch (error) {
             console.error('Ошибка при обновлении количества:', error);
+            
+            // Если произошла ошибка, возвращаем предыдущее состояние
+            router.reload();
         } finally {
-            setLoading(false);
+            setUpdatingItemId(null);
         }
     };
 
     const handleRemoveItem = async (cartItemId) => {
         setLoading(true);
+        
+        // Обновляем локальное состояние для мгновенной обратной связи
+        const updatedItems = items.filter(item => item.id !== cartItemId);
+        setItems(updatedItems);
+        
+        // Обновляем общую сумму
+        const newTotal = updatedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        setTotalPrice(newTotal.toFixed(2));
+        
         try {
             const response = await axios.delete(route('cart.remove'), {
                 data: { cart_item_id: cartItemId }
             });
             
-            // Обновляем страницу для отображения актуальных данных
-            router.reload();
+            // Если корзина пуста, очищаем localStorage
+            if (updatedItems.length === 0) {
+                const storageKey = getStorageKey();
+                localStorage.setItem(storageKey, JSON.stringify([]));
+            }
+            
+            // Обновляем событие для CartIcon
+            window.dispatchEvent(new CustomEvent('cartUpdated'));
         } catch (error) {
             console.error('Ошибка при удалении товара:', error);
+            
+            // Если произошла ошибка, возвращаем предыдущее состояние
+            router.reload();
         } finally {
             setLoading(false);
         }
@@ -50,13 +132,28 @@ export default function Index({ auth, cart, cartItems }) {
         }
         
         setLoading(true);
+        
+        // Обновляем локальное состояние для мгновенной обратной связи
+        setItems([]);
+        setTotalPrice(0);
+        
+        // Очищаем localStorage
+        const storageKey = getStorageKey();
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        
         try {
             const response = await axios.delete(route('cart.clear'));
             
-            // Обновляем страницу для отображения актуальных данных
-            router.reload();
+            // Обновляем событие для CartIcon
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { cart: [], storageKey },
+                bubbles: true
+            }));
         } catch (error) {
             console.error('Ошибка при очистке корзины:', error);
+            
+            // Если произошла ошибка, возвращаем предыдущее состояние
+            router.reload();
         } finally {
             setLoading(false);
         }
@@ -77,7 +174,7 @@ export default function Index({ auth, cart, cartItems }) {
                                 <div className="text-center py-10">
                                     <p>Загрузка...</p>
                                 </div>
-                            ) : cartItems.length > 0 ? (
+                            ) : items.length > 0 ? (
                                 <>
                                     <div className="mb-6 flex justify-between items-center">
                                         <h3 className="text-xl font-semibold">Товары в корзине</h3>
@@ -91,7 +188,7 @@ export default function Index({ auth, cart, cartItems }) {
                                     </div>
                                     
                                     <div className="divide-y divide-gray-200">
-                                        {cartItems.map(item => (
+                                        {items.map(item => (
                                             <div key={item.id} className="py-6 flex flex-col sm:flex-row">
                                                 {/* Изображение товара */}
                                                 <div className="sm:w-1/4 mb-4 sm:mb-0 sm:mr-6">
@@ -133,7 +230,7 @@ export default function Index({ auth, cart, cartItems }) {
                                                                     <button
                                                                         onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
                                                                         className="border border-gray-300 px-2 py-1 rounded-l-md"
-                                                                        disabled={loading || item.quantity <= 1}
+                                                                        disabled={updatingItemId === item.id || item.quantity <= 1}
                                                                     >
                                                                         -
                                                                     </button>
@@ -144,17 +241,22 @@ export default function Index({ auth, cart, cartItems }) {
                                                                         onChange={(e) => handleQuantityChange(item.id, parseInt(e.target.value))}
                                                                         min="1"
                                                                         max={item.sparePart.stock_quantity}
-                                                                        disabled={loading}
+                                                                        disabled={updatingItemId === item.id}
                                                                         className="border-t border-b border-gray-300 w-12 text-center py-1"
                                                                     />
                                                                     <button
                                                                         onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
                                                                         className="border border-gray-300 px-2 py-1 rounded-r-md"
-                                                                        disabled={loading || item.quantity >= item.sparePart.stock_quantity}
+                                                                        disabled={updatingItemId === item.id || item.quantity >= item.sparePart.stock_quantity}
                                                                     >
                                                                         +
                                                                     </button>
                                                                 </div>
+                                                                {updatingItemId === item.id && (
+                                                                    <span className="ml-2 text-xs text-indigo-600">
+                                                                        Обновление...
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                             
                                                             <div className="text-right mt-2">
@@ -181,7 +283,7 @@ export default function Index({ auth, cart, cartItems }) {
                                         <div className="flex justify-between items-center mb-6">
                                             <h3 className="text-xl font-semibold">Итого:</h3>
                                             <span className="text-2xl font-bold text-indigo-600">
-                                                {cart.total_price} руб.
+                                                {totalPrice} руб.
                                             </span>
                                         </div>
                                         

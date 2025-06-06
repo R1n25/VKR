@@ -7,6 +7,18 @@ use Illuminate\Support\Facades\DB;
 class CategoryService
 {
     /**
+     * Получить все категории запчастей
+     * 
+     * @return \Illuminate\Support\Collection
+     */
+    public function getAllCategories()
+    {
+        return DB::table('part_categories')
+            ->orderBy('name')
+            ->get();
+    }
+    
+    /**
      * Получить все корневые категории запчастей
      * 
      * @return \Illuminate\Support\Collection

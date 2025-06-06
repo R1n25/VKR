@@ -14,33 +14,20 @@ if (token) {
     axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
 }
 
-export default function Show({ auth, order, availableStatuses }) {
+export default function Show({ auth, order }) {
+    const [note, setNote] = useState('');
     const [processing, setProcessing] = useState(false);
     const [statusError, setStatusError] = useState('');
-    const [note, setNote] = useState('');
     const [noteError, setNoteError] = useState('');
     const [addingNote, setAddingNote] = useState(false);
-    const [statusNote, setStatusNote] = useState('');
-    const [selectedStatus, setSelectedStatus] = useState(order.status || 'pending');
+    const [statusComment, setStatusComment] = useState('');
+    const [selectedStatus, setSelectedStatus] = useState(order?.status || 'pending');
     const [feedbackMessage, setFeedbackMessage] = useState(null);
     const [messageType, setMessageType] = useState('success'); // 'success', 'error', 'info'
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [orderData, setOrder] = useState(order || {});
     
-    // Добавим отладочную информацию в консоль
-    useEffect(() => {
-        if (order) {
-            console.log("Данные заказа:", order);
-            console.log("Товары заказа:", order.direct_items);
-            
-            if (order.direct_items && order.direct_items.length > 0) {
-                console.log("Первый товар:", order.direct_items[0]);
-                console.log("Бренд:", order.direct_items[0].brand_name);
-                console.log("Артикул:", order.direct_items[0].part_number);
-                console.log("Описание:", order.direct_items[0].description);
-            }
-        }
-    }, [order]);
-
     // Оставляем только эффект для сброса сообщения обратной связи
     useEffect(() => {
         if (feedbackMessage) {
@@ -80,19 +67,15 @@ export default function Show({ auth, order, availableStatuses }) {
 
     // Функция для получения текстового представления статуса заказа
     const getStatusText = (status) => {
-        // Если передан объект availableStatuses с сервера, используем его
-        if (availableStatuses && availableStatuses[status]) {
-            return availableStatuses[status];
-        }
-        
-        // Иначе используем встроенный перевод
+        // Используем встроенный перевод
         const statuses = {
             'pending': 'Ожидает обработки',
-            'processing': 'В обработке',
-            'shipped': 'Отправлен',
-            'delivered': 'Доставлен',
-            'completed': 'Выполнен',
-            'cancelled': 'Отменен'
+            'processing': 'В работе',
+            'ready_for_pickup': 'Готов к выдаче',
+            'ready_for_delivery': 'Готов к доставке',
+            'in_delivery': 'В доставке',
+            'delivered': 'Выдано',
+            'returned': 'Возвращен'
         };
         
         return statuses[status] || status;
@@ -103,10 +86,11 @@ export default function Show({ auth, order, availableStatuses }) {
         const classes = {
             'pending': 'bg-blue-100 text-blue-800',
             'processing': 'bg-yellow-100 text-yellow-800',
-            'shipped': 'bg-purple-100 text-purple-800',
-            'delivered': 'bg-indigo-100 text-indigo-800',
-            'completed': 'bg-green-100 text-green-800',
-            'cancelled': 'bg-red-100 text-red-800'
+            'ready_for_pickup': 'bg-green-100 text-green-800',
+            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
+            'in_delivery': 'bg-purple-100 text-purple-800',
+            'delivered': 'bg-green-100 text-green-800',
+            'returned': 'bg-red-100 text-red-800'
         };
         
         return classes[status] || 'bg-gray-100 text-gray-800';
@@ -133,55 +117,45 @@ export default function Show({ auth, order, availableStatuses }) {
         return methods[method] || method;
     };
 
-    // Функция для обновления статуса заказа
-    const handleStatusChange = async (e) => {
-        e.preventDefault();
-        
-        // Проверяем, изменился ли статус
-        if (selectedStatus === order.status) {
-            setFeedbackMessage('Статус не изменился, выберите другой статус');
-            setMessageType('info');
-            return;
-        }
-
-        if (processing) return;
-        
-        if (!confirm(`Изменить статус заказа на "${getStatusText(selectedStatus)}"?`)) {
-            return;
-        }
-        
-        setProcessing(true);
-        setStatusError('');
-        setFeedbackMessage(null);
-        
+    // Обработчик изменения статуса заказа
+    const handleStatusUpdate = async () => {
         try {
-            const response = await axios.put(route('admin.orders.update-status', order.id), {
+            setIsUpdating(true);
+            
+            // Формируем данные для отправки
+            const formData = {
                 status: selectedStatus,
-                note: statusNote
-            });
+                comment: statusComment
+            };
             
-            setStatusNote('');
-            setFeedbackMessage('Статус заказа успешно обновлен');
-            setMessageType('success');
+            // Отправляем запрос на обновление статуса
+            const response = await axios.put(`/admin/orders/${orderData.id}/status`, formData);
             
-            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
-            setTimeout(() => {
-                router.reload();
-            }, 1000);
+            if (response.data && response.data.success) {
+                setFeedbackMessage('Статус заказа успешно обновлен');
+                setMessageType('success');
+                
+                // Обновляем статус заказа в локальном состоянии
+                setOrder({
+                    ...orderData,
+                    status: selectedStatus,
+                    status_updated_at: new Date().toISOString()
+                });
+                
+                // Очищаем комментарий
+                setStatusComment('');
+                
+                // Закрываем выпадающий список
+                setStatusDropdownOpen(false);
+            } else {
+                throw new Error('Не удалось обновить статус заказа');
+            }
         } catch (error) {
             console.error('Ошибка при обновлении статуса:', error);
-            
-            if (error.response && error.response.data && error.response.data.error) {
-                setStatusError(error.response.data.error);
-                setFeedbackMessage(error.response.data.error);
-            } else {
-                setStatusError('Не удалось обновить статус заказа.');
-                setFeedbackMessage('Не удалось обновить статус заказа.');
-            }
-            
+            setFeedbackMessage(`Ошибка при обновлении статуса: ${error.message}`);
             setMessageType('error');
         } finally {
-            setProcessing(false);
+            setIsUpdating(false);
         }
     };
 
@@ -207,10 +181,10 @@ export default function Show({ auth, order, availableStatuses }) {
         try {
             const response = await axios.put(route('admin.orders.update-status', order.id), {
                 status: newStatus,
-                note: statusNote
+                note: statusComment
             });
             
-            setStatusNote('');
+            setStatusComment('');
             setFeedbackMessage('Статус заказа успешно обновлен');
             setMessageType('success');
             
@@ -279,6 +253,17 @@ export default function Show({ auth, order, availableStatuses }) {
         }
     };
 
+    // Определение доступных статусов
+    const statusOptions = [
+        { value: 'pending', label: 'Ожидает обработки' },
+        { value: 'processing', label: 'В работе' },
+        { value: 'ready_for_pickup', label: 'Готов к выдаче' },
+        { value: 'ready_for_delivery', label: 'Готов к доставке' },
+        { value: 'in_delivery', label: 'В доставке' },
+        { value: 'delivered', label: 'Выдано' },
+        { value: 'returned', label: 'Возвращен' }
+    ];
+
     return (
         <AdminLayout
             user={auth.user}
@@ -320,228 +305,155 @@ export default function Show({ auth, order, availableStatuses }) {
                                     {/* Форма для изменения статуса */}
                                     <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
                                         <h3 className="text-md font-semibold mb-3">Управление статусом заказа</h3>
-                                        <form onSubmit={handleStatusChange}>
-                                            <div>
-                                                <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Выберите новый статус
-                                                </label>
-                                                <div className="flex items-center">
-                                                    <select
-                                                        id="status-select"
-                                                        value={selectedStatus}
-                                                        onChange={(e) => setSelectedStatus(e.target.value)}
-                                                        disabled={processing}
-                                                        className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 mr-2"
-                                                    >
-                                                        {Object.entries(availableStatuses || {
-                                                            'pending': 'Ожидает обработки',
-                                                            'processing': 'В обработке',
-                                                            'shipped': 'Отправлен',
-                                                            'delivered': 'Доставлен',
-                                                            'completed': 'Выполнен',
-                                                            'cancelled': 'Отменен'
-                                                        }).map(([value, label]) => (
-                                                            <option key={value} value={value}>{label}</option>
-                                                        ))}
-                                                    </select>
-
-                                                    <button 
-                                                        type="submit"
-                                                        disabled={processing || selectedStatus === order.status}
-                                                        className="inline-flex justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
-                                                    >
-                                                        {processing ? 'Обновление...' : 'Обновить статус'}
-                                                    </button>
-                                                </div>
+                                        <div>
+                                            <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Выберите новый статус
+                                            </label>
+                                            <div className="relative">
+                                                <select
+                                                    id="status-select"
+                                                    value={selectedStatus}
+                                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                                    disabled={isUpdating}
+                                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                >
+                                                    {statusOptions.map((status) => (
+                                                        <option key={status.value} value={status.value}>
+                                                            {status.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                            
-                                            <div className="mt-3">
-                                                <label htmlFor="status-note" className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Комментарий к изменению статуса (необязательно)
-                                                </label>
-                                                <textarea
-                                                    id="status-note"
-                                                    value={statusNote}
-                                                    onChange={(e) => setStatusNote(e.target.value)}
-                                                    disabled={processing}
-                                                    rows={2}
-                                                    className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                                    placeholder="Добавьте комментарий к изменению статуса"
-                                                ></textarea>
-                                            </div>
-                                        </form>
-                                        
-                                        {/* Сообщение обратной связи */}
-                                        {feedbackMessage && (
-                                            <div className={`mt-3 p-2 rounded-md ${
-                                                messageType === 'success' ? 'bg-green-100 text-green-800' : 
-                                                messageType === 'error' ? 'bg-red-100 text-red-800' : 
-                                                'bg-blue-100 text-blue-800'
-                                            }`}>
-                                                {feedbackMessage}
-                                            </div>
-                                        )}
-                                        
-                                        <div className="mt-4 grid grid-cols-2 gap-4">
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleQuickStatusChange('processing')}
-                                                disabled={processing || order.status === 'processing'}
-                                                className="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
-                                            >
-                                                {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В работу'}
-                                            </button>
-                                            <button 
-                                                type="button" 
-                                                onClick={() => handleQuickStatusChange('delivered')}
-                                                disabled={processing || order.status === 'delivered'}
-                                                className="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
-                                            >
-                                                {processing && selectedStatus === 'delivered' ? 'Обновление...' : 'Выдано'}
-                                            </button>
                                         </div>
                                         
-                                        {statusError && !feedbackMessage && (
-                                            <p className="mt-3 text-sm text-red-600">{statusError}</p>
-                                        )}
+                                        <div className="mt-3">
+                                            <label htmlFor="status-comment" className="block text-sm font-medium text-gray-700 mb-2">
+                                                Комментарий к изменению статуса (необязательно)
+                                            </label>
+                                            <textarea
+                                                id="status-comment"
+                                                value={statusComment}
+                                                onChange={(e) => setStatusComment(e.target.value)}
+                                                disabled={isUpdating}
+                                                rows={2}
+                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                                                placeholder="Укажите причину изменения статуса или дополнительную информацию"
+                                            ></textarea>
+                                        </div>
+                                        
+                                        <div className="mt-4">
+                                            <button
+                                                type="button"
+                                                onClick={handleStatusUpdate}
+                                                disabled={isUpdating || selectedStatus === orderData.status}
+                                                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                                                    isUpdating || selectedStatus === orderData.status ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
+                                                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+                                            >
+                                                {isUpdating ? 'Обновление...' : 'Обновить статус'}
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <div className="bg-gray-50 p-6 rounded-lg">
-                                    <h3 className="text-lg font-semibold mb-4">Данные покупателя</h3>
+                            {/* Сообщение обратной связи */}
+                            {feedbackMessage && (
+                                <div className={`mt-3 p-2 rounded-md ${
+                                    messageType === 'success' ? 'bg-green-100 text-green-800' : 
+                                    messageType === 'error' ? 'bg-red-100 text-red-800' : 
+                                    'bg-blue-100 text-blue-800'
+                                }`}>
+                                    {feedbackMessage}
+                                </div>
+                            )}
+                            
+                            <div className="mt-4 grid grid-cols-2 gap-4">
+                                <button 
+                                    type="button" 
+                                    onClick={() => handleQuickStatusChange('processing')}
+                                    disabled={processing || order.status === 'processing'}
+                                    className="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
+                                >
+                                    {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В работу'}
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => handleQuickStatusChange('delivered')}
+                                    disabled={processing || order.status === 'delivered'}
+                                    className="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
+                                >
+                                    {processing && selectedStatus === 'delivered' ? 'Обновление...' : 'Выдано'}
+                                </button>
+                            </div>
+                            
+                            {statusError && !feedbackMessage && (
+                                <p className="mt-3 text-sm text-red-600">{statusError}</p>
+                            )}
+                            
+                            {/* Информация о клиенте и доставке */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8">
+                                <div className="bg-white p-6 rounded-lg shadow">
+                                    <h3 className="text-lg font-semibold mb-4">Данные клиента</h3>
                                     
                                     <div className="space-y-4">
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">ФИО</h4>
-                                            <p className="text-gray-900">{order.shipping_name}</p>
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">ФИО:</span>
+                                            <span className="w-2/3 font-medium">{orderData.customer_name || 'Не указано'}</span>
                                         </div>
                                         
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">Телефон</h4>
-                                            <p className="text-gray-900">{order.shipping_phone}</p>
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">Email:</span>
+                                            <span className="w-2/3">{orderData.customer_email || 'Не указано'}</span>
                                         </div>
                                         
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">Пользователь</h4>
-                                            <p className="text-gray-900">
-                                                {order.user ? order.user.name : 'Не зарегистрирован'}
-                                                {order.user && order.user.email && ` (${order.user.email})`}
-                                            </p>
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">Телефон:</span>
+                                            <span className="w-2/3">{orderData.customer_phone || 'Не указано'}</span>
                                         </div>
+                                        
+                                        {orderData.user && (
+                                            <div className="flex border-b border-gray-200 pb-2">
+                                                <span className="w-1/3 text-gray-600">Аккаунт:</span>
+                                                <span className="w-2/3">
+                                                    <Link href={route('admin.users.edit', orderData.user.id)} className="text-indigo-600 hover:underline">
+                                                        {orderData.user.name} (ID: {orderData.user.id})
+                                                    </Link>
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                                 
-                                <div className="bg-gray-50 p-6 rounded-lg">
+                                <div className="bg-white p-6 rounded-lg shadow">
                                     <h3 className="text-lg font-semibold mb-4">Информация о доставке</h3>
                                     
                                     <div className="space-y-4">
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">Адрес</h4>
-                                            <p className="text-gray-900">{order.shipping_address}</p>
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">Способ доставки:</span>
+                                            <span className="w-2/3">{orderData.delivery_method === 'pickup' ? 'Самовывоз' : 'Доставка'}</span>
                                         </div>
                                         
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">Город</h4>
-                                            <p className="text-gray-900">{order.shipping_city}</p>
-                                        </div>
-                                        
-                                        {order.shipping_zip && (
-                                            <div>
-                                                <h4 className="text-sm font-medium text-gray-600 mb-1">Индекс</h4>
-                                                <p className="text-gray-900">{order.shipping_zip}</p>
+                                        {orderData.delivery_address && (
+                                            <div className="flex border-b border-gray-200 pb-2">
+                                                <span className="w-1/3 text-gray-600">Адрес доставки:</span>
+                                                <span className="w-2/3">{orderData.delivery_address}</span>
                                             </div>
                                         )}
                                         
-                                        <div>
-                                            <h4 className="text-sm font-medium text-gray-600 mb-1">Способ оплаты</h4>
-                                            <p className="text-gray-900">{getPaymentMethodText(order.payment_method)}</p>
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">Дата заказа:</span>
+                                            <span className="w-2/3">{formatDate(orderData.created_at)}</span>
+                                        </div>
+                                        
+                                        <div className="flex border-b border-gray-200 pb-2">
+                                            <span className="w-1/3 text-gray-600">Способ оплаты:</span>
+                                            <span className="w-2/3">{getPaymentMethodText(orderData.payment_method)}</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
-                            {/* История статусов */}
-                            <div className="mt-8 bg-gray-50 p-6 rounded-lg">
-                                <h3 className="text-lg font-semibold mb-4">История изменений статуса</h3>
-                                
-                                {order.status_history && order.status_history.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {order.status_history.map((item, index) => (
-                                            <div key={index} className="flex items-start">
-                                                <div className="flex-shrink-0">
-                                                    <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                    </svg>
-                                                </div>
-                                                <div className="ml-3">
-                                                    <p className="text-sm text-gray-900">
-                                                        Статус изменен с <span className="font-medium">{getStatusText(item.from)}</span> на <span className="font-medium">{getStatusText(item.to)}</span>
-                                                    </p>
-                                                    <p className="mt-1 text-xs text-gray-500">
-                                                        {item.changed_at} • {item.changed_by || 'Система'}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-gray-500">История изменений статуса отсутствует</p>
-                                )}
-                            </div>
-                            
-                            {/* Заметки к заказу */}
-                            <div className="mt-8 bg-gray-50 p-6 rounded-lg">
-                                <h3 className="text-lg font-semibold mb-4">Заметки к заказу</h3>
-                                
-                                <form onSubmit={handleAddNote} className="mb-6">
-                                    <div>
-                                        <label htmlFor="note" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Добавить заметку
-                                        </label>
-                                        <textarea
-                                            id="note"
-                                            name="note"
-                                            rows={3}
-                                            value={note}
-                                            onChange={(e) => setNote(e.target.value)}
-                                            className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            placeholder="Введите текст заметки..."
-                                        ></textarea>
-                                        
-                                        {noteError && (
-                                            <p className="mt-1 text-sm text-red-600">{noteError}</p>
-                                        )}
-                                    </div>
-                                    
-                                    <div className="mt-3">
-                                        <button
-                                            type="submit"
-                                            disabled={addingNote}
-                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            {addingNote ? 'Добавление...' : 'Добавить заметку'}
-                                        </button>
-                                    </div>
-                                </form>
-                                
-                                <div className="space-y-4">
-                                    {order.notes_json && order.notes_json.length > 0 ? (
-                                        order.notes_json.map((note, index) => (
-                                            <div key={index} className="bg-white p-4 rounded-md shadow-sm">
-                                                <p className="text-gray-900">{note.text}</p>
-                                                <p className="mt-2 text-xs text-gray-500">
-                                                    {note.created_at} • {note.created_by || 'Система'}
-                                                </p>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-gray-500">Нет заметок к этому заказу</p>
-                                    )}
-                                </div>
-                            </div>
-
                             {/* Товары заказа */}
                             <div className="bg-white border rounded-lg overflow-hidden mb-8">
                                 <div className="px-6 py-4 border-b bg-gray-50">
@@ -576,40 +488,50 @@ export default function Show({ auth, order, availableStatuses }) {
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
-                                            {order.orderItems && order.orderItems.length > 0 ? (
-                                                order.orderItems.map((item, index) => (
+                                            {orderData.orderItems && orderData.orderItems.length > 0 ? (
+                                                orderData.orderItems.map((item, index) => (
                                                     <tr key={`orderItem-${item.id}`}>
                                                         <td className="px-4 py-2">{index + 1}</td>
                                                         <td className="px-4 py-2">
-                                                            {item.sparePart?.brand?.name || item.brand_name || (item.manufacturer || '')}
+                                                            {item.sparePart?.brand?.name || item.brand_name || ''}
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             {item.sparePart?.part_number || item.part_number || ''}
                                                         </td>
                                                         <td className="px-4 py-2">
-                                                            {item.sparePart?.name || item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}
+                                                            <div>
+                                                                <p className="font-medium">{item.sparePart?.name || item.name || `Товар #${item.spare_part_id || 'N/A'}`}</p>
+                                                                {item.sparePart?.description && (
+                                                                    <p className="text-xs text-gray-500 mt-1">{item.sparePart.description}</p>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
                                                         <td className="px-4 py-2">{item.quantity}</td>
-                                                        <td className="px-4 py-2">{formatPrice(item.price * item.quantity)} ₽</td>
+                                                        <td className="px-4 py-2">{formatPrice(item.total || (item.price * item.quantity))} ₽</td>
                                                     </tr>
                                                 ))
-                                            ) : order.direct_items && order.direct_items.length > 0 ? (
-                                                order.direct_items.map((item, index) => (
+                                            ) : orderData.direct_items && orderData.direct_items.length > 0 ? (
+                                                orderData.direct_items.map((item, index) => (
                                                     <tr key={`directItem-${index}`}>
                                                         <td className="px-4 py-2">{index + 1}</td>
                                                         <td className="px-4 py-2">
-                                                            {item.brand_name || item.manufacturer || ''}
+                                                            {item.brand_name || ''}
                                                         </td>
                                                         <td className="px-4 py-2">
                                                             {item.part_number || ''}
                                                         </td>
                                                         <td className="px-4 py-2">
-                                                            {item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}
+                                                            <div>
+                                                                <p className="font-medium">{item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}</p>
+                                                                {item.description && (
+                                                                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
+                                                                )}
+                                                            </div>
                                                         </td>
                                                         <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
                                                         <td className="px-4 py-2">{item.quantity}</td>
-                                                        <td className="px-4 py-2">{formatPrice(item.price * item.quantity)} ₽</td>
+                                                        <td className="px-4 py-2">{formatPrice(item.total || (item.price * item.quantity))} ₽</td>
                                                     </tr>
                                                 ))
                                             ) : (
@@ -626,22 +548,21 @@ export default function Show({ auth, order, availableStatuses }) {
                                                     Итого:
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                    {formatPrice(order.total || 0)} руб.
+                                                    {formatPrice(orderData.total || 0)} руб.
                                                 </td>
                                             </tr>
                                         </tfoot>
                                     </table>
                                 </div>
                             </div>
-
-                            {order.payment_status !== 'paid' && (
-                                <Link
-                                    href={route('admin.orders.add-payment', order.id)}
-                                    className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    Добавить оплату
-                                </Link>
-                            )}
+                            
+                            {/* Кнопка добавления оплаты */}
+                            <Link
+                                href={route('admin.orders.add-payment', orderData.id)}
+                                className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                            >
+                                Добавить оплату
+                            </Link>
                         </div>
                     </div>
                 </div>

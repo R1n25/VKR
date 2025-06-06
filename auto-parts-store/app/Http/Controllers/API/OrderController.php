@@ -9,6 +9,8 @@ use App\Models\SparePart;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -131,125 +133,146 @@ class OrderController extends Controller
      */
     public function store(Request $request)
     {
-        // Убедимся, что customer_name не пустой
-        if (empty($request->customer_name)) {
-            $request->merge(['customer_name' => 'Гость']);
-        }
-        
-        $validated = $request->validate([
-            'customer_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'shipping_name' => 'nullable|string|max:255',
-            'shipping_phone' => 'nullable|string|max:20',
-            'shipping_address' => 'nullable|string',
-            'shipping_city' => 'nullable|string|max:100',
-            'shipping_zip' => 'nullable|string|max:20',
-            'payment_method' => 'nullable|string|in:cash,card,online',
-            'notes' => 'nullable|string',
-            'user_id' => 'nullable|exists:users,id',
-            'items' => 'required|array|min:1',
-            'items.*.spare_part_id' => 'required|exists:spare_parts,id',
-            'items.*.quantity' => 'required|integer|min:1',
-        ]);
-
-        // Начинаем транзакцию для создания заказа и элементов заказа
-        return DB::transaction(function () use ($validated, $request) {
-            $total = 0;
-            
-            // Рассчитываем общую сумму заказа и проверяем наличие запчастей
-            foreach ($validated['items'] as $item) {
-                $part = SparePart::findOrFail($item['spare_part_id']);
-                
-                if ($part->stock_quantity < $item['quantity']) {
-                    throw new \Exception("Недостаточное количество запчасти '{$part->name}' на складе");
-                }
-                
-                $total += $part->price * $item['quantity'];
-            }
-            
-            // Генерируем номер заказа
-            $orderData = [
-                'customer_name' => $validated['customer_name'],
-                'email' => $validated['email'],
-                'phone' => $validated['phone'],
-                'address' => $validated['address'],
-                'user_id' => $validated['user_id'] ?? null,
-                'total' => $total,
-                'status' => 'pending',
-                'payment_status' => 'pending',
-                'payment_method' => $request->payment_method ?? 'cash',
-            ];
-            
-            // Добавляем данные о доставке, если они есть
-            if ($request->has('shipping_name') && !empty($request->shipping_name)) {
-                $orderData['shipping_name'] = $request->shipping_name;
-            } else {
-                $orderData['shipping_name'] = $validated['customer_name'];
-            }
-            
-            if ($request->has('shipping_phone')) {
-                $orderData['shipping_phone'] = $request->shipping_phone;
-            } else {
-                $orderData['shipping_phone'] = $validated['phone'];
-            }
-            
-            if ($request->has('shipping_address')) {
-                $orderData['shipping_address'] = $request->shipping_address;
-            } else {
-                $orderData['shipping_address'] = $validated['address'];
-            }
-            
-            if ($request->has('shipping_city')) {
-                $orderData['shipping_city'] = $request->shipping_city;
-            }
-            
-            if ($request->has('shipping_zip')) {
-                $orderData['shipping_zip'] = $request->shipping_zip;
-            }
-            
-            if ($request->has('notes')) {
-                $orderData['notes'] = $request->notes;
-            }
-            
-            // Создаем заказ
-            $order = Order::create($orderData);
-            
-            // Для отладки: выводим информацию о созданном заказе
-            \Log::info('Создан заказ через API', [
-                'order_id' => $order->id,
-                'order_number' => $order->order_number,
-                'user_id' => $order->user_id,
-                'total' => $order->total
+        try {
+            // Валидация входных данных
+            $validated = $request->validate([
+                'customer_name' => 'required|string|max:255',
+                'email' => 'nullable|email|max:255',
+                'phone' => 'required|string|max:20',
+                'delivery_address' => 'nullable|string|max:500',
+                // 'delivery_method' => 'required|string|in:pickup,delivery', // Поле не существует в базе данных
+                'payment_method' => 'required|string|in:cash,card,online',
+                'items' => 'required|array|min:1',
+                'items.*.id' => 'required|exists:spare_parts,id',
+                'items.*.quantity' => 'required|integer|min:1',
+                'items.*.price' => 'required|numeric|min:0',
+                'items.*.name' => 'required|string',
+                'comment' => 'nullable|string|max:1000',
             ]);
+
+            // Начинаем транзакцию
+            DB::beginTransaction();
+
+            // Создаем новый заказ
+            $order = new Order();
+            $order->user_id = auth()->id(); // ID авторизованного пользователя или null
+            $order->order_number = $this->generateOrderNumber();
+            $order->customer_name = $validated['customer_name'];
+            $order->email = $validated['email'] ?? null;
+            $order->phone = $validated['phone'];
+            $order->address = $validated['delivery_address'] ?? null;
+            // $order->delivery_method = $validated['delivery_method']; // Поле не существует в базе данных
+            $order->payment_method = $validated['payment_method'];
+            $order->status = 'pending'; // Начальный статус - "Ожидает обработки"
+            $order->notes = $validated['comment'] ?? null;
             
-            // Создаем элементы заказа и уменьшаем количество запчастей на складе
+            // Рассчитываем общую сумму заказа
+            $total = 0;
             foreach ($validated['items'] as $item) {
-                $part = SparePart::findOrFail($item['spare_part_id']);
-                
-                // Уменьшаем количество запчастей на складе
-                $part->stock_quantity -= $item['quantity'];
-                $part->save();
-                
-                // Создаем элемент заказа
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'spare_part_id' => $part->id,
-                    'quantity' => $item['quantity'],
-                    'price' => $part->price,
-                ]);
+                $total += $item['price'] * $item['quantity'];
             }
+            $order->total = $total;
             
-            // Загружаем заказ с элементами
-            $order->load('orderItems.sparePart');
-            
+            $order->save();
+
+            // Добавляем товары в заказ
+            foreach ($validated['items'] as $item) {
+                $orderItem = new OrderItem();
+                $orderItem->order_id = $order->id;
+                $orderItem->spare_part_id = $item['id'];
+                $orderItem->quantity = $item['quantity'];
+                $orderItem->price = $item['price'];
+                $orderItem->name = $item['name'];
+                $orderItem->total = $item['price'] * $item['quantity'];
+                $orderItem->save();
+                
+                // Уменьшаем количество товара на складе
+                $sparePart = SparePart::find($item['id']);
+                if ($sparePart) {
+                    // Логируем состояние до изменения
+                    Log::info('Состояние товара до уменьшения количества', [
+                        'order_id' => $order->id,
+                        'part_id' => $item['id'],
+                        'part_name' => $item['name'],
+                        'current_quantity' => $sparePart->stock_quantity,
+                        'is_available' => $sparePart->is_available,
+                        'requested_quantity' => $item['quantity']
+                    ]);
+                    
+                    // Проверяем, достаточно ли товара на складе
+                    if ($sparePart->stock_quantity < $item['quantity']) {
+                        // Если товара недостаточно, откатываем транзакцию
+                        DB::rollBack();
+                        Log::warning('Недостаточно товара на складе', [
+                            'part_id' => $item['id'],
+                            'part_name' => $item['name'],
+                            'available' => $sparePart->stock_quantity,
+                            'requested' => $item['quantity']
+                        ]);
+                        return response()->json([
+                            'error' => 'Недостаточно товара на складе',
+                            'part_id' => $item['id'],
+                            'part_name' => $item['name'],
+                            'available' => $sparePart->stock_quantity,
+                            'requested' => $item['quantity']
+                        ], 400);
+                    }
+                    
+                    // Запоминаем старое значение для логирования
+                    $oldQuantity = $sparePart->stock_quantity;
+                    
+                    // Используем новый метод для уменьшения количества товара
+                    // Передаем отрицательное значение, чтобы уменьшить количество
+                    $sparePart->updateAvailability(-$item['quantity']);
+                    
+                    // Логируем изменение количества
+                    Log::info('Уменьшено количество товара после заказа', [
+                        'order_id' => $order->id,
+                        'part_id' => $item['id'],
+                        'part_name' => $item['name'],
+                        'quantity_before' => $oldQuantity,
+                        'quantity_after' => $sparePart->stock_quantity,
+                        'quantity_changed' => $item['quantity'],
+                        'is_available' => $sparePart->is_available
+                    ]);
+                }
+            }
+
+            // Фиксируем транзакцию
+            DB::commit();
+
+            // Возвращаем успешный ответ с данными заказа
             return response()->json([
                 'success' => true,
                 'message' => 'Заказ успешно создан',
-                'data' => $order
+                'order' => [
+                    'id' => $order->id,
+                    'order_number' => $order->order_number,
+                    'total' => $order->total,
+                    'status' => $order->status,
+                    'created_at' => $order->created_at
+                ]
             ], 201);
-        });
+        } catch (ValidationException $e) {
+            // Если произошла ошибка валидации
+            return response()->json([
+                'error' => 'Ошибка валидации',
+                'messages' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            // Если произошла другая ошибка, откатываем транзакцию
+            DB::rollBack();
+            
+            Log::error('Ошибка при создании заказа', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'error' => 'Не удалось создать заказ',
+                'message' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -302,31 +325,65 @@ class OrderController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $order = Order::findOrFail($id);
-        
-        $validated = $request->validate([
-            'status' => 'required|string|in:pending,processing,ready_for_pickup,ready_for_delivery,shipping,delivered,returned,shipped,completed,cancelled',
-        ]);
-        
-        // Если заказ отменен или возвращен, возвращаем запчасти на склад
-        if (($validated['status'] === 'returned' || $validated['status'] === 'cancelled') 
-            && $order->status !== 'returned' && $order->status !== 'cancelled') {
-            DB::transaction(function () use ($order) {
-                foreach ($order->orderItems as $item) {
-                    $part = $item->sparePart;
-                    $part->stock_quantity += $item->quantity;
-                    $part->save();
-                }
-            });
+        try {
+            $order = Order::findOrFail($id);
+            
+            $validated = $request->validate([
+                'status' => 'required|string|in:pending,processing,ready_for_pickup,ready_for_delivery,shipping,delivered,returned,shipped,completed,cancelled',
+            ]);
+            
+            // Если заказ отменен или возвращен, возвращаем запчасти на склад
+            if (($validated['status'] === 'returned' || $validated['status'] === 'cancelled') 
+                && $order->status !== 'returned' && $order->status !== 'cancelled') {
+                
+                DB::transaction(function () use ($order) {
+                    foreach ($order->orderItems as $item) {
+                        $part = $item->sparePart;
+                        if ($part) {
+                            // Используем новый метод для обновления доступности
+                            $part->updateAvailability($item->quantity);
+                            
+                            // Логируем возврат товара на склад
+                            Log::info('Возврат товара на склад при отмене/возврате заказа', [
+                                'order_id' => $order->id,
+                                'part_id' => $item->spare_part_id,
+                                'part_name' => $item->name,
+                                'quantity_before' => $part->stock_quantity - $item->quantity,
+                                'quantity_after' => $part->stock_quantity,
+                                'quantity_returned' => $item->quantity,
+                                'is_available' => $part->is_available
+                            ]);
+                        }
+                    }
+                });
+            }
+            
+            // Обновляем статус заказа
+            $order->status = $validated['status'];
+            
+            // Добавляем информацию о том, кто и когда обновил статус
+            $order->status_updated_at = now();
+            $order->status_updated_by = auth()->id();
+            
+            $order->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Статус заказа успешно обновлен',
+                'data' => $order
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Ошибка при обновлении статуса заказа', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Не удалось обновить статус заказа',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        
-        $order->update($validated);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Статус заказа успешно обновлен',
-            'data' => $order
-        ]);
     }
 
     /**
@@ -334,24 +391,71 @@ class OrderController extends Controller
      */
     public function destroy(string $id)
     {
-        $order = Order::findOrFail($id);
-        
-        // Если заказ не отменен, возвращаем запчасти на склад
-        if ($order->status !== 'cancelled') {
-            DB::transaction(function () use ($order) {
-                foreach ($order->orderItems as $item) {
-                    $part = $item->sparePart;
-                    $part->stock_quantity += $item->quantity;
-                    $part->save();
-                }
-            });
+        try {
+            $order = Order::findOrFail($id);
+            
+            // Если заказ не отменен, возвращаем запчасти на склад
+            if ($order->status !== 'cancelled' && $order->status !== 'returned') {
+                DB::transaction(function () use ($order) {
+                    foreach ($order->orderItems as $item) {
+                        $part = $item->sparePart;
+                        if ($part) {
+                            // Запоминаем старое значение для логирования
+                            $oldQuantity = $part->stock_quantity;
+                            
+                            // Используем новый метод для возврата товара на склад
+                            $part->updateAvailability($item->quantity);
+                            
+                            // Логируем возврат товара на склад
+                            Log::info('Возврат товара на склад при удалении заказа', [
+                                'order_id' => $order->id,
+                                'part_id' => $item->spare_part_id,
+                                'part_name' => $item->name,
+                                'quantity_before' => $oldQuantity,
+                                'quantity_after' => $part->stock_quantity,
+                                'quantity_returned' => $item->quantity,
+                                'is_available' => $part->is_available
+                            ]);
+                        }
+                    }
+                });
+            }
+            
+            $order->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Заказ успешно удален'
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Ошибка при удалении заказа', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Не удалось удалить заказ',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
+
+    /**
+     * Генерирует уникальный номер заказа
+     *
+     * @return string
+     */
+    private function generateOrderNumber()
+    {
+        // Получаем последний заказ
+        $lastOrder = Order::orderBy('id', 'desc')->first();
         
-        $order->delete();
+        // Если заказов еще нет, начинаем с 1
+        $nextId = $lastOrder ? $lastOrder->id + 1 : 1;
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Заказ успешно удален'
-        ]);
+        // Форматируем номер заказа с ведущими нулями
+        // Например: 100000001, 100000002, и т.д.
+        return '1' . str_pad($nextId, 8, '0', STR_PAD_LEFT);
     }
 }

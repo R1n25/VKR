@@ -10,8 +10,10 @@ class OrderItem extends Model
     protected $fillable = [
         'order_id',
         'spare_part_id',
+        'name',
         'quantity',
         'price',
+        'total',
     ];
 
     /**

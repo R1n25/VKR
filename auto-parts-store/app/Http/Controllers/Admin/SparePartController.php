@@ -10,6 +10,7 @@ use App\Models\CarBrand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Inertia\Inertia;
 
 class SparePartController extends Controller
 {
@@ -93,11 +94,22 @@ class SparePartController extends Controller
             $validated['image'] = $imagePath;
         }
         
+        // Получаем и удаляем количество из валидированных данных, 
+        // так как будем устанавливать его через updateAvailability
+        $quantity = (int)$validated['stock_quantity'];
+        unset($validated['stock_quantity']);
+        $validated['stock_quantity'] = 0; // Начальное значение
+        
         // Установка статуса активности
         $validated['is_available'] = $request->has('is_available');
         
-        // Создание запчасти
+        // Создание запчасти с нулевым количеством
         $sparePart = SparePart::create($validated);
+        
+        // Установка количества через updateAvailability
+        if ($quantity > 0) {
+            $sparePart->updateAvailability($quantity);
+        }
         
         // Добавление совместимых моделей автомобилей
         if ($request->has('compatible_car_models')) {
@@ -166,11 +178,26 @@ class SparePartController extends Controller
             $validated['image'] = $imagePath;
         }
         
+        // Получаем текущее количество товара
+        $oldQuantity = $sparePart->stock_quantity;
+        $newQuantity = (int)$validated['stock_quantity'];
+        
+        // Вычисляем разницу для обновления количества
+        $quantityDiff = $newQuantity - $oldQuantity;
+        
+        // Удаляем stock_quantity из валидированных данных, так как будем обновлять его через updateAvailability
+        unset($validated['stock_quantity']);
+        
         // Установка статуса активности
         $validated['is_available'] = $request->has('is_available');
         
-        // Обновление запчасти
+        // Обновление запчасти без количества
         $sparePart->update($validated);
+        
+        // Обновление количества через updateAvailability
+        if ($quantityDiff != 0) {
+            $sparePart->updateAvailability($quantityDiff);
+        }
         
         // Обновление совместимых моделей автомобилей
         if ($request->has('compatible_car_models')) {
@@ -192,68 +219,52 @@ class SparePartController extends Controller
             // Проверка на наличие связанных заказов
             if ($sparePart->orderItems()->count() > 0) {
                 if (request()->header('X-Inertia')) {
-                    return back()->with('error', 'Невозможно удалить запчасть, так как она связана с заказами');
+                    return back()->with('error', 'Запчасть невозможно удалить, так как она связана с заказами. Запчасть помечена как "не в наличии".');
                 }
                 
+                // Вместо удаления, помечаем запчасть как "не в наличии"
+                $sparePart->is_available = false;
+                $sparePart->stock_quantity = 0;
+                $sparePart->save();
+                
                 return redirect()->route('admin.spare-parts.index')
-                    ->with('error', 'Невозможно удалить запчасть, так как она связана с заказами');
+                    ->with('success', 'Запчасть помечена как "не в наличии", так как она связана с заказами');
             }
             
-            // Удаление изображения
-            if ($sparePart->image) {
-                Storage::disk('public')->delete($sparePart->image);
-            }
-            
-            // Удаление связей с моделями автомобилей
-            if (method_exists($sparePart, 'compatibleCarModels')) {
-                $sparePart->compatibleCarModels()->detach();
-            }
-            
-            if (method_exists($sparePart, 'carModels')) {
-                $sparePart->carModels()->detach();
-            }
-            
-            // Удаление связей с аналогами
-            if (method_exists($sparePart, 'analogs')) {
-                $sparePart->analogs()->delete();
-            }
-            
-            if (method_exists($sparePart, 'analogFor')) {
-                $sparePart->analogFor()->delete();
-            }
-            
-            // Удаление запчасти
-            $sparePart->delete();
+            // Вместо удаления, помечаем запчасть как "не в наличии"
+            $sparePart->is_available = false;
+            $sparePart->stock_quantity = 0;
+            $sparePart->save();
             
             if (request()->header('X-Inertia')) {
-                return back()->with('success', 'Запчасть успешно удалена');
+                return back()->with('success', 'Запчасть помечена как "не в наличии"');
             }
             
             if (request()->wantsJson()) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Запчасть успешно удалена'
+                    'message' => 'Запчасть помечена как "не в наличии"'
                 ]);
             }
             
             return redirect()->route('admin.spare-parts.index')
-                ->with('success', 'Запчасть успешно удалена');
+                ->with('success', 'Запчасть помечена как "не в наличии"');
         } catch (\Exception $e) {
-            \Log::error('Ошибка при удалении запчасти: ' . $e->getMessage());
+            \Log::error('Ошибка при обработке запчасти: ' . $e->getMessage());
             
             if (request()->header('X-Inertia')) {
-                return back()->with('error', 'Ошибка при удалении запчасти: ' . $e->getMessage());
+                return back()->with('error', 'Ошибка при обработке запчасти: ' . $e->getMessage());
             }
             
             if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ошибка при удалении запчасти: ' . $e->getMessage()
+                    'message' => 'Ошибка при обработке запчасти: ' . $e->getMessage()
                 ], 500);
             }
             
             return redirect()->route('admin.spare-parts.index')
-                ->with('error', 'Ошибка при удалении запчасти: ' . $e->getMessage());
+                ->with('error', 'Ошибка при обработке запчасти: ' . $e->getMessage());
         }
     }
 
@@ -480,8 +491,19 @@ class SparePartController extends Controller
             $validated['image'] = $imagePath;
         }
         
-        // Создание запчасти
+        // Получаем и удаляем количество из валидированных данных, 
+        // так как будем устанавливать его через updateAvailability
+        $quantity = (int)$validated['stock_quantity'];
+        unset($validated['stock_quantity']);
+        $validated['stock_quantity'] = 0; // Начальное значение
+        
+        // Создание запчасти с нулевым количеством
         $sparePart = SparePart::create($validated);
+        
+        // Установка количества через updateAvailability
+        if ($quantity > 0) {
+            $sparePart->updateAvailability($quantity);
+        }
         
         // Добавление совместимых моделей автомобилей
         if ($request->has('compatible_car_models')) {
@@ -567,8 +589,23 @@ class SparePartController extends Controller
             $validated['image_url'] = $imagePath;
         }
         
-        // Обновление запчасти
+        // Получаем текущее количество товара
+        $oldQuantity = $sparePart->stock_quantity;
+        $newQuantity = (int)$validated['stock_quantity'];
+        
+        // Вычисляем разницу для обновления количества
+        $quantityDiff = $newQuantity - $oldQuantity;
+        
+        // Удаляем stock_quantity из валидированных данных, так как будем обновлять его через updateAvailability
+        unset($validated['stock_quantity']);
+        
+        // Обновление запчасти без количества
         $sparePart->update($validated);
+        
+        // Обновление количества через updateAvailability
+        if ($quantityDiff != 0) {
+            $sparePart->updateAvailability($quantityDiff);
+        }
         
         // Обновление совместимых моделей автомобилей
         if ($request->has('compatible_car_models')) {

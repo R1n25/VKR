@@ -21,24 +21,16 @@ const pageModules = import.meta.glob('./Pages/**/*.jsx');
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => {
-        // Удаляем лишний console.log для повышения производительности
-        
-        // Проверка для страниц админ-панели
-        if (name.startsWith('Admin/')) {
-            return resolvePageComponent(
-                `./Pages/${name}.jsx`,
-                pageModules, // Используем кешированные модули
-            );
-        }
+        // Выводим для отладки путь к резолвимой странице
+        console.log('Resolving page:', name);
         
         return resolvePageComponent(
             `./Pages/${name}.jsx`,
-            pageModules, // Используем кешированные модули
+            pageModules
         );
     },
     setup({ el, App, props }) {
         const root = createRoot(el);
-        // Удаляем лишний console.log для повышения производительности
         
         // Отключаем строгий режим в продакшене для улучшения производительности
         const isProd = import.meta.env.PROD;

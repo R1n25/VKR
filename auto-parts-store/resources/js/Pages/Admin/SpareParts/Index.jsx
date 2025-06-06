@@ -436,16 +436,24 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                     </div>
                                     <div className="flex space-x-1">
                                         {spareParts.links.map((link, index) => (
-                                            <Link
-                                                key={index}
-                                                href={link.url}
-                                                className={`px-3 py-1 text-sm rounded ${
-                                                    link.active 
-                                                        ? 'bg-indigo-600 text-white'
-                                                        : 'bg-white text-gray-700 hover:bg-gray-100'
-                                                } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                            />
+                                            link.url ? (
+                                                <Link
+                                                    key={index}
+                                                    href={link.url}
+                                                    className={`px-3 py-1 text-sm rounded ${
+                                                        link.active 
+                                                            ? 'bg-indigo-600 text-white'
+                                                            : 'bg-white text-gray-700 hover:bg-gray-100'
+                                                    }`}
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            ) : (
+                                                <span
+                                                    key={index}
+                                                    className="px-3 py-1 text-sm rounded opacity-50 cursor-not-allowed bg-white text-gray-700"
+                                                    dangerouslySetInnerHTML={{ __html: link.label }}
+                                                />
+                                            )
                                         ))}
                                     </div>
                                 </div>

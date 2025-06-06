@@ -7,6 +7,7 @@ use App\Models\PartCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class PartCategoryController extends Controller
 {
@@ -63,9 +64,16 @@ class PartCategoryController extends Controller
      */
     public function show(PartCategory $partCategory)
     {
+        // Загружаем связанные запчасти
         $partCategory->load('spareParts');
         
-        return view('admin.part-categories.show', compact('partCategory'));
+        // Загружаем подкатегории
+        $subcategories = PartCategory::where('parent_id', $partCategory->id)
+            ->withCount('spareParts')
+            ->orderBy('name')
+            ->get();
+        
+        return view('admin.part-categories.show', compact('partCategory', 'subcategories'));
     }
 
     /**
@@ -117,9 +125,15 @@ class PartCategoryController extends Controller
     public function destroy(PartCategory $partCategory)
     {
         // Проверяем, есть ли запчасти в этой категории
-        if ($partCategory->spareParts()->count() > 0) {
-            return redirect()->route('admin.part-categories.index')
-                ->with('error', 'Невозможно удалить категорию, так как в ней есть запчасти');
+        $spareParts = $partCategory->spareParts;
+        
+        if ($spareParts->count() > 0) {
+            // Вместо запрета на удаление категории, помечаем все запчасти в ней как "не в наличии"
+            foreach ($spareParts as $sparePart) {
+                $sparePart->is_available = false;
+                $sparePart->stock_quantity = 0;
+                $sparePart->save();
+            }
         }
 
         // Удаляем изображение
@@ -130,6 +144,162 @@ class PartCategoryController extends Controller
         $partCategory->delete();
 
         return redirect()->route('admin.part-categories.index')
-            ->with('success', 'Категория успешно удалена');
+            ->with('success', 'Категория успешно удалена. Все запчасти в этой категории помечены как "не в наличии"');
+    }
+
+    /**
+     * Отображение списка категорий запчастей (Inertia)
+     */
+    public function indexInertia()
+    {
+        $categories = PartCategory::with('parent')
+            ->withCount('spareParts')
+            ->orderBy('name')
+            ->get();
+
+        return inertia('Admin/Categories/Index', [
+            'categories' => $categories,
+            'flash' => [
+                'success' => session('success'),
+                'error' => session('error')
+            ]
+        ]);
+    }
+
+    /**
+     * Форма создания новой категории (Inertia)
+     */
+    public function createInertia()
+    {
+        $categories = PartCategory::all();
+        
+        return inertia('Admin/Categories/Create', [
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * Отображение информации о категории (Inertia)
+     */
+    public function showInertia(PartCategory $partCategory)
+    {
+        // Загружаем родительскую категорию
+        $partCategory->load('parent');
+        
+        // Загружаем подкатегории
+        $subcategories = PartCategory::where('parent_id', $partCategory->id)
+            ->withCount('spareParts')
+            ->orderBy('name')
+            ->get();
+        
+        // Загружаем запчасти в этой категории
+        $spareParts = $partCategory->spareParts()->with('category')->get();
+        
+        return inertia('Admin/Categories/Show', [
+            'category' => $partCategory,
+            'subcategories' => $subcategories,
+            'spareParts' => $spareParts
+        ]);
+    }
+
+    /**
+     * Форма редактирования категории (Inertia)
+     */
+    public function editInertia(PartCategory $partCategory)
+    {
+        $categories = PartCategory::where('id', '!=', $partCategory->id)
+            ->get();
+            
+        return inertia('Admin/Categories/Edit', [
+            'category' => $partCategory,
+            'categories' => $categories
+        ]);
+    }
+
+    /**
+     * Сохранение новой категории через Inertia
+     */
+    public function storeInertia(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:part_categories',
+            'description' => 'nullable|string',
+            'parent_id' => 'nullable|exists:part_categories,id',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        // Создаем slug из имени
+        $validated['slug'] = Str::slug($validated['name']);
+
+        // Обработка изображения
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('part_categories', 'public');
+            $validated['image_url'] = $imagePath;
+        }
+
+        PartCategory::create($validated);
+
+        return redirect()->route('admin.part-categories.inertia')
+            ->with('success', 'Категория успешно создана');
+    }
+
+    /**
+     * Обновление категории через Inertia
+     */
+    public function updateInertia(Request $request, PartCategory $partCategory)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:part_categories,name,' . $partCategory->id,
+            'description' => 'nullable|string',
+            'parent_id' => 'nullable|exists:part_categories,id',
+            'image' => 'nullable|image|max:2048',
+        ]);
+
+        // Обновляем slug
+        $validated['slug'] = Str::slug($validated['name']);
+
+        // Обработка изображения
+        if ($request->hasFile('image')) {
+            // Удаляем старое изображение
+            if ($partCategory->image_url) {
+                Storage::disk('public')->delete($partCategory->image_url);
+            }
+
+            $imagePath = $request->file('image')->store('part_categories', 'public');
+            $validated['image_url'] = $imagePath;
+        }
+
+        $partCategory->update($validated);
+
+        return redirect()->route('admin.part-categories.inertia')
+            ->with('success', 'Категория успешно обновлена');
+    }
+
+    /**
+     * Удаление категории через Inertia
+     */
+    public function destroyInertia(PartCategory $partCategory)
+    {
+        // Проверяем, есть ли запчасти в этой категории
+        $spareParts = $partCategory->spareParts;
+        
+        if ($spareParts->count() > 0) {
+            // Вместо запрета на удаление категории, помечаем все запчасти в ней как "не в наличии"
+            foreach ($spareParts as $sparePart) {
+                $sparePart->is_available = false;
+                $sparePart->stock_quantity = 0;
+                $sparePart->save();
+            }
+        }
+
+        // Удаляем изображение
+        if ($partCategory->image_url) {
+            Storage::disk('public')->delete($partCategory->image_url);
+        }
+
+        $partCategory->delete();
+
+        return redirect()->route('admin.part-categories.inertia')
+            ->with('success', 'Категория успешно удалена. Все запчасти в этой категории помечены как "не в наличии"');
     }
 } 

@@ -104,9 +104,8 @@ class CreateTestOrder extends Command
                 $orderItem->part_number = $part->part_number;
                 $orderItem->save();
                 
-                // Уменьшаем количество на складе
-                $part->stock_quantity -= $quantity;
-                $part->save();
+                // Уменьшаем количество на складе с помощью метода updateAvailability
+                $part->updateAvailability(-$quantity);
             }
             
             // Обновляем общую сумму заказа

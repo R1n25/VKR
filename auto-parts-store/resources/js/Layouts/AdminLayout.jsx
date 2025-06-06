@@ -61,6 +61,15 @@ export default function AdminLayout({ user, header, children }) {
                                 </svg>
                                 Запчасти
                             </Link>
+                            <Link 
+                                href={route('admin.part-categories.inertia')} 
+                                className={`block py-3 px-4 rounded-lg flex items-center transition-colors ${route().current('admin.part-categories.inertia') || route().current('admin.part-categories.*') ? 'bg-[#3a5085]' : 'hover:bg-[#3a5085]'}`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                                </svg>
+                                Категории
+                            </Link>
                             <Link
                                 href={route('admin.orders.index')}
                                 className={`block py-3 px-4 rounded-lg flex items-center transition-colors ${route().current('admin.orders.*') ? 'bg-[#3a5085]' : 'hover:bg-[#3a5085]'}`}

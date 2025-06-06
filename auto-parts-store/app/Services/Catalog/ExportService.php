@@ -106,7 +106,7 @@ class ExportService
             
             // Применяем фильтры, если они есть
             if (!empty($filters['brand_id'])) {
-                $query->where('car_brand_id', $filters['brand_id']);
+                $query->where('brand_id', $filters['brand_id']);
             }
             
             if (isset($filters['is_popular'])) {

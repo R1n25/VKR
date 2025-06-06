@@ -5,13 +5,41 @@ import axios from 'axios';
 export default function CartIcon({ user = null }) {
     const [itemCount, setItemCount] = useState(0);
     
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return user ? `cart_${user.id}` : 'cart_guest';
+    };
+    
+    // Загружаем данные корзины из localStorage
+    const loadCart = () => {
+        console.log('Загрузка корзины...');
+        const storageKey = getStorageKey();
+        const storedCart = JSON.parse(localStorage.getItem(storageKey)) || [];
+        console.log('Содержимое корзины:', storedCart);
+        const count = storedCart.reduce((total, item) => total + (parseInt(item.quantity) || 0), 0);
+        console.log('Количество товаров в корзине:', count);
+        setItemCount(count);
+    };
+    
+    // Принудительно обновляем счетчик каждые 2 секунды для отладки
+    useEffect(() => {
+        loadCart(); // Загружаем при монтировании
+        
+        const interval = setInterval(() => {
+            loadCart();
+        }, 2000);
+        
+        return () => clearInterval(interval);
+    }, [user]);
+    
     useEffect(() => {
         // Функция для синхронизации локальной корзины с сервером
         const syncCartWithServer = async () => {
             if (user) {
                 try {
                     // Получаем локальную корзину
-                    const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+                    const storageKey = getStorageKey();
+                    const localCart = JSON.parse(localStorage.getItem(storageKey)) || [];
                     
                     if (localCart.length > 0) {
                         // Если в локальной корзине есть товары, синхронизируем с сервером
@@ -40,7 +68,7 @@ export default function CartIcon({ user = null }) {
                                 };
                             }).filter(Boolean);
                             
-                            localStorage.setItem('cart', JSON.stringify(serverCartItems));
+                            localStorage.setItem(storageKey, JSON.stringify(serverCartItems));
                             loadCart(); // Обновляем счетчик
                         }
                     }
@@ -50,32 +78,41 @@ export default function CartIcon({ user = null }) {
             }
         };
         
-        // Загружаем данные корзины из localStorage
-        const loadCart = () => {
-            const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
-            const count = storedCart.reduce((total, item) => total + item.quantity, 0);
-            setItemCount(count);
+        // Функция для обработки события обновления корзины
+        const handleCartUpdated = (event) => {
+            console.log('Событие cartUpdated получено!', event);
+            loadCart();
         };
-        
-        // Загружаем данные при монтировании компонента
-        loadCart();
         
         // Синхронизируем корзину при монтировании компонента или изменении пользователя
         syncCartWithServer();
         
         // Добавляем слушатель события для обновления счетчика корзины
-        window.addEventListener('cartUpdated', loadCart);
+        window.addEventListener('cartUpdated', handleCartUpdated);
         
-        // Очистка слушателя при размонтировании
+        // Добавляем обработчик для хранилища localStorage
+        window.addEventListener('storage', (event) => {
+            const storageKey = getStorageKey();
+            if (event.key === storageKey) {
+                console.log('Событие storage получено!', event);
+                loadCart();
+            }
+        });
+        
+        // Очистка слушателей при размонтировании
         return () => {
-            window.removeEventListener('cartUpdated', loadCart);
+            window.removeEventListener('cartUpdated', handleCartUpdated);
+            window.removeEventListener('storage', (event) => {
+                const storageKey = getStorageKey();
+                if (event.key === storageKey) loadCart();
+            });
         };
     }, [user]);
     
     return (
         <Link 
             href={route('cart')} 
-            className="relative flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-300"
+            className="relative flex items-center text-white hover:text-gray-200 transition-colors duration-300"
         >
             <div className="relative">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

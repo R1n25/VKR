@@ -11,7 +11,7 @@ alwaysApply: true
 ruleType: project
 description: "Основные правила и метаданные для проекта Auto-parts-store"
 - projectName: "Auto-parts-store"
-- prependToPrompt: "{projectName} | "            # Всегда начинать ответы с названия проекта
+- prependToPrompt: "{projectName} | "            # Всегда начинать ответы с названием проекта
 - appendToPrompt: "use context7"                 # Подключать Context7 MCP для актуальной документации
 
 # --- Автоматическая интеграция MCP ---
@@ -71,7 +71,20 @@ fileMatch: ["app/Http/Controllers//*.php", "app/Models//*.php"]
 - localization: "Use Lang facade for strings"
 
 # ===================================================================
-# 4. Организация и приоритеты
+# 4. Правила для командной строки Windows PowerShell
+# ===================================================================
+ruleType: always
+- description: "Правила для генерации команд Windows PowerShell"
+- shellCommands:
+  - "Use PowerShell syntax only"                # Только синтаксис PowerShell
+  - "No Unix-like commands (&&, |, etc.)"       # Запрет Unix-подобных команд
+  - "Use semicolon (;) for command chaining"    # Использовать ; для цепочки команд
+  - "Use Set-Location instead of cd"            # Использовать Set-Location вместо cd
+  - "Use PowerShell cmdlets when available"     # Использовать cmdlets PowerShell
+  - "Use -Path parameter for file operations"   # Использовать параметр -Path для файловых операций
+
+# ===================================================================
+# 5. Организация и приоритеты
 # ===================================================================
 ruleType: project
 - ruleLoadingOrder: 
@@ -80,11 +93,12 @@ ruleType: project
   - "React rules"
   - "PHP rules"
   - "Laravel rules"
+  - "PowerShell rules"                          # Добавлены правила PowerShell
 - filePatternOverrides:
   - "*.test.*": "skip all rules except testing defaults"
 
 # ===================================================================
-# 5. Дополнительные рекомендации
+# 6. Дополнительные рекомендации
 # ===================================================================
 ruleType: always
 - description: "Общие best practices"
@@ -92,3 +106,4 @@ ruleType: always
   - "Write meaningful commit messages"
   - "Keep PRs small and focused"
   - "Use @-контекст для точечного управления"
+  - "Use PowerShell commands for Windows environment"  # Добавлен совет по использованию PowerShell

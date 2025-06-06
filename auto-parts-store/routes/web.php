@@ -75,6 +75,204 @@ Route::get('/search-debug', function (Illuminate\Http\Request $request) {
     ]);
 })->name('search.debug');
 
+// Тестовый маршрут для проверки структуры запчасти
+Route::get('/test-spare-part/{id}', function ($id) {
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return response()->json(['error' => 'Запчасть не найдена'], 404);
+    }
+    
+    return response()->json([
+        'id' => $sparePart->id,
+        'name' => $sparePart->name,
+        'fields' => array_keys($sparePart->getAttributes()),
+        'stock_quantity' => $sparePart->stock_quantity,
+        'quantity' => $sparePart->quantity ?? 'field not exists',
+        'is_available' => $sparePart->is_available,
+    ]);
+});
+
+// Тестовый маршрут для уменьшения количества запчасти
+Route::get('/test-decrease-quantity/{id}/{quantity}', function ($id, $quantity) {
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return response()->json(['error' => 'Запчасть не найдена'], 404);
+    }
+    
+    $before = $sparePart->stock_quantity;
+    
+    // Уменьшаем количество используя метод updateAvailability
+    $sparePart->updateAvailability(-$quantity);
+    
+    return response()->json([
+        'id' => $sparePart->id,
+        'name' => $sparePart->name,
+        'before' => $before,
+        'after' => $sparePart->stock_quantity,
+        'decreased_by' => $quantity,
+        'is_available' => $sparePart->is_available,
+    ]);
+});
+
+// Тестовый маршрут для проверки уменьшения количества товара
+Route::get('/test-decrease/{id}/{quantity}', function ($id, $quantity) {
+    // Находим товар
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return 'Товар не найден';
+    }
+    
+    // Выводим текущее количество
+    $before = $sparePart->stock_quantity;
+    
+    // Уменьшаем количество используя метод updateAvailability
+    $sparePart->updateAvailability(-$quantity);
+    
+    return "Товар ID: {$id}, Было: {$before}, Стало: {$sparePart->stock_quantity}, Уменьшено на: {$quantity}";
+});
+
+// Тестовый маршрут для создания заказа
+Route::get('/test-create-order/{id}/{quantity}', function ($id, $quantity) {
+    // Находим товар
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return 'Товар не найден';
+    }
+    
+    // Создаем тестовые данные заказа
+    $orderData = [
+        'customer_name' => 'Тестовый клиент',
+        'email' => 'test@example.com',
+        'phone' => '+7 999 123-45-67',
+        // 'delivery_method' => 'pickup', // Поле не существует в базе данных
+        'payment_method' => 'cash',
+        'items' => [
+            [
+                'id' => $sparePart->id,
+                'quantity' => (int)$quantity,
+                'price' => (float)$sparePart->price,
+                'name' => $sparePart->name
+            ]
+        ]
+    ];
+    
+    // Вызываем метод контроллера напрямую
+    $controller = new \App\Http\Controllers\API\OrderController(new \App\Services\OrderService());
+    $request = new \Illuminate\Http\Request();
+    $request->replace($orderData);
+    
+    // Выполняем метод store
+    $response = $controller->store($request);
+    
+    // Возвращаем результат
+    return $response;
+});
+
+// Тестовый маршрут для обновления количества товара напрямую через модель
+Route::get('/test-update-quantity/{id}/{quantity}', function ($id, $quantity) {
+    // Находим товар
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return 'Товар не найден';
+    }
+    
+    // Выводим текущее количество
+    $before = $sparePart->stock_quantity;
+    
+    // Вычисляем изменение количества
+    $change = (int)$quantity - $before;
+    
+    // Устанавливаем новое количество через метод updateAvailability
+    $sparePart->updateAvailability($change);
+    
+    // Логируем SQL-запрос
+    \Illuminate\Support\Facades\DB::enableQueryLog();
+    \Illuminate\Support\Facades\DB::disableQueryLog();
+    
+    return [
+        'id' => $sparePart->id,
+        'name' => $sparePart->name,
+        'before' => $before,
+        'after' => $sparePart->stock_quantity,
+        'set_to' => (int)$quantity,
+        'change' => $change,
+        'is_available' => $sparePart->is_available
+    ];
+});
+
+// Тестовый маршрут для проверки транзакций при обновлении количества товара
+Route::get('/test-transaction/{id}/{quantity}', function ($id, $quantity) {
+    // Находим товар
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return 'Товар не найден';
+    }
+    
+    // Выводим текущее количество
+    $before = $sparePart->stock_quantity;
+    
+    // Начинаем транзакцию
+    \Illuminate\Support\Facades\DB::beginTransaction();
+    
+    try {
+        // Вычисляем изменение количества
+        $change = (int)$quantity - $before;
+        
+        // Устанавливаем новое количество через метод updateAvailability
+        $sparePart->updateAvailability($change);
+        
+        // Фиксируем транзакцию
+        \Illuminate\Support\Facades\DB::commit();
+        
+        return [
+            'id' => $sparePart->id,
+            'name' => $sparePart->name,
+            'before' => $before,
+            'after' => $sparePart->stock_quantity,
+            'set_to' => (int)$quantity,
+            'change' => $change,
+            'is_available' => $sparePart->is_available,
+            'transaction' => 'committed'
+        ];
+    } catch (\Exception $e) {
+        // Откатываем транзакцию
+        \Illuminate\Support\Facades\DB::rollBack();
+        
+        return [
+            'error' => $e->getMessage(),
+            'transaction' => 'rolled back'
+        ];
+    }
+});
+
+// Тестовый маршрут для обновления количества товара через SQL-запрос
+Route::get('/test-update-sql/{id}/{quantity}', function ($id, $quantity) {
+    // Находим товар
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return 'Товар не найден';
+    }
+    
+    // Выводим текущее количество
+    $before = $sparePart->stock_quantity;
+    
+    // Вычисляем изменение количества
+    $change = (int)$quantity - $before;
+    
+    // Используем метод updateAvailability вместо прямого SQL-запроса
+    $sparePart->updateAvailability($change);
+    
+    return [
+        'id' => $sparePart->id,
+        'name' => $sparePart->name,
+        'before' => $before,
+        'after' => $sparePart->stock_quantity,
+        'set_to' => (int)$quantity,
+        'change' => $change,
+        'is_available' => $sparePart->is_available
+    ];
+});
+
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', function() {
@@ -185,11 +383,11 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::patch('/users/{user}/markup', [App\Http\Controllers\Admin\UserController::class, 'updateMarkup'])->name('users.update-markup');
     
     // Управление заказами
-    Route::get('/orders', [App\Http\Controllers\Admin\OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{id}', [App\Http\Controllers\Admin\OrderController::class, 'show'])->name('orders.show');
-    Route::put('/orders/{id}/status', [App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('orders.update-status');
-    Route::post('/orders/{id}/note', [App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('orders.add-note');
-    Route::get('/orders-export', [App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
+    Route::get('/orders', [\App\Http\Controllers\Admin\OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{id}', [\App\Http\Controllers\Admin\OrderController::class, 'show'])->name('orders.show');
+    Route::put('/orders/{id}/status', [\App\Http\Controllers\Admin\OrderController::class, 'updateStatus'])->name('orders.update-status');
+    Route::post('/orders/{id}/note', [\App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('orders.add-note');
+    Route::get('/orders-export', [\App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
     
     // Управление платежами
     Route::get('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
@@ -223,7 +421,18 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/catalog-manager/download-backup', [CatalogManagerController::class, 'downloadBackup'])->name('catalog-manager.download-backup');
 
     // Управление категориями запчастей
-    Route::resource('part-categories', PartCategoryController::class);
+    Route::resource('part-categories', \App\Http\Controllers\Admin\PartCategoryController::class)->parameters([
+        'part-categories' => 'partCategory'
+    ]);
+    
+    // Управление категориями запчастей через Inertia
+    Route::get('part-categories-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'indexInertia'])->name('part-categories.inertia');
+    Route::get('part-categories-create-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'createInertia'])->name('part-categories.create-inertia');
+    Route::post('part-categories-store-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'storeInertia'])->name('part-categories.store-inertia');
+    Route::get('part-categories-show-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'showInertia'])->name('part-categories.show-inertia');
+    Route::get('part-categories-edit-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'editInertia'])->name('part-categories.edit-inertia');
+    Route::put('part-categories-update-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update-inertia');
+    Route::delete('part-categories-destroy-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy-inertia');
 
     // Управление финансами пользователей
     Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('finances.index');

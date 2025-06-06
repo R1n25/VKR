@@ -102,7 +102,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                         
                                         <div className="mr-4 inline-flex">
                                             <CartIcon user={user} />
-                                            <span className="ml-1 text-white">Корзина</span>
                                         </div>
                                         
                                         <Link
@@ -121,7 +120,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                     <>
                                         <div className="mr-4 inline-flex">
                                             <CartIcon user={user} />
-                                            <span className="ml-1 text-white">Корзина</span>
                                         </div>
                                         
                                         <div className="border-l border-gray-500 h-8 mx-2"></div>

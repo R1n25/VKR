@@ -278,12 +278,12 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                     <tr key={order.id}>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="text-sm font-medium text-indigo-600">
-                                                                <Link
-                                                                    href={route('admin.orders.show', order.id)}
+                                                                <a
+                                                                    href={`http://127.0.0.1:8000/admin/orders/${order.id}`}
                                                                     className="hover:underline"
                                                                 >
                                                                     {order.order_number || `№${order.id}`}
-                                                                </Link>
+                                                                </a>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -309,19 +309,19 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                                         </td>
                                                         <td className="px-6 py-4 text-sm">
                                                             <a
-                                                                href={`${window.location.origin}/admin/orders/${order.id}`}
+                                                                href={`http://127.0.0.1:8000/admin/orders/${order.id}`}
                                                                 className="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-2"
                                                             >
                                                                 Подробнее
                                                             </a>
                                                             
                                                             {(isAdmin || (auth.user && auth.user.id === order.user_id)) && order.payment_status !== 'paid' && (
-                                                                <Link
-                                                                    href={isAdmin ? route('admin.orders.add-payment', order.id) : route('orders.add-payment', order.id)}
+                                                                <a
+                                                                    href={isAdmin ? `http://127.0.0.1:8000/admin/orders/${order.id}/add-payment` : `http://127.0.0.1:8000/orders/${order.id}/add-payment`}
                                                                     className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                                 >
                                                                     Добавить оплату
-                                                                </Link>
+                                                                </a>
                                                             )}
                                                         </td>
                                                     </tr>

@@ -7,6 +7,11 @@ export default function AddToCartButton({ sparePart, className = '', user = null
     const [errorMessage, setErrorMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return user ? `cart_${user.id}` : 'cart_guest';
+    };
+    
     const handleQuantityChange = (e) => {
         const value = parseInt(e.target.value);
         if (value < 1) {
@@ -18,13 +23,29 @@ export default function AddToCartButton({ sparePart, className = '', user = null
         }
     };
     
+    // Функция для обновления счетчика корзины
+    const updateCartCounter = (cart) => {
+        const storageKey = getStorageKey();
+        
+        // Отправляем событие обновления корзины с использованием CustomEvent
+        const cartUpdatedEvent = new CustomEvent('cartUpdated', {
+            detail: { cart, storageKey },
+            bubbles: true
+        });
+        window.dispatchEvent(cartUpdatedEvent);
+        
+        // Также напрямую обновляем localStorage
+        localStorage.setItem(storageKey, JSON.stringify(cart));
+    };
+    
     const addToCart = async () => {
         setIsLoading(true);
         setErrorMessage('');
         
         try {
             // Получаем текущую корзину из localStorage
-            const cart = JSON.parse(localStorage.getItem('cart')) || [];
+            const storageKey = getStorageKey();
+            const cart = JSON.parse(localStorage.getItem(storageKey)) || [];
             
             // Проверяем, есть ли уже этот товар в корзине
             const existingItemIndex = cart.findIndex(item => item.id === sparePart.id);
@@ -53,8 +74,8 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                 });
             }
             
-            // Сохраняем обновленную корзину в localStorage
-            localStorage.setItem('cart', JSON.stringify(cart));
+            // Обновляем корзину в localStorage и счетчик
+            updateCartCounter(cart);
             
             // Если пользователь авторизован, также сохраняем в базе данных
             if (user) {
@@ -74,8 +95,16 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                 }
             }
             
-            // Отправляем событие обновления корзины
-            window.dispatchEvent(new Event('cartUpdated'));
+            // Отправляем событие обновления количества товара
+            const productUpdatedEvent = new CustomEvent('productUpdated', {
+                detail: { 
+                    productId: sparePart.id,
+                    action: 'addToCart',
+                    quantity: quantity
+                },
+                bubbles: true
+            });
+            window.dispatchEvent(productUpdatedEvent);
             
             // Показываем подтверждение
             setIsAdded(true);

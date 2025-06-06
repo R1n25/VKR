@@ -67,6 +67,12 @@ class CheckoutController extends Controller
             
             foreach ($validated['cart_items'] as $item) {
                 $sparePart = SparePart::findOrFail($item['id']);
+                
+                // Проверяем, достаточно ли товара на складе
+                if ($sparePart->stock_quantity < $item['quantity']) {
+                    throw new \Exception("Недостаточно товара на складе: {$sparePart->name}. Доступно: {$sparePart->stock_quantity}, запрошено: {$item['quantity']}");
+                }
+                
                 $price = $sparePart->price;
                 
                 // Если пользователь авторизован, применяем его наценку
@@ -78,11 +84,31 @@ class CheckoutController extends Controller
                 $orderItem = new OrderItem([
                     'order_id' => $order->id,
                     'spare_part_id' => $sparePart->id,
+                    'name' => $sparePart->name,
                     'quantity' => $item['quantity'],
                     'price' => $price,
+                    'total' => $price * $item['quantity'],
                 ]);
                 
                 $orderItem->save();
+                
+                // Уменьшаем количество товара на складе
+                $oldQuantity = $sparePart->stock_quantity;
+                
+                // Используем новый метод для уменьшения количества товара
+                // Передаем отрицательное значение, чтобы уменьшить количество
+                $sparePart->updateAvailability(-$item['quantity']);
+                
+                // Логируем изменение количества
+                Log::info('Уменьшено количество товара после заказа', [
+                    'order_id' => $order->id,
+                    'part_id' => $sparePart->id,
+                    'part_name' => $sparePart->name,
+                    'quantity_before' => $oldQuantity,
+                    'quantity_after' => $sparePart->stock_quantity,
+                    'quantity_changed' => $item['quantity'],
+                    'is_available' => $sparePart->is_available
+                ]);
                 
                 $totalAmount += $price * $item['quantity'];
             }

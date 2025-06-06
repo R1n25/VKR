@@ -12,6 +12,11 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
     // Получаем информацию о пользователе и его роли
     const isAdmin = auth.user && auth.user.is_admin;
 
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return auth.user ? `cart_${auth.user.id}` : 'cart_guest';
+    };
+
     const handleQuantityChange = (e) => {
         const value = parseInt(e.target.value);
         
@@ -28,7 +33,8 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
         setAddingToCart(true);
         
         // Получаем текущую корзину из localStorage или создаем новую
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const storageKey = getStorageKey();
+        let cart = JSON.parse(localStorage.getItem(storageKey)) || [];
         
         // Проверяем, есть ли уже такая запчасть в корзине
         const existingItemIndex = cart.findIndex(item => item.id === part.id);
@@ -54,7 +60,13 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
         }
         
         // Сохраняем обновленную корзину в localStorage
-        localStorage.setItem('cart', JSON.stringify(cart));
+        localStorage.setItem(storageKey, JSON.stringify(cart));
+        
+        // Отправляем событие обновления корзины
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: { cart, storageKey },
+            bubbles: true
+        }));
         
         setAddingToCart(false);
         setMessage({ 

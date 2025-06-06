@@ -20,9 +20,15 @@ export default function Checkout({ auth, balance }) {
         notes: ''
     });
 
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return auth.user ? `cart_${auth.user.id}` : 'cart_guest';
+    };
+
     useEffect(() => {
         // Загружаем корзину из localStorage
-        const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+        const storageKey = getStorageKey();
+        const storedCart = JSON.parse(localStorage.getItem(storageKey)) || [];
         
         if (storedCart.length === 0) {
             router.visit('/cart');
@@ -69,7 +75,14 @@ export default function Checkout({ auth, balance }) {
             });
             
             // Очищаем корзину
-            localStorage.removeItem('cart');
+            const storageKey = getStorageKey();
+            localStorage.setItem(storageKey, JSON.stringify([]));
+            
+            // Отправляем событие обновления корзины
+            window.dispatchEvent(new CustomEvent('cartUpdated', {
+                detail: { cart: [], storageKey },
+                bubbles: true
+            }));
             
             // Устанавливаем флаг успешного создания заказа
             setSuccess(true);

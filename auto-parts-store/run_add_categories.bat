@@ -1,0 +1,6 @@
+@echo off
+echo Запуск скрипта добавления категорий запчастей...
+php add_categories.php
+echo.
+echo Нажмите любую клавишу для выхода...
+pause > nul 

@@ -8,6 +8,9 @@ use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\PartController;
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\CartController;
+use App\Http\Controllers\API\SparePartController;
+use App\Http\Controllers\SpareParts\SparePartController as SparePartsSparePartController;
+use App\Http\Controllers\API\BrandController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,6 +37,9 @@ Route::get('/brands/{id}', function ($id) {
     return redirect('/brands/' . $id);
 });
 
+// Добавляем маршрут для получения моделей по ID бренда
+Route::get('/brands/{id}/models', [BrandController::class, 'getModels']);
+
 // Закомментировали оригинальный маршрут для брендов
 // Route::apiResource('brands', CarBrandController::class);
 
@@ -51,6 +57,25 @@ Route::get('categories/{id}/parts', [CategoryController::class, 'getParts']);
 // Маршруты для запчастей
 Route::get('parts', [PartController::class, 'index']);
 Route::get('parts/{id}', [PartController::class, 'show']);
+Route::get('/spare-parts', [SparePartController::class, 'index']);
+Route::get('/spare-parts/{id}', [SparePartController::class, 'show']);
+Route::get('/spare-parts/{id}/quantity', [SparePartsSparePartController::class, 'getQuantity']);
+Route::get('/spare-parts/{id}/info', [SparePartsSparePartController::class, 'getInfo']);
+
+// Маршрут для получения информации о товаре (stock_quantity)
+Route::get('/spare-parts/{id}/stock', function ($id) {
+    $sparePart = \App\Models\SparePart::find($id);
+    if (!$sparePart) {
+        return response()->json(['error' => 'Запчасть не найдена'], 404);
+    }
+    
+    return response()->json([
+        'id' => $sparePart->id,
+        'name' => $sparePart->name,
+        'stock_quantity' => $sparePart->stock_quantity,
+        'is_available' => $sparePart->stock_quantity > 0,
+    ]);
+});
 
 // Маршруты для корзины
 Route::get('cart', [CartController::class, 'getCart']);

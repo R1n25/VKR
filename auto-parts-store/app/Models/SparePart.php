@@ -195,6 +195,33 @@ class SparePart extends Model
             'notes' => $notes,
         ]);
     }
+    
+    /**
+     * Обновить доступность товара на основе количества
+     * 
+     * @param int $quantityChange Изменение количества (положительное или отрицательное)
+     * @return $this
+     */
+    public function updateAvailability($quantityChange)
+    {
+        // Получаем текущее количество
+        $oldQuantity = $this->stock_quantity;
+        
+        // Вычисляем новое количество
+        $newQuantity = max(0, $oldQuantity + $quantityChange);
+        
+        // Обновляем количество товара
+        $this->stock_quantity = $newQuantity;
+        
+        // Обновляем доступность - товар всегда остается в базе, 
+        // но может быть отмечен как недоступный
+        $this->is_available = ($newQuantity > 0);
+        
+        // Сохраняем изменения
+        $this->save();
+        
+        return $this;
+    }
 
     /**
      * Преобразование модели в массив.

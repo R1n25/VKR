@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -15,6 +16,19 @@ use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
+    /**
+     * Сервис для работы с заказами
+     */
+    protected $orderService;
+    
+    /**
+     * Конструктор контроллера
+     */
+    public function __construct(OrderService $orderService)
+    {
+        $this->orderService = $orderService;
+    }
+
     /**
      * Список всех заказов с фильтрацией
      */
@@ -68,7 +82,11 @@ class OrderController extends Controller
     {
         try {
             // Загружаем заказ с пользователем
-            $order = Order::with('user')->findOrFail($id);
+            $order = Order::with([
+                'user',
+                'orderItems.sparePart.brand',
+                'orderItems.sparePart.category',
+            ])->findOrFail($id);
             
             Log::info('Получен заказ', [
                 'order_id' => $id,
@@ -84,10 +102,10 @@ class OrderController extends Controller
                     'oi.spare_part_id',
                     'oi.quantity',
                     'oi.price',
-                    'oi.part_number',
-                    'oi.part_name',
+                    'oi.name as part_name',
+                    'oi.total',
                     'sp.name as sp_name',
-                    'sp.part_number as sp_part_number',
+                    'sp.part_number',
                     'sp.description',
                     'sp.manufacturer'
                 )
@@ -112,9 +130,10 @@ class OrderController extends Controller
                     'quantity' => $item->quantity,
                     'price' => $item->price,
                     'part_name' => $item->sp_name ?: $item->part_name,
-                    'part_number' => $item->sp_part_number ?: $item->part_number,
-                    'description' => $item->description,
-                    'brand_name' => $item->manufacturer
+                    'part_number' => $item->part_number ?: '',
+                    'description' => $item->description ?: '',
+                    'brand_name' => $item->manufacturer ?: '',
+                    'total' => $item->total ?: ($item->price * $item->quantity)
                 ];
                 
                 $displayItems[] = $displayItem;
@@ -132,7 +151,6 @@ class OrderController extends Controller
             return Inertia::render('Admin/Orders/Show', [
                 'order' => $order,
                 'page_title' => 'Заказ №' . $order->order_number,
-                'availableStatuses' => $this->getAvailableStatuses(),
             ]);
         } catch (\Exception $e) {
             Log::error('Ошибка при просмотре заказа', [
@@ -152,102 +170,66 @@ class OrderController extends Controller
     public function updateStatus(Request $request, $id)
     {
         try {
-            $availableStatuses = array_keys($this->getAvailableStatuses());
-            
+            // Валидация запроса
             $validated = $request->validate([
-                'status' => 'required|in:' . implode(',', $availableStatuses),
-                'note' => 'nullable|string|max:1000',
+                'status' => 'required|string|in:pending,processing,ready_for_pickup,ready_for_delivery,in_delivery,delivered,returned',
+                'comment' => 'nullable|string|max:500',
             ]);
             
+            // Находим заказ
             $order = Order::findOrFail($id);
-            $oldStatus = $order->status;
             
-            // Проверяем, не является ли текущий статус таким же
-            if ($oldStatus === $validated['status']) {
-                return $request->expectsJson() 
-                    ? response()->json(['message' => 'Статус не изменился, операция не выполнена'], 200)
-                    : redirect()->back()->with('info', 'Статус не изменился, операция не выполнена');
+            // Получаем текущего пользователя
+            $user = auth()->user();
+            
+            // Используем сервис для обновления статуса, который обработает логику возврата товаров
+            $result = $this->orderService->updateOrderStatus($id, $validated['status']);
+            
+            if (!$result) {
+                throw new \Exception('Не удалось обновить статус заказа');
             }
             
-            DB::beginTransaction();
-            try {
-                $order->update([
-                    'status' => $validated['status'],
-                    'status_updated_at' => now(),
-                    'status_updated_by' => Auth::id(),
+            // Обновляем данные о последнем изменении статуса
+            $order->status_updated_at = now();
+            $order->status_updated_by = $user->id;
+            $order->save();
+            
+            // Добавляем комментарий к заказу, если он есть
+            if (!empty($validated['comment'])) {
+                $order->notes()->create([
+                    'user_id' => $user->id,
+                    'content' => $validated['comment'],
+                    'type' => 'status_change',
                 ]);
-                
-                // Добавляем запись об изменении статуса в историю
-                $statusHistory = $order->status_history ?? [];
-                $statusHistory[] = [
-                    'from' => $oldStatus,
-                    'to' => $validated['status'],
-                    'changed_at' => now()->toDateTimeString(),
-                    'changed_by' => Auth::user()->name,
-                ];
-                
-                $order->update(['status_history' => $statusHistory]);
-                
-                // Если указана заметка, то добавляем её
-                if (!empty($validated['note'])) {
-                    // Добавляем новую заметку к существующим заметкам
-                    $notes = $order->notes_json ?? [];
-                    $notes[] = [
-                        'text' => $validated['note'],
-                        'created_at' => now()->toDateTimeString(),
-                        'created_by' => Auth::user()->name,
-                    ];
-                    
-                    $order->update([
-                        'notes_json' => $notes,
-                    ]);
-                }
-                
-                DB::commit();
-                
-                // Логируем информацию об изменении статуса
-                Log::info('Статус заказа изменён', [
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'old_status' => $oldStatus,
-                    'new_status' => $validated['status'],
-                    'user_id' => Auth::id(),
-                    'user_name' => Auth::user()->name,
-                ]);
-                
-                return $request->expectsJson()
-                    ? response()->json([
-                        'success' => true, 
-                        'message' => 'Статус заказа успешно обновлен', 
-                        'order' => $order
-                    ])
-                    : redirect()->back()->with('message', 'Статус заказа успешно обновлен');
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error('Ошибка при обновлении статуса заказа', [
-                    'order_id' => $id,
-                    'exception' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString()
-                ]);
-                
-                throw $e;
             }
-        } catch (ValidationException $e) {
-            // Обработка ошибки валидации
-            return $request->expectsJson()
-                ? response()->json(['errors' => $e->errors()], 422)
-                : redirect()->back()->withErrors($e->errors())->withInput();
+            
+            Log::info('Статус заказа обновлен', [
+                'order_id' => $id,
+                'new_status' => $validated['status'],
+                'user_id' => $user->id,
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Статус заказа успешно обновлен',
+                'order' => [
+                    'id' => $order->id,
+                    'status' => $order->status,
+                    'status_updated_at' => $order->status_updated_at,
+                    'status_updated_by' => $order->status_updated_by
+                ]
+            ]);
         } catch (\Exception $e) {
-            // Обработка других ошибок
             Log::error('Ошибка при обновлении статуса заказа', [
                 'order_id' => $id,
-                'exception' => $e->getMessage(),
+                'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return $request->expectsJson()
-                ? response()->json(['error' => 'Не удалось обновить статус заказа: ' . $e->getMessage()], 500)
-                : redirect()->back()->with('error', 'Не удалось обновить статус заказа: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при обновлении статуса заказа: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -371,19 +353,18 @@ class OrderController extends Controller
     }
     
     /**
-     * Получение доступных статусов заказа
+     * Получить доступные статусы заказа
      */
     private function getAvailableStatuses()
     {
         return [
-            // Новые статусы
             'pending' => 'Ожидает обработки',
             'processing' => 'В работе',
             'ready_for_pickup' => 'Готов к выдаче',
             'ready_for_delivery' => 'Готов к доставке',
-            'shipping' => 'В доставке',
+            'in_delivery' => 'В доставке',
             'delivered' => 'Выдано',
-            'returned' => 'Возвращен',
+            'returned' => 'Возвращен'
         ];
     }
 }

@@ -245,6 +245,10 @@
                             <div class="sb-nav-link-icon"><i class="fas fa-cogs"></i></div>
                             Запчасти
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.part-categories.*') ? 'active' : '' }}" href="{{ route('admin.part-categories.index') }}">
+                            <div class="sb-nav-link-icon"><i class="fas fa-tags"></i></div>
+                            Категории
+                        </a>
                         
                         <div class="sb-sidenav-menu-heading">Пользователи</div>
                         <a class="nav-link {{ request()->routeIs('admin.suggestions.*') ? 'active' : '' }}" href="{{ route('admin.suggestions.index') }}">

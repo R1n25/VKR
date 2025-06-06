@@ -6,9 +6,15 @@ export default function Cart({ auth }) {
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Получаем ключ для localStorage в зависимости от пользователя
+    const getStorageKey = () => {
+        return auth.user ? `cart_${auth.user.id}` : 'cart_guest';
+    };
+
     useEffect(() => {
         // Загружаем корзину из localStorage
-        const storedCart = JSON.parse(localStorage.getItem('cart')) || [];
+        const storageKey = getStorageKey();
+        const storedCart = JSON.parse(localStorage.getItem(storageKey)) || [];
         setCart(storedCart);
         setLoading(false);
     }, []);
@@ -27,18 +33,39 @@ export default function Cart({ auth }) {
         });
         
         setCart(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        const storageKey = getStorageKey();
+        localStorage.setItem(storageKey, JSON.stringify(updatedCart));
+        
+        // Отправляем событие обновления корзины
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: { cart: updatedCart, storageKey },
+            bubbles: true
+        }));
     };
 
     const handleRemoveItem = (id) => {
         const updatedCart = cart.filter(item => item.id !== id);
         setCart(updatedCart);
-        localStorage.setItem('cart', JSON.stringify(updatedCart));
+        const storageKey = getStorageKey();
+        localStorage.setItem(storageKey, JSON.stringify(updatedCart));
+        
+        // Отправляем событие обновления корзины
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: { cart: updatedCart, storageKey },
+            bubbles: true
+        }));
     };
 
     const handleClearCart = () => {
         setCart([]);
-        localStorage.removeItem('cart');
+        const storageKey = getStorageKey();
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        
+        // Отправляем событие обновления корзины
+        window.dispatchEvent(new CustomEvent('cartUpdated', {
+            detail: { cart: [], storageKey },
+            bubbles: true
+        }));
     };
 
     const handleCheckout = () => {

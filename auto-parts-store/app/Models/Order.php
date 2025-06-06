@@ -28,12 +28,12 @@ class Order extends Model
         'payment_method',
         'payment_status',
         'shipping_method',
-        'shipping_address',
+        'address',
         'shipping_city',
         'shipping_postal_code',
         'shipping_country',
-        'shipping_phone',
-        'shipping_email',
+        'phone',
+        'email',
         'shipping_name',
         'shipping_tracking_number',
         'notes',
@@ -45,9 +45,6 @@ class Order extends Model
         'canceled_at',
         'refunded_at',
         'customer_name',
-        'email',
-        'phone',
-        'address',
         'order_number',
         'total',
     ];
@@ -344,5 +341,21 @@ class Order extends Model
     public function getStatusHistory()
     {
         return $this->status_history ?? [];
+    }
+
+    /**
+     * Получить заметки к заказу
+     */
+    public function notes()
+    {
+        return $this->hasMany(OrderNote::class);
+    }
+
+    /**
+     * Получить пользователя, сделавшего заказ
+     */
+    public function orderUser()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

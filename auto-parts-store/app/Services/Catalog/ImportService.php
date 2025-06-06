@@ -251,6 +251,7 @@ class ImportService
                         $brand = CarBrand::firstOrCreate(
                             ['name' => $brandName],
                             [
+                                'slug' => \Illuminate\Support\Str::slug($brandName),
                                 'country' => $country,
                                 'is_popular' => $isPopular,
                             ]
@@ -258,6 +259,9 @@ class ImportService
                         
                         if ($brand->wasRecentlyCreated) {
                             $stats['brands_created']++;
+                            Log::info("Создан новый бренд: {$brandName} с ID {$brand->id}");
+                        } else {
+                            Log::info("Найден существующий бренд: {$brandName} с ID {$brand->id}");
                         }
                         
                         $processedBrands[$brandName] = $brand->id;
@@ -273,30 +277,41 @@ class ImportService
                     // Подготавливаем данные для модели
                     $modelData = [
                         'name' => $modelName,
-                        'slug' => Str::slug($brandName . '-' . $modelName),
+                        'slug' => \Illuminate\Support\Str::slug($brandName . '-' . $modelName),
                         'brand_id' => $brandId,
                         'year_start' => $yearFrom,
                         'year_end' => $yearTo,
                         'is_popular' => $isPopular,
                     ];
                     
+                    Log::info("Подготовлены данные модели: ", [
+                        'name' => $modelName,
+                        'brand_id' => $brandId,
+                        'brand_name' => $brandName,
+                        'year_start' => $yearFrom,
+                        'year_end' => $yearTo
+                    ]);
+                    
                     if ($carModel) {
                         if ($updateExisting) {
                             $carModel->update($modelData);
                             $stats['updated']++;
+                            Log::info("Обновлена модель: {$modelName} с ID {$carModel->id}");
                         } else {
                             $stats['skipped']++;
+                            Log::info("Пропущена существующая модель: {$modelName}");
                         }
                     } else {
                         try {
                             // Логируем данные перед созданием
-                            Log::info("Создаём новую модель:", $modelData);
+                            Log::info("Создаём новую модель: {$modelName} для бренда {$brandName} (ID: {$brandId})");
                             
-                            CarModel::create($modelData);
+                            $newModel = CarModel::create($modelData);
                             $stats['created']++;
+                            Log::info("Создана новая модель: {$modelName} с ID {$newModel->id}");
                         } catch (\Exception $e) {
                             // Подробное логирование ошибки
-                            Log::error("Ошибка при создании модели: " . $e->getMessage(), [
+                            Log::error("Ошибка при создании модели {$modelName}: " . $e->getMessage(), [
                                 'modelData' => $modelData,
                                 'trace' => $e->getTraceAsString()
                             ]);

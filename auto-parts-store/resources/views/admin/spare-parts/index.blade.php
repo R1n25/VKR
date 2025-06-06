@@ -107,8 +107,8 @@
                                         <a href="{{ route('admin.spare-parts.edit', $sparePart->id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $sparePart->id }}">
-                                            <i class="fas fa-trash"></i>
+                                        <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#deleteModal{{ $sparePart->id }}" title="Пометить как 'не в наличии'">
+                                            <i class="fas fa-times-circle"></i>
                                         </button>
                                     </div>
                                     
@@ -117,19 +117,19 @@
                                         <div class="modal-dialog">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteModalLabel{{ $sparePart->id }}">Подтверждение удаления</h5>
+                                                    <h5 class="modal-title" id="deleteModalLabel{{ $sparePart->id }}">Подтверждение скрытия</h5>
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <p>Вы уверены, что хотите удалить запчасть "{{ $sparePart->name }}"?</p>
-                                                    <p class="text-danger">Это действие невозможно отменить.</p>
+                                                    <p>Вы уверены, что хотите пометить запчасть "{{ $sparePart->name }}" как "не в наличии"?</p>
+                                                    <p>Запчасть останется в базе данных, но будет недоступна для покупки.</p>
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                                                     <form action="{{ route('admin.spare-parts.destroy', $sparePart->id) }}" method="POST">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger">Удалить</button>
+                                                        <button type="submit" class="btn btn-danger">Пометить как "не в наличии"</button>
                                                     </form>
                                                 </div>
                                             </div>

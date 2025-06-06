@@ -1,14 +1,11 @@
-import { forwardRef, useEffect, useRef } from 'react';
+import React, { forwardRef, useEffect, useRef } from 'react';
 
-export default forwardRef(function Textarea(
-    { className = '', isFocused = false, ...props },
-    ref
-) {
-    const textareaRef = ref ? ref : useRef();
+export default forwardRef(function TextArea({ className = '', isFocused = false, ...props }, ref) {
+    const input = ref ? ref : useRef();
 
     useEffect(() => {
         if (isFocused) {
-            textareaRef.current.focus();
+            input.current.focus();
         }
     }, []);
 
@@ -16,10 +13,10 @@ export default forwardRef(function Textarea(
         <textarea
             {...props}
             className={
-                'border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm ' +
+                'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm ' +
                 className
             }
-            ref={textareaRef}
+            ref={input}
         ></textarea>
     );
 }); 

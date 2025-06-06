@@ -129,7 +129,13 @@ class OrderController extends Controller
             'note' => 'nullable|string',
         ]);
         
-        $order->updateStatus($validated['status']);
+        // Используем сервис для обновления статуса, который обработает логику возврата товаров
+        $orderService = app(\App\Services\OrderService::class);
+        $result = $orderService->updateOrderStatus($order->id, $validated['status']);
+        
+        if (!$result) {
+            return redirect()->back()->with('error', 'Не удалось обновить статус заказа.');
+        }
         
         if (!empty($validated['note'])) {
             $order->addNote($validated['note']);

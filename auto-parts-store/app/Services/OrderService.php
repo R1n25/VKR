@@ -140,9 +140,45 @@ class OrderService
         $order = Order::find($orderId);
         
         if ($order) {
-            $order->status = $status;
-            $order->save();
-            return $order;
+            // Запоминаем старый статус
+            $oldStatus = $order->status;
+            
+            // Начинаем транзакцию
+            DB::beginTransaction();
+            
+            try {
+                // Если заказ возвращен, и раньше не был возвращен или отменен
+                if ($status === 'returned' && $oldStatus !== 'returned' && $oldStatus !== 'cancelled') {
+                    // Восстанавливаем количество товаров
+                    foreach ($order->orderItems as $item) {
+                        if ($item->sparePart) {
+                            // Восстанавливаем количество товара, используя новый метод
+                            $item->sparePart->updateAvailability($item->quantity);
+                        }
+                    }
+                }
+                
+                // Обновляем статус заказа
+                $order->status = $status;
+                $order->save();
+                
+                // Фиксируем транзакцию
+                DB::commit();
+                
+                return $order;
+            } catch (\Exception $e) {
+                // В случае ошибки откатываем изменения
+                DB::rollBack();
+                
+                // Логируем ошибку
+                \Illuminate\Support\Facades\Log::error('Ошибка при обновлении статуса заказа', [
+                    'order_id' => $orderId,
+                    'status' => $status,
+                    'error' => $e->getMessage()
+                ]);
+                
+                return null;
+            }
         }
         
         return null;
