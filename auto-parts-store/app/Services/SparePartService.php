@@ -54,7 +54,7 @@ class SparePartService
      */
     public function getSparePartById(int $id, bool $isAdmin = false, ?float $markupPercent = null)
     {
-        $sparePart = SparePart::with('carModels')->find($id);
+        $sparePart = SparePart::with(['carModels', 'category'])->find($id);
         
         if ($sparePart) {
             // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
@@ -363,6 +363,13 @@ class SparePartService
             $sparePart->original_price = $originalPrice;
             $sparePart->markup_price = $markupPrice;
             $sparePart->markup_percent = $markupPercent;
+        }
+        
+        // Добавляем имя категории, если категория загружена
+        if ($sparePart->relationLoaded('category') && $sparePart->category) {
+            $sparePart->category_name = $sparePart->category->name;
+        } else {
+            $sparePart->category_name = 'Без категории';
         }
         
         return $sparePart;

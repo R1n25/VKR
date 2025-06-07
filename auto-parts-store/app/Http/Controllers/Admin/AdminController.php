@@ -65,26 +65,14 @@ class AdminController extends Controller
                 ->get();
         }
         
-        // Проверяем, запрашивается ли Inertia-версия
-        if (request()->wantsJson() || request()->header('X-Inertia')) {
-            return Inertia::render('Admin/Dashboard', [
-                'stats' => $stats,
-                'recentSuggestions' => $recentSuggestions,
-                'recentOrders' => $recentOrders,
-                'topCategories' => $topCategories,
-                'selectedCategory' => $selectedCategory,
-                'subcategories' => $subcategories,
-            ]);
-        }
-        
-        // Возвращаем обычное Laravel-представление
-        return view('admin.dashboard', compact(
-            'stats', 
-            'recentSuggestions', 
-            'recentOrders', 
-            'topCategories',
-            'selectedCategory',
-            'subcategories'
-        ));
+        // Всегда возвращаем Inertia-представление
+        return Inertia::render('Admin/Dashboard', [
+            'stats' => $stats,
+            'recentSuggestions' => $recentSuggestions,
+            'recentOrders' => $recentOrders,
+            'topCategories' => $topCategories,
+            'selectedCategory' => $selectedCategory,
+            'subcategories' => $subcategories,
+        ]);
     }
 }

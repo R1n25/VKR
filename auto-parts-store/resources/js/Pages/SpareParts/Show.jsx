@@ -111,7 +111,11 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                                 </div>
                                 <div>
                                     <p className="text-gray-600">Категория:</p>
-                                    <p className="font-semibold">{sparePart.category}</p>
+                                    <p className="font-semibold">
+                                        {sparePart.category_id ? (
+                                            sparePart.category_name || 'Без категории'
+                                        ) : 'Без категории'}
+                                    </p>
                                 </div>
                                 <div>
                                     <p className="text-gray-600">Наличие:</p>

@@ -44,7 +44,7 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
         setData('compatible_car_models', newSelectedModels);
     };
 
-    const { data, setData, post, processing, errors, transform } = useForm({
+    const { data, setData, put, processing, errors, transform } = useForm({
         name: sparePart.name || '',
         part_number: sparePart.part_number || '',
         description: sparePart.description || '',
@@ -85,11 +85,29 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        // Используем метод post для обновления данных через Inertia
-        post(route('admin.spare-parts.update', sparePart.id), {
-            _method: 'PUT',
+        // Отладочный вывод
+        console.log('Отправляем данные:', data);
+        console.log('URL маршрута:', route('admin.spare-parts.update-inertia', sparePart.id));
+        
+        try {
+            // Используем правильное имя маршрута
+            put(route('admin.spare-parts.update-inertia', sparePart.id), data, {
             forceFormData: true,
-        });
+                preserveState: false,
+                preserveScroll: true,
+                onSuccess: () => {
+                    console.log('Успешно обновлено!');
+                },
+                onError: (errors) => {
+                    console.error('Ошибки валидации:', errors);
+                },
+                onFinish: () => {
+                    console.log('Запрос завершен');
+                }
+            });
+        } catch (error) {
+            console.error('Ошибка при отправке формы:', error);
+        }
     };
 
     return (

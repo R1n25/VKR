@@ -9,25 +9,27 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import TextArea from '@/Components/TextArea';
 import Notification from '@/Components/Notification';
 
-export default function Create({ auth, categories }) {
+export default function Create({ auth, categories, spareParts }) {
     const [notification, setNotification] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedSpareParts, setSelectedSpareParts] = useState([]);
 
     const { data, setData, post, processing, errors, progress, reset } = useForm({
         name: '',
         description: '',
         parent_id: '',
         image: null,
+        spare_parts: [],
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route('admin.part-categories.store'), {
             onSuccess: () => {
-                setNotification({ type: 'success', message: 'Категория успешно создана' });
                 reset();
                 setPreviewImage(null);
-                setTimeout(() => setNotification(null), 3000);
+                setSelectedSpareParts([]);
             },
             preserveScroll: true,
         });
@@ -45,6 +47,35 @@ export default function Create({ auth, categories }) {
             setPreviewImage(null);
         }
     };
+
+    const handleSparePartSelect = (sparePartId) => {
+        const isSelected = selectedSpareParts.includes(sparePartId);
+        let updatedSelection;
+        
+        if (isSelected) {
+            updatedSelection = selectedSpareParts.filter(id => id !== sparePartId);
+        } else {
+            updatedSelection = [...selectedSpareParts, sparePartId];
+        }
+        
+        setSelectedSpareParts(updatedSelection);
+        setData('spare_parts', updatedSelection);
+    };
+
+    const filteredSpareParts = spareParts.filter(part => 
+        part.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        part.part_number.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    
+    // Сортируем запчасти так, чтобы выбранные были в конце списка
+    const sortedSpareParts = [...filteredSpareParts].sort((a, b) => {
+        const aSelected = selectedSpareParts.includes(a.id);
+        const bSelected = selectedSpareParts.includes(b.id);
+        
+        if (aSelected && !bSelected) return 1; // a выбран, b не выбран => a после b
+        if (!aSelected && bSelected) return -1; // a не выбран, b выбран => a перед b
+        return 0; // оба выбраны или оба не выбраны => порядок не меняется
+    });
 
     return (
         <AdminLayout
@@ -120,6 +151,54 @@ export default function Create({ auth, categories }) {
                                         <img src={previewImage} alt="Предпросмотр" className="max-w-xs max-h-40 rounded" />
                                     </div>
                                 )}
+                            </div>
+
+                            <div className="mb-6">
+                                <InputLabel htmlFor="spare_parts" value="Запчасти в категории" />
+                                <div className="mt-2 border rounded-md p-4">
+                                    <div className="mb-3">
+                                        <TextInput
+                                            type="text"
+                                            placeholder="Поиск запчастей..."
+                                            className="w-full"
+                                            value={searchQuery}
+                                            onChange={e => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div className="max-h-60 overflow-y-auto">
+                                        {sortedSpareParts.length > 0 ? (
+                                            <div className="space-y-2">
+                                                {sortedSpareParts.map(part => (
+                                                    <div 
+                                                        key={part.id} 
+                                                        className={`flex items-center p-2 ${selectedSpareParts.includes(part.id) ? 'bg-gray-100' : ''}`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            id={`part-${part.id}`}
+                                                            checked={selectedSpareParts.includes(part.id)}
+                                                            onChange={() => handleSparePartSelect(part.id)}
+                                                            className="mr-2 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                                        />
+                                                        <label htmlFor={`part-${part.id}`} className="flex-grow">
+                                                            <span className="font-medium">{part.name}</span>
+                                                            <span className="text-gray-500 ml-2">({part.part_number})</span>
+                                                        </label>
+                                                        <span className="text-sm text-gray-500">{part.price} ₽</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500 text-center py-4">Запчасти не найдены</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="mt-2 text-sm text-gray-600">
+                                        Выбрано запчастей: {selectedSpareParts.length}
+                                    </div>
+                                </div>
+                                <InputError message={errors.spare_parts} className="mt-2" />
                             </div>
 
                             <div className="flex items-center justify-between mt-6">

@@ -43,6 +43,19 @@ class PartsController extends Controller
             abort(404);
         }
         
+        // Загружаем категорию запчасти
+        $part->load('category');
+        
+        // Добавляем имя категории в данные запчасти
+        if ($part->category) {
+            $part->category_name = $part->category->name;
+        } else {
+            $part->category_name = 'Без категории';
+        }
+        
+        // Отладочный вывод
+        \Log::info('Part data:', ['part' => $part->toArray()]);
+        
         // Получаем похожие запчасти
         $similarParts = $this->sparePartService->getSimilarParts($id, 4, $isAdmin);
         

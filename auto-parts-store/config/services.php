@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'vin_api' => [
+        'url' => env('VIN_API_URL', 'https://api.example.com/vin'),
+        'key' => env('VIN_API_KEY', ''),
+    ],
+
 ];

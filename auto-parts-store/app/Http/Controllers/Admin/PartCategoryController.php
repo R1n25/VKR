@@ -172,9 +172,11 @@ class PartCategoryController extends Controller
     public function createInertia()
     {
         $categories = PartCategory::all();
+        $spareParts = \App\Models\SparePart::orderBy('name')->get();
         
         return inertia('Admin/Categories/Create', [
-            'categories' => $categories
+            'categories' => $categories,
+            'spareParts' => $spareParts
         ]);
     }
 
@@ -209,10 +211,16 @@ class PartCategoryController extends Controller
     {
         $categories = PartCategory::where('id', '!=', $partCategory->id)
             ->get();
+        
+        // Загружаем запчасти с указанием, какие уже относятся к этой категории
+        $spareParts = \App\Models\SparePart::orderBy('name')->get();
+        $categorySparePartIds = $partCategory->spareParts->pluck('id')->toArray();
             
         return inertia('Admin/Categories/Edit', [
             'category' => $partCategory,
-            'categories' => $categories
+            'categories' => $categories,
+            'spareParts' => $spareParts,
+            'categorySparePartIds' => $categorySparePartIds
         ]);
     }
 
@@ -226,6 +234,8 @@ class PartCategoryController extends Controller
             'description' => 'nullable|string',
             'parent_id' => 'nullable|exists:part_categories,id',
             'image' => 'nullable|image|max:2048',
+            'spare_parts' => 'nullable|array',
+            'spare_parts.*' => 'exists:spare_parts,id',
         ]);
 
         // Создаем slug из имени
@@ -237,7 +247,14 @@ class PartCategoryController extends Controller
             $validated['image_url'] = $imagePath;
         }
 
-        PartCategory::create($validated);
+        // Создаем категорию
+        $category = PartCategory::create($validated);
+
+        // Обновляем category_id у выбранных запчастей
+        if ($request->has('spare_parts')) {
+            \App\Models\SparePart::whereIn('id', $request->input('spare_parts'))
+                ->update(['category_id' => $category->id]);
+        }
 
         return redirect()->route('admin.part-categories.inertia')
             ->with('success', 'Категория успешно создана');
@@ -253,6 +270,8 @@ class PartCategoryController extends Controller
             'description' => 'nullable|string',
             'parent_id' => 'nullable|exists:part_categories,id',
             'image' => 'nullable|image|max:2048',
+            'spare_parts' => 'nullable|array',
+            'spare_parts.*' => 'exists:spare_parts,id',
         ]);
 
         // Обновляем slug
@@ -269,8 +288,20 @@ class PartCategoryController extends Controller
             $validated['image_url'] = $imagePath;
         }
 
+        // Обновляем категорию
         $partCategory->update($validated);
 
+        // Сначала сбрасываем категорию у всех запчастей, которые принадлежали этой категории
+        \App\Models\SparePart::where('category_id', $partCategory->id)
+            ->update(['category_id' => null]);
+
+        // Затем устанавливаем категорию для выбранных запчастей
+        if ($request->has('spare_parts')) {
+            \App\Models\SparePart::whereIn('id', $request->input('spare_parts'))
+                ->update(['category_id' => $partCategory->id]);
+        }
+
+        // Изменяем перенаправление на Inertia-версию вместо Blade
         return redirect()->route('admin.part-categories.inertia')
             ->with('success', 'Категория успешно обновлена');
     }

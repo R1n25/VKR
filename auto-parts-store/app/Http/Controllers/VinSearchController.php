@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\VinApiService;
+use App\Services\VinDecoderService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Exception;
@@ -10,10 +11,12 @@ use Exception;
 class VinSearchController extends Controller
 {
     private VinApiService $vinService;
+    private VinDecoderService $vinDecoderService;
 
-    public function __construct(VinApiService $vinService)
+    public function __construct(VinApiService $vinService, VinDecoderService $vinDecoderService)
     {
         $this->vinService = $vinService;
+        $this->vinDecoderService = $vinDecoderService;
     }
 
     /**
@@ -39,6 +42,25 @@ class VinSearchController extends Controller
         } catch (Exception $e) {
             return response()->json([
                 'error' => 'Не удалось найти информацию по VIN номеру'
+            ], 422);
+        }
+    }
+
+    /**
+     * Decode VIN code
+     */
+    public function decode(Request $request)
+    {
+        $request->validate([
+            'vin' => 'required|string|size:17'
+        ]);
+
+        try {
+            $decodedInfo = $this->vinDecoderService->decodeVin($request->vin);
+            return response()->json($decodedInfo);
+        } catch (Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage()
             ], 422);
         }
     }

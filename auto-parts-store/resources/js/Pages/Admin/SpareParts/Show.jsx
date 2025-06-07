@@ -1,9 +1,59 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { toast } from 'react-hot-toast';
 
+// Словарь соответствия ID категорий их названиям
+const categoryNames = {
+    1: 'Двигатель',
+    2: 'Блок цилиндров',
+    3: 'Головка блока цилиндров',
+    4: 'Поршневая группа',
+    5: 'Система смазки',
+    6: 'Система охлаждения',
+    7: 'Трансмиссия',
+    8: 'Сцепление',
+    9: 'Коробка передач',
+    10: 'Карданная передача',
+    11: 'Подвеска',
+    12: 'Передняя подвеска',
+    13: 'Задняя подвеска',
+    14: 'Ступицы и подшипники',
+    15: 'Рулевое управление',
+    16: 'Рулевые механизмы',
+    17: 'Рулевые тяги',
+    18: 'Тормозная система',
+    19: 'Тормозные диски',
+    20: 'Тормозные колодки',
+    21: 'Электрооборудование',
+    22: 'Система зажигания',
+    23: 'Генераторы и стартеры',
+    24: 'Кузовные детали',
+    25: 'Капот и крылья',
+    26: 'Двери',
+    27: 'Салон',
+    28: 'Сиденья',
+    29: 'Панель приборов',
+    30: 'Расходные материалы',
+    31: 'Масла и жидкости',
+    32: 'Фильтры',
+    33: 'Аксессуары',
+    34: 'Коврики',
+    35: 'Чехлы'
+};
+
+// Функция для получения названия категории по ID
+function getCategoryNameById(categoryId) {
+    return categoryNames[categoryId] || 'Неизвестная категория';
+}
+
 export default function Show({ auth, sparePart }) {
+    console.log('SparePart data:', sparePart);
+    console.log('Category data:', {
+        category_id: sparePart.category_id,
+        category: sparePart.category,
+        category_name: sparePart.category_name
+    });
     return (
         <AdminLayout
             user={auth.user}
@@ -55,7 +105,11 @@ export default function Show({ auth, sparePart }) {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Категория</p>
-                                                <p className="font-medium">{sparePart.category ? sparePart.category.name : '-'}</p>
+                                                <p className="font-medium">
+                                                    {sparePart.category_id ? (
+                                                        sparePart.category_name || (sparePart.category ? sparePart.category.name : getCategoryNameById(sparePart.category_id))
+                                                    ) : 'Без категории'}
+                                                </p>
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Производитель</p>

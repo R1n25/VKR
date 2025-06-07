@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\CatalogManagerController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Admin\PartCategoryController;
 use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\VinSearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -45,6 +46,12 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/brands', [BrandsController::class, 'index'])->name('brands.index');
 Route::get('/brands/{id}', [BrandsController::class, 'show'])->name('brands.show');
 
+// Маршруты для VIN-кода
+Route::get('/vin-decoder', function () {
+    return Inertia::render('VinDecoder/Index');
+})->name('vin-decoder');
+Route::get('/vin-search', [VinSearchController::class, 'index'])->name('vin-search');
+
 // Маршруты для категорий
 Route::get('/categories', [CategoriesController::class, 'index'])->name('categories.index');
 Route::get('/categories/{id}', [CategoriesController::class, 'show'])->name('categories.show');
@@ -61,6 +68,7 @@ Route::get('/models/{id}', function ($id) {
 
 // Маршруты для запчастей
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
+Route::get('/spare-parts/{id}', [PartsController::class, 'show'])->name('spare-parts.show');
 Route::get('/search', [PartsController::class, 'search'])->name('search');
 Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
 
@@ -354,7 +362,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Маршруты админ-панели
 Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [\App\Http\Controllers\Admin\AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
     // Управление запчастями
     Route::resource('spare-parts', App\Http\Controllers\Admin\SparePartController::class);
@@ -364,6 +372,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('spare-parts-show/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'showInertia'])->name('spare-parts.show-inertia');
     Route::get('spare-parts-edit/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'editInertia'])->name('spare-parts.edit-inertia');
     Route::put('spare-parts-update/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateInertia'])->name('spare-parts.update-inertia');
+    Route::put('spare-parts-update-category/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateCategory'])->name('spare-parts.update-category');
     
     // Управление аналогами запчастей
     Route::get('spare-parts/{sparePart}/analogs', [App\Http\Controllers\Admin\SparePartController::class, 'manageAnalogs'])->name('spare-parts.analogs');
@@ -420,19 +429,14 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/catalog-manager/export-cars', [CatalogManagerController::class, 'exportCars'])->name('catalog-manager.export-cars');
     Route::get('/catalog-manager/download-backup', [CatalogManagerController::class, 'downloadBackup'])->name('catalog-manager.download-backup');
 
-    // Управление категориями запчастей
-    Route::resource('part-categories', \App\Http\Controllers\Admin\PartCategoryController::class)->parameters([
-        'part-categories' => 'partCategory'
-    ]);
-    
-    // Управление категориями запчастей через Inertia
-    Route::get('part-categories-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'indexInertia'])->name('part-categories.inertia');
-    Route::get('part-categories-create-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'createInertia'])->name('part-categories.create-inertia');
-    Route::post('part-categories-store-inertia', [\App\Http\Controllers\Admin\PartCategoryController::class, 'storeInertia'])->name('part-categories.store-inertia');
-    Route::get('part-categories-show-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'showInertia'])->name('part-categories.show-inertia');
-    Route::get('part-categories-edit-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'editInertia'])->name('part-categories.edit-inertia');
-    Route::put('part-categories-update-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update-inertia');
-    Route::delete('part-categories-destroy-inertia/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy-inertia');
+    // Управление категориями запчастей (Inertia-версии)
+    Route::get('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'indexInertia'])->name('part-categories.inertia');
+    Route::get('part-categories/create', [\App\Http\Controllers\Admin\PartCategoryController::class, 'createInertia'])->name('part-categories.create-inertia');
+    Route::post('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'storeInertia'])->name('part-categories.store-inertia');
+    Route::get('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'showInertia'])->name('part-categories.show-inertia');
+    Route::get('part-categories/{partCategory}/edit', [\App\Http\Controllers\Admin\PartCategoryController::class, 'editInertia'])->name('part-categories.edit-inertia');
+    Route::put('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update-inertia');
+    Route::delete('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy-inertia');
 
     // Управление финансами пользователей
     Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('finances.index');

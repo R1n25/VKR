@@ -58,9 +58,9 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <h3 className="text-lg font-semibold text-[#854d0e]">Заказы</h3>
                                 <p className="text-3xl font-bold text-[#ca8a04]">{stats.orders_count}</p>
                             </div>
-                            <div className="bg-[#fef2f2] p-4 rounded-lg shadow border border-[#fee2e2]">
-                                <h3 className="text-lg font-semibold text-[#991b1b]">Ожидающие предложения</h3>
-                                <p className="text-3xl font-bold text-[#dc2626]">{stats.pending_suggestions_count}</p>
+                            <div className="bg-[#e0f2fe] p-4 rounded-lg shadow border border-[#bae6fd]">
+                                <h3 className="text-lg font-semibold text-[#0c4a6e]">Категории</h3>
+                                <p className="text-3xl font-bold text-[#0284c7]">{stats.categories_count || 0}</p>
                             </div>
                         </div>
                         
@@ -75,6 +75,18 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                     <h3 className="ml-3 text-lg font-semibold text-[#2a4075]">Заказы</h3>
                                 </div>
                                 <p className="text-gray-600">Управление заказами пользователей и их статусами</p>
+                            </Link>
+                            
+                            <Link href={route('admin.part-categories.inertia')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#0c4a6e] hover:shadow-lg hover:shadow-[#0284c7]/10 transition-all duration-300">
+                                <div className="flex items-center mb-3">
+                                    <div className="bg-[#e0f2fe] p-3 rounded-lg">
+                                        <svg className="w-6 h-6 text-[#0c4a6e]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                        </svg>
+                                    </div>
+                                    <h3 className="ml-3 text-lg font-semibold text-[#0c4a6e]">Категории</h3>
+                                </div>
+                                <p className="text-gray-600">Управление древовидным каталогом категорий запчастей</p>
                             </Link>
                             
                             <Link href={route('admin.vin-requests.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
@@ -114,7 +126,7 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <p className="text-gray-600">Управление каталогом запчастей</p>
                             </Link>
                             
-                            <Link href={route('admin.suggestions.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
+                            <Link href={route('admin.suggestions.inertia')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
                                 <div className="flex items-center mb-3">
                                     <div className="bg-[#eef2ff] p-3 rounded-lg">
                                         <svg className="w-6 h-6 text-[#2a4075]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,17 +138,7 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <p className="text-gray-600">Управление предложениями пользователей</p>
                             </Link>
                             
-                            <Link href={route('admin.finances.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
-                                <div className="flex items-center mb-3">
-                                    <div className="bg-[#eef2ff] p-3 rounded-lg">
-                                        <svg className="w-6 h-6 text-[#2a4075]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="ml-3 text-lg font-semibold text-[#2a4075]">Финансы</h3>
-                                </div>
-                                <p className="text-gray-600">Управление финансовыми операциями и отчетами</p>
-                            </Link>
+
                         </div>
                         
                         {/* Последние заказы */}
@@ -188,6 +190,8 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 </div>
                             </div>
                         )}
+                        
+
                     </div>
                 </div>
             </div>

@@ -273,6 +273,9 @@ class SparePartController extends Controller
      */
     public function indexInertia(Request $request)
     {
+        // Включаем логирование SQL-запросов
+        \DB::enableQueryLog();
+        
         $query = SparePart::query()->with(['category']);
         
         // Фильтрация
@@ -300,6 +303,26 @@ class SparePartController extends Controller
         
         $perPage = $request->input('per_page', 30);
         $spareParts = $query->paginate($perPage)->withQueryString();
+        
+        // Логируем выполненные запросы
+        \Log::info('SQL запросы:', \DB::getQueryLog());
+        
+        // Логируем данные запчастей
+        \Log::info('Первая запчасть:', ['data' => $spareParts->first() ? $spareParts->first()->toArray() : null]);
+        
+        // Загружаем категории для запчастей
+        $spareParts->getCollection()->transform(function ($part) {
+            if ($part->category) {
+                $part->category_name = $part->category->name;
+                \Log::info("SparePart ID: {$part->id}, Category: " . ($part->category ? $part->category->name : 'null') . ", Category Name: {$part->category_name}");
+            } else {
+                $part->category_name = 'Без категории';
+                \Log::info("SparePart ID: {$part->id}, Category: null, Category Name: {$part->category_name}");
+            }
+            
+            return $part;
+        });
+        
         $categories = PartCategory::all();
         
         return inertia('Admin/SpareParts/Index', [
@@ -519,7 +542,33 @@ class SparePartController extends Controller
      */
     public function showInertia(SparePart $sparePart)
     {
+        // Загружаем связанные данные
         $sparePart->load(['category', 'carModels', 'analogs.analogSparePart']);
+        
+        // Проверяем категорию и добавляем имя категории в данные запчасти
+        if ($sparePart->category) {
+            $sparePart->category_name = $sparePart->category->name;
+        } else if ($sparePart->category_id) {
+            // Если категория не загрузилась, но ID категории есть, пробуем загрузить категорию напрямую
+            $category = \App\Models\PartCategory::find($sparePart->category_id);
+            if ($category) {
+                $sparePart->category_name = $category->name;
+                $sparePart->category = $category;
+            } else {
+                $sparePart->category_name = 'Без категории';
+            }
+        } else {
+            $sparePart->category_name = 'Без категории';
+        }
+        
+        // Отладочный вывод
+        \Log::info('Показ запчасти:', [
+            'id' => $sparePart->id,
+            'name' => $sparePart->name,
+            'category_id' => $sparePart->category_id,
+            'category_name' => $sparePart->category_name,
+            'has_category' => $sparePart->category ? true : false
+        ]);
         
         return inertia('Admin/SpareParts/Show', [
             'sparePart' => $sparePart
@@ -565,6 +614,14 @@ class SparePartController extends Controller
      */
     public function updateInertia(Request $request, SparePart $sparePart)
     {
+        // Отладочный вывод
+        \Log::info('Обновление запчасти:', [
+            'id' => $sparePart->id,
+            'name' => $sparePart->name,
+            'category_id' => $request->input('category_id'),
+            'category_name' => $sparePart->category ? $sparePart->category->name : 'Без категории'
+        ]);
+        
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'part_number' => 'required|string|max:100|unique:spare_parts,part_number,' . $sparePart->id,
@@ -614,7 +671,34 @@ class SparePartController extends Controller
             $sparePart->carModels()->detach();
         }
         
+        // Перезагружаем запчасть с категорией для правильного отображения
+        $sparePart->refresh();
+        $sparePart->load('category');
+        
+        // Если категория не загрузилась, но ID категории есть, пробуем загрузить категорию напрямую
+        if (!$sparePart->category && $sparePart->category_id) {
+            $category = \App\Models\PartCategory::find($sparePart->category_id);
+            if ($category) {
+                $sparePart->category = $category;
+            }
+        }
+        
         return redirect()->route('admin.spare-parts.show-inertia', $sparePart->id)
             ->with('success', 'Запчасть успешно обновлена');
+    }
+
+    /**
+     * Обновление категории запчасти
+     */
+    public function updateCategory(Request $request, SparePart $sparePart)
+    {
+        $validated = $request->validate([
+            'category_id' => 'nullable|exists:part_categories,id',
+        ]);
+        
+        $sparePart->category_id = $validated['category_id'] ?: null;
+        $sparePart->save();
+        
+        return back()->with('success', 'Категория запчасти успешно обновлена');
     }
 } 

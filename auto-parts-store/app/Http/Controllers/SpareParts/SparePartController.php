@@ -35,7 +35,11 @@ class SparePartController extends Controller
     public function getInfo($id)
     {
         try {
-            $sparePart = SparePart::findOrFail($id);
+            $sparePart = SparePart::with('category')->findOrFail($id);
+            
+            // Добавляем имя категории в данные запчасти
+            $category_name = $sparePart->category ? $sparePart->category->name : 'Без категории';
+            
             return response()->json([
                 'success' => true,
                 'id' => $sparePart->id,
@@ -44,7 +48,8 @@ class SparePartController extends Controller
                 'is_available' => $sparePart->stock_quantity > 0,
                 'price' => $sparePart->price,
                 'manufacturer' => $sparePart->manufacturer,
-                'part_number' => $sparePart->part_number
+                'part_number' => $sparePart->part_number,
+                'category_name' => $category_name
             ]);
         } catch (\Exception $e) {
             return response()->json([

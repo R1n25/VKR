@@ -102,6 +102,17 @@ const MainLayout = ({ auth, children }) => {
                                     <SearchIcon className="w-5 h-5 mr-1" />
                                     Поиск
                                 </Link>
+                                <Link
+                                    href={route('vin-decoder')}
+                                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
+                                        url === '/vin-decoder'
+                                            ? 'border-primary text-gray-900'
+                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                    }`}
+                                >
+                                    <CircleDotIcon className="w-5 h-5 mr-1" />
+                                    VIN-код
+                                </Link>
                             </div>
                         </div>
 

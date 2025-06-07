@@ -11,6 +11,7 @@ use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\SparePartController;
 use App\Http\Controllers\SpareParts\SparePartController as SparePartsSparePartController;
 use App\Http\Controllers\API\BrandController;
+use App\Http\Controllers\VinSearchController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,6 +28,10 @@ use App\Http\Controllers\API\BrandController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Маршруты для работы с VIN-кодами
+Route::post('/vin/decode', [VinSearchController::class, 'decode']);
+Route::get('/vin/{vin}/schemes', [VinSearchController::class, 'getSchemes']);
 
 // Перенаправляем запросы с /api/brands на /brands
 Route::get('/brands', function () {

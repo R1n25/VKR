@@ -8,6 +8,10 @@ export default function Index({ auth, spareParts, categories, filters }) {
     const page = usePage();
     const [notification, setNotification] = useState(null);
     
+    // Отладочный вывод для проверки данных
+    console.log('SpareParts:', spareParts);
+    console.log('Categories:', categories);
+    
     // Обработка флеш-сообщений
     useEffect(() => {
         const flash = page.props.flash || {};
@@ -104,6 +108,20 @@ export default function Index({ auth, spareParts, categories, filters }) {
                 }
             });
         }
+    };
+
+    const handleUpdateCategory = (partId, categoryId) => {
+        router.put(route('admin.spare-parts.update-category', { spare_part: partId }), {
+            category_id: categoryId
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setNotification({ type: 'success', message: 'Категория запчасти успешно обновлена' });
+            },
+            onError: (errors) => {
+                setNotification({ type: 'error', message: 'Ошибка при обновлении категории: ' + (errors.message || 'Неизвестная ошибка') });
+            }
+        });
     };
 
     const handleActivateAll = () => {
@@ -368,7 +386,9 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                                         {part.part_number}
                                                     </td>
                                                     <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.category ? part.category.name : '-'}
+                                                        {part.category_id ? (
+                                                            categories.find(cat => cat.id === part.category_id)?.name || '-'
+                                                        ) : '-'}
                                                     </td>
                                                     <td className="px-2 py-3 text-sm text-gray-500 break-words">
                                                         {part.manufacturer}

@@ -1,0 +1,50 @@
+﻿[2025-06-07 06:59:58] local.INFO: SparePart ID: 14, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 15, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 16, Category: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 17, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 18, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 19, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 20, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 21, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 22, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 23, Category: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 24, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 25, Category: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, Category Name: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 26, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 27, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 28, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 29, Category: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, Category Name: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ  
+[2025-06-07 06:59:58] local.INFO: SparePart ID: 30, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SQL Р·Р°РїСЂРѕСЃС‹: [{"query":"select count(*) as aggregate from \"spare_parts\"","bindings":[],"time":1.61},{"query":"select * from \"spare_parts\" order by \"id\" asc limit 30 offset 0","bindings":[],"time":0.53},{"query":"select * from \"part_categories\" where \"part_categories\".\"id\" in (6, 12, 21, 22)","bindings":[],"time":0.45}] 
+[2025-06-07 07:00:15] local.INFO: РџРµСЂРІР°СЏ Р·Р°РїС‡Р°СЃС‚СЊ: {"data":{"id":1,"name":"РђРјРѕСЂС‚РёР·Р°С‚РѕСЂ РїРѕРґРІРµСЃРєРё РіР°Р·РѕРІС‹Р№ РїРµСЂРµРґРЅРёР№ РїСЂР°РІС‹Р№","slug":"amortizator-podveski-gazovyi-perednii-pravyi-vl342045r","description":"РђРјРѕСЂС‚РёР·Р°С‚РѕСЂ РїРѕРґРІРµСЃРєРё РіР°Р·РѕРІС‹Р№ РїРµСЂРµРґРЅРёР№ РїСЂР°РІС‹Р№","part_number":"VL342045R","price":"3012.00","stock_quantity":1,"manufacturer":"ABSEL","category_id":12,"image_url":null,"is_available":true,"created_at":"2025-06-06T07:30:17.000000Z","updated_at":"2025-06-07T06:58:57.000000Z"}} 
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 1, Category: РџРµСЂРµРґРЅСЏСЏ РїРѕРґРІРµСЃРєР°, Category Name: РџРµСЂРµРґРЅСЏСЏ РїРѕРґРІРµСЃРєР°  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 2, Category: РџРµСЂРµРґРЅСЏСЏ РїРѕРґРІРµСЃРєР°, Category Name: РџРµСЂРµРґРЅСЏСЏ РїРѕРґРІРµСЃРєР°  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 3, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 4, Category: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 5, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 6, Category: РЎРёСЃС‚РµРјР° РѕС…Р»Р°Р¶РґРµРЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° РѕС…Р»Р°Р¶РґРµРЅРёСЏ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 7, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 8, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 9, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 10, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 11, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 12, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 13, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 14, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 15, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 16, Category: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 17, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 18, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 19, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 20, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 21, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 22, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 23, Category: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ, Category Name: РЎРёСЃС‚РµРјР° Р·Р°Р¶РёРіР°РЅРёСЏ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 24, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 25, Category: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, Category Name: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 26, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 27, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 28, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 29, Category: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ, Category Name: Р­Р»РµРєС‚СЂРѕРѕР±РѕСЂСѓРґРѕРІР°РЅРёРµ  
+[2025-06-07 07:00:15] local.INFO: SparePart ID: 30, Category: null, Category Name: Р‘РµР· РєР°С‚РµРіРѕСЂРёРё  
+[2025-06-07 07:05:31] local.INFO: РћР±РЅРѕРІР»РµРЅРёРµ Р·Р°РїС‡Р°СЃС‚Рё: {"id":3,"name":"Р Р°РґРёР°С‚РѕСЂ РєРѕРЅРґРёС†РёРѕРЅРµСЂР°","category_id":6,"category_name":"РЎРёСЃС‚РµРјР° РѕС…Р»Р°Р¶РґРµРЅРёСЏ"} 

@@ -8,7 +8,7 @@ import DangerButton from '@/Components/DangerButton';
 export default function Show({ auth, category, subcategories, spareParts }) {
     const confirmDelete = () => {
         if (confirm(`Вы действительно хотите удалить категорию "${category.name}"?`)) {
-            router.delete(route('admin.part-categories.destroy', category.id));
+            router.delete(route('admin.part-categories.destroy-inertia', category.id));
         }
     };
 
@@ -45,7 +45,7 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                     <div className="text-gray-600 mb-1">Родительская категория:</div>
                                     <div className="font-medium">
                                         {category.parent ? (
-                                            <Link href={route('admin.part-categories.show', category.parent.id)} className="text-blue-600 hover:underline">
+                                            <Link href={route('admin.part-categories.show-inertia', category.parent.id)} className="text-blue-600 hover:underline">
                                                 {category.parent.name}
                                             </Link>
                                         ) : (
@@ -87,7 +87,7 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                         </SecondaryButton>
                                     </Link>
                                     
-                                    <Link href={route('admin.part-categories.edit', category.id)}>
+                                    <Link href={route('admin.part-categories.edit-inertia', category.id)}>
                                         <PrimaryButton>
                                             Редактировать
                                         </PrimaryButton>
@@ -100,16 +100,6 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                             </div>
                             
                             <div>
-                                {category.image_url && (
-                                    <div className="mb-6">
-                                        <h3 className="text-lg font-semibold mb-3">Изображение</h3>
-                                        <img 
-                                            src={`/storage/${category.image_url}`} 
-                                            alt={category.name} 
-                                            className="max-w-full h-auto rounded-lg shadow-md"
-                                        />
-                                    </div>
-                                )}
                                 
                                 {category.description && (
                                     <div className="mb-6">
@@ -144,12 +134,20 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{subcategory.name}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{subcategory.spare_parts_count}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <Link href={route('admin.part-categories.show', subcategory.id)} className="text-indigo-600 hover:text-indigo-900 mr-3">
+                                                        <div className="flex justify-center space-x-2">
+                                                            <Link
+                                                                href={route('admin.part-categories.show-inertia', subcategory.id)}
+                                                                className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                                                            >
                                                             Просмотр
                                                         </Link>
-                                                        <Link href={route('admin.part-categories.edit', subcategory.id)} className="text-blue-600 hover:text-blue-900">
-                                                            Редактировать
+                                                            <Link
+                                                                href={route('admin.part-categories.edit-inertia', subcategory.id)}
+                                                                className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200 transition"
+                                                            >
+                                                                Изменить
                                                         </Link>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -197,12 +195,20 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                                         )}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <Link href={route('admin.spare-parts.show', part.id)} className="text-indigo-600 hover:text-indigo-900 mr-3">
+                                                        <div className="flex justify-center space-x-2">
+                                                            <Link
+                                                                href={route('admin.spare-parts.show-inertia', part.id)}
+                                                                className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                                                            >
                                                             Просмотр
                                                         </Link>
-                                                        <Link href={route('admin.spare-parts.edit', part.id)} className="text-blue-600 hover:text-blue-900">
-                                                            Редактировать
+                                                            <Link
+                                                                href={route('admin.spare-parts.edit-inertia', part.id)}
+                                                                className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200 transition"
+                                                            >
+                                                                Изменить
                                                         </Link>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -210,7 +216,7 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                     </table>
                                 </div>
                             ) : (
-                                <p className="text-gray-500 italic">В этой категории пока нет запчастей</p>
+                                <p className="text-gray-500 italic">Нет запчастей в этой категории</p>
                             )}
                         </div>
                     </div>
