@@ -78,48 +78,49 @@ export default function AppLayout({ children }) {
                                         </svg>
                                         Корзина
                                     </Link>
-                                    <div className="relative" ref={dropdownRef}>
-                                        <button
-                                            onClick={() => setDropdownOpen(!dropdownOpen)}
-                                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition"
+                                    <div className="flex items-center space-x-2">
+                                        <Link
+                                            href={route('dashboard')}
+                                            className="inline-flex items-center px-3 py-2 border border-indigo-500 text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition ease-in-out duration-150"
                                         >
-                                            {auth.user.name}
-                                            <svg className="ml-2 -mr-0.5 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            <svg 
+                                                xmlns="http://www.w3.org/2000/svg" 
+                                                className="w-4 h-4 mr-1" 
+                                                fill="none" 
+                                                viewBox="0 0 24 24" 
+                                                stroke="currentColor"
+                                            >
+                                                <path 
+                                                    strokeLinecap="round" 
+                                                    strokeLinejoin="round" 
+                                                    strokeWidth={2} 
+                                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" 
+                                                />
                                             </svg>
-                                        </button>
-                                        
-                                        {dropdownOpen && (
-                                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                                <Link
-                                                    href={route('dashboard')}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Личный кабинет
-                                                </Link>
-                                                <Link
-                                                    href={route('orders.index')}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Мои заказы
-                                                </Link>
-                                                <Link
-                                                    href={route('finances.index')}
-                                                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Финансы
-                                                </Link>
-                                                <hr className="my-1" />
-                                                <Link
-                                                    href={route('logout')}
-                                                    method="post"
-                                                    as="button"
-                                                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                                >
-                                                    Выход
-                                                </Link>
-                                            </div>
-                                        )}
+                                            Личный кабинет
+                                        </Link>
+                                        <Link
+                                            href={route('logout')}
+                                            method="post"
+                                            as="button"
+                                            className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition ease-in-out duration-150"
+                                        >
+                                            <svg 
+                                                xmlns="http://www.w3.org/2000/svg" 
+                                                className="w-4 h-4 mr-1" 
+                                                fill="none" 
+                                                viewBox="0 0 24 24" 
+                                                stroke="currentColor"
+                                            >
+                                                <path 
+                                                    strokeLinecap="round" 
+                                                    strokeLinejoin="round" 
+                                                    strokeWidth={2} 
+                                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" 
+                                                />
+                                            </svg>
+                                            Выход
+                                        </Link>
                                     </div>
                                 </div>
                             ) : (

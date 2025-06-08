@@ -242,7 +242,7 @@ export default function Index({ auth, cart, cartItems }) {
                                                                         min="1"
                                                                         max={item.sparePart.stock_quantity}
                                                                         disabled={updatingItemId === item.id}
-                                                                        className="border-t border-b border-gray-300 w-12 text-center py-1"
+                                                                        className="border-t border-b border-gray-300 w-16 text-center py-1 text-lg font-medium"
                                                                     />
                                                                     <button
                                                                         onClick={() => handleQuantityChange(item.id, item.quantity + 1)}

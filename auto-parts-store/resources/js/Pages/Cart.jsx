@@ -159,7 +159,7 @@ export default function Cart({ auth }) {
                                                                         onChange={(e) => handleQuantityChange(item.id, e.target.value)}
                                                                         min="1"
                                                                         max={item.stock}
-                                                                        className="border-t border-b border-gray-300 w-12 text-center py-1"
+                                                                        className="border-t border-b border-gray-300 w-16 text-center py-1 text-lg font-medium"
                                                                     />
                                                                     <button
                                                                         onClick={() => handleQuantityChange(item.id, item.quantity + 1)}

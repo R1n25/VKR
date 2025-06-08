@@ -3,6 +3,17 @@ import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminFormGroup from '@/Components/AdminFormGroup';
+import AdminInput from '@/Components/AdminInput';
+import AdminSelect from '@/Components/AdminSelect';
+import AdminAlert from '@/Components/AdminAlert';
+import OrderStatusBadge from '@/Components/OrderStatusBadge';
+import AdminPagination from '@/Components/AdminPagination';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import AdminTable from '@/Components/AdminTable';
 
 export default function Index({ auth, orders, filters, ordersCount }) {
     // Отладочная информация
@@ -118,282 +129,144 @@ export default function Index({ auth, orders, filters, ordersCount }) {
             <Head title="Управление заказами" />
 
             <div className="py-12">
-                <div className="max-w-8xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Отладочная информация */}
-                            <div className="mb-4 p-4 bg-gray-100 rounded">
-                                <p>Всего заказов: {ordersCount || 0}</p>
-                                <p>Текущая страница: {orders?.current_page || 'N/A'}</p>
-                            </div>
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <AdminCard>
+                        <AdminPageHeader 
+                            title="Управление заказами" 
+                            subtitle={`Всего заказов: ${ordersCount || 0}`}
+                        />
+                        
+                        {/* Фильтры */}
+                        <div className="mb-8">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center text-[#2a4075]">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                Фильтры поиска
+                            </h3>
                             
-                            {/* Фильтры */}
-                            <div className="mb-8">
-                                <h3 className="text-lg font-semibold mb-4">Фильтры</h3>
-                                
-                                <form onSubmit={handleSearch} className="bg-gray-50 p-4 rounded-lg">
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <div>
-                                            <label htmlFor="order_number" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Номер заказа
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="order_number"
-                                                name="order_number"
-                                                value={searchFilters.order_number}
-                                                onChange={handleFilterChange}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Имя клиента
-                                            </label>
-                                            <input
-                                                type="text"
-                                                id="customer_name"
-                                                name="customer_name"
-                                                value={searchFilters.customer_name}
-                                                onChange={handleFilterChange}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Статус
-                                            </label>
-                                            <select
-                                                id="status"
-                                                name="status"
-                                                value={searchFilters.status}
-                                                onChange={handleFilterChange}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            >
-                                                <option value="">Все статусы</option>
-                                                <option value="pending">Ожидает обработки</option>
-                                                <option value="processing">В работе</option>
-                                                <option value="ready_for_pickup">Готов к выдаче</option>
-                                                <option value="ready_for_delivery">Готов к доставке</option>
-                                                <option value="shipping">В доставке</option>
-                                                <option value="delivered">Выдано</option>
-                                                <option value="returned">Возвращен</option>
-                                            </select>
-                                        </div>
-                                        
-                                        <div>
-                                            <label htmlFor="date_from" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Дата с
-                                            </label>
-                                            <input
-                                                type="date"
-                                                id="date_from"
-                                                name="date_from"
-                                                value={searchFilters.date_from}
-                                                onChange={handleFilterChange}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label htmlFor="date_to" className="block text-sm font-medium text-gray-700 mb-1">
-                                                Дата по
-                                            </label>
-                                            <input
-                                                type="date"
-                                                id="date_to"
-                                                name="date_to"
-                                                value={searchFilters.date_to}
-                                                onChange={handleFilterChange}
-                                                className="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            />
-                                        </div>
-                                    </div>
+                            <form onSubmit={handleSearch} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <AdminFormGroup label="Номер заказа" name="order_number">
+                                        <AdminInput
+                                            type="text"
+                                            name="order_number"
+                                            value={searchFilters.order_number}
+                                            handleChange={handleFilterChange}
+                                            placeholder="Введите номер"
+                                        />
+                                    </AdminFormGroup>
                                     
-                                    <div className="mt-4 flex justify-end space-x-3">
-                                        <button
-                                            type="button"
-                                            onClick={handleResetFilters}
-                                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            Сбросить
-                                        </button>
-                                        
-                                        <button
-                                            type="submit"
-                                            className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                        >
-                                            Применить фильтры
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                            
-                            {/* Кнопка экспорта */}
-                            <div className="mb-6 flex justify-end">
-                                <a
-                                    href={`${route('admin.orders.export')}?${new URLSearchParams(searchFilters).toString()}`}
-                                    className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Экспорт в CSV
-                                </a>
-                            </div>
-
-                            {/* Список заказов */}
-                            <h3 className="text-xl font-semibold mb-4">Список заказов</h3>
-                            
-                            {orders?.data && orders.data.length > 0 ? (
-                                <>
-                                    <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        № заказа
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Дата
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Клиент
-                                                    </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Статус
-                                                    </th>
-                                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Сумма
-                                                    </th>
-                                                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Действия
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {orders.data.map(order => (
-                                                    <tr key={order.id}>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm font-medium text-indigo-600">
-                                                                <a
-                                                                    href={`http://127.0.0.1:8000/admin/orders/${order.id}`}
-                                                                    className="hover:underline"
-                                                                >
-                                                                    {order.order_number || `№${order.id}`}
-                                                                </a>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900">
-                                                                {formatDate(order.created_at)}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900">
-                                                                {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">
-                                                                {order.shipping_phone || order.phone || 'Н/Д'}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColorClass(order.status)}`}>
-                                                                {getStatusText(order.status)}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                            {order.total || '0'} руб.
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm">
-                                                            <a
-                                                                href={`http://127.0.0.1:8000/admin/orders/${order.id}`}
-                                                                className="inline-flex items-center px-3 py-1.5 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 mr-2"
-                                                            >
-                                                                Подробнее
-                                                            </a>
-                                                            
-                                                            {(isAdmin || (auth.user && auth.user.id === order.user_id)) && order.payment_status !== 'paid' && (
-                                                                <a
-                                                                    href={isAdmin ? `http://127.0.0.1:8000/admin/orders/${order.id}/add-payment` : `http://127.0.0.1:8000/orders/${order.id}/add-payment`}
-                                                                    className="inline-flex items-center px-3 py-1.5 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                                                >
-                                                                    Добавить оплату
-                                                                </a>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    <AdminFormGroup label="Имя клиента" name="customer_name">
+                                        <AdminInput
+                                            type="text"
+                                            name="customer_name"
+                                            value={searchFilters.customer_name}
+                                            handleChange={handleFilterChange}
+                                            placeholder="Введите имя"
+                                        />
+                                    </AdminFormGroup>
                                     
-                                    {/* Пагинация */}
-                                    <div className="mt-6">
-                                        <nav className="flex items-center justify-between">
-                                            <div className="flex justify-between flex-1 sm:hidden">
-                                                {orders.prev_page_url && (
-                                                    <a
-                                                        href={orders.prev_page_url}
-                                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                                    >
-                                                        Назад
-                                                    </a>
-                                                )}
-                                                
-                                                {orders.next_page_url && (
-                                                    <a
-                                                        href={orders.next_page_url}
-                                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                                                    >
-                                                        Вперед
-                                                    </a>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                                <div>
-                                                    <p className="text-sm text-gray-700">
-                                                        Показано с <span className="font-medium">{orders.from}</span> по <span className="font-medium">{orders.to}</span> из <span className="font-medium">{orders.total}</span> заказов
-                                                    </p>
-                                                </div>
-                                                
-                                                <div>
-                                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                                        {orders.links.map((link, index) => {
-                                                            // Пропускаем "Previous" и "Next" ссылки
-                                                            if (link.label === '&laquo; Previous' || link.label === 'Next &raquo;') {
-                                                                return null;
-                                                            }
-                                                            
-                                                            return (
-                                                                <a
-                                                                    key={index}
-                                                                    href={link.url}
-                                                                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                                                        link.active
-                                                                            ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                                    }`}
-                                                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                                                />
-                                                            );
-                                                        })}
-                                                    </nav>
-                                                </div>
-                                            </div>
-                                        </nav>
-                                    </div>
-                                </>
-                            ) : (
-                                <div className="text-center py-10">
-                                    <p className="text-gray-600 mb-4">Заказы не найдены</p>
+                                    <AdminFormGroup label="Статус" name="status">
+                                        <AdminSelect
+                                            name="status"
+                                            value={searchFilters.status}
+                                            handleChange={handleFilterChange}
+                                        >
+                                            <option value="">Все статусы</option>
+                                            <option value="pending">Ожидает обработки</option>
+                                            <option value="processing">В работе</option>
+                                            <option value="ready_for_pickup">Готов к выдаче</option>
+                                            <option value="ready_for_delivery">Готов к доставке</option>
+                                            <option value="shipping">В доставке</option>
+                                            <option value="delivered">Выдано</option>
+                                            <option value="returned">Возвращен</option>
+                                        </AdminSelect>
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Дата с" name="date_from">
+                                        <AdminInput
+                                            type="date"
+                                            name="date_from"
+                                            value={searchFilters.date_from}
+                                            handleChange={handleFilterChange}
+                                        />
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Дата по" name="date_to">
+                                        <AdminInput
+                                            type="date"
+                                            name="date_to"
+                                            value={searchFilters.date_to}
+                                            handleChange={handleFilterChange}
+                                        />
+                                    </AdminFormGroup>
                                 </div>
-                            )}
+                                
+                                <div className="mt-4 flex justify-end space-x-2">
+                                    <SecondaryButton 
+                                        type="button" 
+                                        onClick={handleResetFilters}
+                                        className="flex items-center"
+                                    >
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                        Сбросить
+                                    </SecondaryButton>
+                                    <PrimaryButton type="submit" className="flex items-center">
+                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        Применить фильтры
+                                    </PrimaryButton>
+                                </div>
+                            </form>
                         </div>
-                    </div>
+
+                        {/* Список заказов */}
+                        <AdminTable
+                            headers={[
+                                '№',
+                                'Дата',
+                                'Клиент',
+                                'Сумма',
+                                'Статус',
+                                'Действия'
+                            ]}
+                            data={orders.data}
+                            renderRow={(order) => (
+                                <>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {order.order_number || `№${order.id}`}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {formatDate(order.created_at)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {order.total || order.total_amount || 0} ₽
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <OrderStatusBadge status={order.status} />
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <Link href={route('admin.orders.show', order.id)} className="btn-primary text-xs py-1 px-3">
+                                            Просмотр
+                                        </Link>
+                                    </td>
+                                </>
+                            )}
+                            emptyMessage="Заказы не найдены"
+                        />
+
+                        {/* Пагинация */}
+                        <div className="mt-4">
+                            <AdminPagination links={orders.links} />
+                        </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

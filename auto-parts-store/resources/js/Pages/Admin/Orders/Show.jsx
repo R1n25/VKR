@@ -5,6 +5,18 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import axios from 'axios';
 import { formatPrice } from '@/utils/helpers';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminTable from '@/Components/AdminTable';
+import AdminFormGroup from '@/Components/AdminFormGroup';
+import AdminInput from '@/Components/AdminInput';
+import AdminTextarea from '@/Components/AdminTextarea';
+import AdminAlert from '@/Components/AdminAlert';
+import OrderStatusBadge from '@/Components/OrderStatusBadge';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import SuccessButton from '@/Components/SuccessButton';
+import DangerButton from '@/Components/DangerButton';
 
 // Настройка axios для работы с CSRF-защитой
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
@@ -48,7 +60,7 @@ export default function Show({ auth, order }) {
                 <Head title="Заказ не найден" />
                 <div className="py-12">
                     <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <AdminCard>
                             <div className="p-6 text-gray-900 text-center">
                                 <p className="mb-4">Запрашиваемый заказ не найден.</p>
                                 <Link
@@ -58,7 +70,7 @@ export default function Show({ auth, order }) {
                                     ← Вернуться к списку заказов
                                 </Link>
                             </div>
-                        </div>
+                        </AdminCard>
                     </div>
                 </div>
             </AdminLayout>
@@ -79,21 +91,6 @@ export default function Show({ auth, order }) {
         };
         
         return statuses[status] || status;
-    };
-
-    // Функция для получения класса цвета статуса
-    const getStatusColorClass = (status) => {
-        const classes = {
-            'pending': 'bg-blue-100 text-blue-800',
-            'processing': 'bg-yellow-100 text-yellow-800',
-            'ready_for_pickup': 'bg-green-100 text-green-800',
-            'ready_for_delivery': 'bg-indigo-100 text-indigo-800',
-            'in_delivery': 'bg-purple-100 text-purple-800',
-            'delivered': 'bg-green-100 text-green-800',
-            'returned': 'bg-red-100 text-red-800'
-        };
-        
-        return classes[status] || 'bg-gray-100 text-gray-800';
     };
 
     // Функция для форматирования даты
@@ -252,319 +249,337 @@ export default function Show({ auth, order }) {
             setAddingNote(false);
         }
     };
-
-    // Определение доступных статусов
-    const statusOptions = [
-        { value: 'pending', label: 'Ожидает обработки' },
-        { value: 'processing', label: 'В работе' },
-        { value: 'ready_for_pickup', label: 'Готов к выдаче' },
-        { value: 'ready_for_delivery', label: 'Готов к доставке' },
-        { value: 'in_delivery', label: 'В доставке' },
-        { value: 'delivered', label: 'Выдано' },
-        { value: 'returned', label: 'Возвращен' }
-    ];
-
+    
     return (
         <AdminLayout
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Детали заказа</h2>}
         >
-            <Head title={`Заказ №${order.order_number}`} />
-
+            <Head title={`Заказ №${order.order_number || order.id}`} />
+            
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <div className="mb-6">
-                                <Link
-                                    href={route('admin.orders.index')}
-                                    className="text-indigo-600 hover:text-indigo-900"
+                    {/* Сообщения обратной связи */}
+                    {feedbackMessage && (
+                        <div className="mb-4">
+                            <AdminAlert 
+                                type={messageType} 
+                                message={feedbackMessage} 
+                                onClose={() => setFeedbackMessage(null)} 
+                            />
+                        </div>
+                    )}
+                    
+                    {/* Шапка заказа */}
+                    <AdminCard className="mb-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                            <div>
+                                <AdminPageHeader 
+                                    title={`Заказ ${order.order_number || `№${order.id}`}`} 
+                                    subtitle={`от ${formatDate(order.created_at)}`} 
+                                />
+                            </div>
+                            <div className="mt-2 sm:mt-0">
+                                <Link 
+                                    href={route('admin.orders.index')} 
+                                    className="flex items-center text-gray-600 hover:text-[#2a4075]"
                                 >
-                                    ← Назад к списку заказов
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Назад к списку
                                 </Link>
                             </div>
-
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900">
-                                        Заказ №{order.order_number || order.id}
-                                    </h2>
-                                    <p className="text-gray-600 mt-1">
-                                        от {formatDate(order.created_at)}
-                                    </p>
+                        </div>
+                        
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold mb-2 text-[#2a4075]">Статус заказа</h3>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <div className="mr-2">
+                                    <OrderStatusBadge status={order.status} />
                                 </div>
                                 
-                                <div className="mt-4 md:mt-0">
-                                    <div className="flex items-center mb-2">
-                                        <span className="mr-2">Статус:</span>
-                                        <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${getStatusColorClass(order.status)}`}>
-                                            {getStatusText(order.status)}
-                                        </span>
-                                    </div>
-                                    
-                                    {/* Форма для изменения статуса */}
-                                    <div className="mt-4 bg-gray-50 p-4 rounded-lg shadow-sm">
-                                        <h3 className="text-md font-semibold mb-3">Управление статусом заказа</h3>
+                                <SecondaryButton 
+                                    onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
+                                    className="flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Изменить статус
+                                </SecondaryButton>
+                            </div>
+                            
+                            {statusDropdownOpen && (
+                                <div className="mt-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-3">
                                         <div>
-                                            <label htmlFor="status-select" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Выберите новый статус
-                                            </label>
-                                            <div className="relative">
-                                                <select
-                                                    id="status-select"
-                                                    value={selectedStatus}
-                                                    onChange={(e) => setSelectedStatus(e.target.value)}
-                                                    disabled={isUpdating}
-                                                    className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                >
-                                                    {statusOptions.map((status) => (
-                                                        <option key={status.value} value={status.value}>
-                                                            {status.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Выберите новый статус:</label>
+                                            <select 
+                                                value={selectedStatus} 
+                                                onChange={(e) => setSelectedStatus(e.target.value)}
+                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                            >
+                                                <option value="pending">Ожидает обработки</option>
+                                                <option value="processing">В работе</option>
+                                                <option value="ready_for_pickup">Готов к выдаче</option>
+                                                <option value="ready_for_delivery">Готов к доставке</option>
+                                                <option value="in_delivery">В доставке</option>
+                                                <option value="delivered">Выдано</option>
+                                                <option value="returned">Возвращен</option>
+                                            </select>
                                         </div>
-                                        
-                                        <div className="mt-3">
-                                            <label htmlFor="status-comment" className="block text-sm font-medium text-gray-700 mb-2">
-                                                Комментарий к изменению статуса (необязательно)
-                                            </label>
-                                            <textarea
-                                                id="status-comment"
-                                                value={statusComment}
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">Комментарий к смене статуса:</label>
+                                            <textarea 
+                                                value={statusComment} 
                                                 onChange={(e) => setStatusComment(e.target.value)}
-                                                disabled={isUpdating}
-                                                rows={2}
-                                                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                                                placeholder="Укажите причину изменения статуса или дополнительную информацию"
+                                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                                placeholder="Необязательный комментарий"
+                                                rows="2"
                                             ></textarea>
                                         </div>
-                                        
-                                        <div className="mt-4">
-                                            <button
-                                                type="button"
-                                                onClick={handleStatusUpdate}
-                                                disabled={isUpdating || selectedStatus === orderData.status}
-                                                className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                                                    isUpdating || selectedStatus === orderData.status ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'
-                                                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
-                                            >
-                                                {isUpdating ? 'Обновление...' : 'Обновить статус'}
-                                            </button>
-                                        </div>
                                     </div>
-                                </div>
-                            </div>
-
-                            {/* Сообщение обратной связи */}
-                            {feedbackMessage && (
-                                <div className={`mt-3 p-2 rounded-md ${
-                                    messageType === 'success' ? 'bg-green-100 text-green-800' : 
-                                    messageType === 'error' ? 'bg-red-100 text-red-800' : 
-                                    'bg-blue-100 text-blue-800'
-                                }`}>
-                                    {feedbackMessage}
+                                    <div className="flex justify-end">
+                                        <SecondaryButton 
+                                            onClick={() => setStatusDropdownOpen(false)}
+                                            className="mr-2"
+                                        >
+                                            Отмена
+                                        </SecondaryButton>
+                                        <PrimaryButton 
+                                            onClick={handleStatusUpdate}
+                                            disabled={isUpdating || selectedStatus === order.status}
+                                        >
+                                            {isUpdating ? 'Обновление...' : 'Сохранить статус'}
+                                        </PrimaryButton>
+                                    </div>
+                                    {statusError && (
+                                        <div className="mt-2 text-sm text-red-600">{statusError}</div>
+                                    )}
                                 </div>
                             )}
                             
-                            <div className="mt-4 grid grid-cols-2 gap-4">
-                                <button 
-                                    type="button" 
+                            <div className="flex flex-wrap gap-2 mt-4">
+                                <SuccessButton
                                     onClick={() => handleQuickStatusChange('processing')}
                                     disabled={processing || order.status === 'processing'}
-                                    className="inline-flex justify-center items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-blue-700 focus:bg-blue-700 disabled:opacity-50 transition"
+                                    className="text-xs"
                                 >
-                                    {processing && selectedStatus === 'processing' ? 'Обновление...' : 'В работу'}
-                                </button>
-                                <button 
-                                    type="button" 
+                                    В работу
+                                </SuccessButton>
+                                <PrimaryButton
+                                    onClick={() => handleQuickStatusChange('ready_for_pickup')}
+                                    disabled={processing || order.status === 'ready_for_pickup'}
+                                    className="text-xs"
+                                >
+                                    Готов к выдаче
+                                </PrimaryButton>
+                                <PrimaryButton
                                     onClick={() => handleQuickStatusChange('delivered')}
                                     disabled={processing || order.status === 'delivered'}
-                                    className="inline-flex justify-center items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 disabled:opacity-50 transition"
+                                    className="text-xs"
                                 >
-                                    {processing && selectedStatus === 'delivered' ? 'Обновление...' : 'Выдано'}
-                                </button>
+                                    Выдано клиенту
+                                </PrimaryButton>
+                                <DangerButton
+                                    onClick={() => handleQuickStatusChange('returned')}
+                                    disabled={processing || order.status === 'returned'}
+                                    className="text-xs"
+                                >
+                                    Возврат
+                                </DangerButton>
                             </div>
-                            
-                            {statusError && !feedbackMessage && (
-                                <p className="mt-3 text-sm text-red-600">{statusError}</p>
-                            )}
-                            
-                            {/* Информация о клиенте и доставке */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8">
-                                <div className="bg-white p-6 rounded-lg shadow">
-                                    <h3 className="text-lg font-semibold mb-4">Данные клиента</h3>
-                                    
-                                    <div className="space-y-4">
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">ФИО:</span>
-                                            <span className="w-2/3 font-medium">{orderData.customer_name || 'Не указано'}</span>
-                                        </div>
-                                        
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">Email:</span>
-                                            <span className="w-2/3">{orderData.customer_email || 'Не указано'}</span>
-                                        </div>
-                                        
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">Телефон:</span>
-                                            <span className="w-2/3">{orderData.customer_phone || 'Не указано'}</span>
-                                        </div>
-                                        
-                                        {orderData.user && (
-                                            <div className="flex border-b border-gray-200 pb-2">
-                                                <span className="w-1/3 text-gray-600">Аккаунт:</span>
-                                                <span className="w-2/3">
-                                                    <Link href={route('admin.users.edit', orderData.user.id)} className="text-indigo-600 hover:underline">
-                                                        {orderData.user.name} (ID: {orderData.user.id})
-                                                    </Link>
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-white p-6 rounded-lg shadow">
-                                    <h3 className="text-lg font-semibold mb-4">Информация о доставке</h3>
-                                    
-                                    <div className="space-y-4">
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">Способ доставки:</span>
-                                            <span className="w-2/3">{orderData.delivery_method === 'pickup' ? 'Самовывоз' : 'Доставка'}</span>
-                                        </div>
-                                        
-                                        {orderData.delivery_address && (
-                                            <div className="flex border-b border-gray-200 pb-2">
-                                                <span className="w-1/3 text-gray-600">Адрес доставки:</span>
-                                                <span className="w-2/3">{orderData.delivery_address}</span>
-                                            </div>
-                                        )}
-                                        
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">Дата заказа:</span>
-                                            <span className="w-2/3">{formatDate(orderData.created_at)}</span>
-                                        </div>
-                                        
-                                        <div className="flex border-b border-gray-200 pb-2">
-                                            <span className="w-1/3 text-gray-600">Способ оплаты:</span>
-                                            <span className="w-2/3">{getPaymentMethodText(orderData.payment_method)}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Товары заказа */}
-                            <div className="bg-white border rounded-lg overflow-hidden mb-8">
-                                <div className="px-6 py-4 border-b bg-gray-50">
-                                    <h3 className="text-lg font-semibold">Товары заказа</h3>
-                                </div>
-                                
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    №
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Бренд
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Артикул
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Товар
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Цена
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Кол-во
-                                                </th>
-                                                <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                    Сумма
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {orderData.orderItems && orderData.orderItems.length > 0 ? (
-                                                orderData.orderItems.map((item, index) => (
-                                                    <tr key={`orderItem-${item.id}`}>
-                                                        <td className="px-4 py-2">{index + 1}</td>
-                                                        <td className="px-4 py-2">
-                                                            {item.sparePart?.brand?.name || item.brand_name || ''}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            {item.sparePart?.part_number || item.part_number || ''}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <div>
-                                                                <p className="font-medium">{item.sparePart?.name || item.name || `Товар #${item.spare_part_id || 'N/A'}`}</p>
-                                                                {item.sparePart?.description && (
-                                                                    <p className="text-xs text-gray-500 mt-1">{item.sparePart.description}</p>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
-                                                        <td className="px-4 py-2">{item.quantity}</td>
-                                                        <td className="px-4 py-2">{formatPrice(item.total || (item.price * item.quantity))} ₽</td>
-                                                    </tr>
-                                                ))
-                                            ) : orderData.direct_items && orderData.direct_items.length > 0 ? (
-                                                orderData.direct_items.map((item, index) => (
-                                                    <tr key={`directItem-${index}`}>
-                                                        <td className="px-4 py-2">{index + 1}</td>
-                                                        <td className="px-4 py-2">
-                                                            {item.brand_name || ''}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            {item.part_number || ''}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            <div>
-                                                                <p className="font-medium">{item.part_name || `Товар #${item.spare_part_id || 'N/A'}`}</p>
-                                                                {item.description && (
-                                                                    <p className="text-xs text-gray-500 mt-1">{item.description}</p>
-                                                                )}
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-2">{formatPrice(item.price)} ₽</td>
-                                                        <td className="px-4 py-2">{item.quantity}</td>
-                                                        <td className="px-4 py-2">{formatPrice(item.total || (item.price * item.quantity))} ₽</td>
-                                                    </tr>
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan={7} className="px-4 py-2 text-center">
-                                                        Товары не найдены
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                        <tfoot className="bg-gray-50">
-                                            <tr>
-                                                <td colSpan="6" className="px-6 py-4 text-right text-sm font-medium">
-                                                    Итого:
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                    {formatPrice(orderData.total || 0)} руб.
-                                                </td>
-                                            </tr>
-                                        </tfoot>
-                                    </table>
-                                </div>
-                            </div>
-                            
-                            {/* Кнопка добавления оплаты */}
-                            <Link
-                                href={route('admin.orders.add-payment', orderData.id)}
-                                className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            >
-                                Добавить оплату
-                            </Link>
                         </div>
-                    </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Данные клиента */}
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2 text-[#2a4075]">Данные клиента</h3>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <dl className="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">ФИО:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Не указано')}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Email:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {order.user ? order.user.email : (order.email || 'Не указано')}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Телефон:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {order.phone || 'Не указано'}
+                                            </dd>
+                                        </div>
+                                        {order.user && (
+                                            <div className="mt-2">
+                                                <Link
+                                                    href={route('admin.users.edit', order.user.id)}
+                                                    className="text-sm text-blue-600 hover:text-blue-800"
+                                                >
+                                                    Просмотреть профиль пользователя
+                                                </Link>
+                                            </div>
+                                        )}
+                                    </dl>
+                                </div>
+                            </div>
+                            
+                            {/* Информация о доставке */}
+                            <div>
+                                <h3 className="text-lg font-semibold mb-2 text-[#2a4075]">Информация о доставке</h3>
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                    <dl className="grid grid-cols-1 gap-3">
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Способ доставки:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {order.shipping_method || 'Не указано'}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Адрес доставки:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {order.shipping_address || 'Не указано'}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Способ оплаты:</dt>
+                                            <dd className="text-sm font-medium">
+                                                {getPaymentMethodText(order.payment_method) || 'Не указано'}
+                                            </dd>
+                                        </div>
+                                        <div>
+                                            <dt className="text-sm font-medium text-gray-500">Статус оплаты:</dt>
+                                            <dd className="text-sm font-medium">
+                                                <span className={`px-2 py-1 text-xs rounded-full ${order.is_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                                                    {order.is_paid ? 'Оплачено' : 'Не оплачено'}
+                                                </span>
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                    </AdminCard>
+                    
+                    {/* Товары в заказе */}
+                    <AdminCard className="mb-6">
+                        <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Товары в заказе</h3>
+                        
+                        <AdminTable
+                            headers={[
+                                '№',
+                                'Артикул',
+                                'Наименование',
+                                'Цена',
+                                'Кол-во',
+                                'Сумма'
+                            ]}
+                            data={order.direct_items || []}
+                            renderRow={(item, index) => (
+                                <>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {index + 1}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {item.part_number || 'Н/Д'}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm text-gray-500">
+                                        <div>{item.part_name || 'Без названия'}</div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {formatPrice(item.price)} ₽
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {item.quantity}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        {formatPrice(item.price * item.quantity)} ₽
+                                    </td>
+                                </>
+                            )}
+                            footerContent={
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-4 text-right text-sm font-medium">
+                                        Итого:
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {formatPrice(order.total || order.total_amount || 0)} ₽
+                                    </td>
+                                </tr>
+                            }
+                            emptyMessage="В заказе нет товаров"
+                        />
+                    </AdminCard>
+                    
+                    {/* Комментарии к заказу */}
+                    <AdminCard className="mb-6">
+                        <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Комментарии к заказу</h3>
+                        
+                        {order.notes && order.notes.length > 0 ? (
+                            <div className="space-y-4 mb-6">
+                                {order.notes.map((noteItem, index) => (
+                                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                                        <div className="flex justify-between mb-2">
+                                            <span className="text-sm font-medium text-[#2a4075]">
+                                                {noteItem.admin_name || 'Администратор'}
+                                            </span>
+                                            <span className="text-xs text-gray-500">
+                                                {formatDate(noteItem.created_at)}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-700">{noteItem.note}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 mb-4">Нет комментариев к заказу</p>
+                        )}
+                        
+                        <div className="bg-gray-50 p-4 rounded-lg">
+                            <h4 className="text-md font-medium mb-3 text-[#2a4075]">Добавить комментарий</h4>
+                            <form onSubmit={handleAddNote}>
+                                <AdminFormGroup>
+                                    <AdminTextarea
+                                        value={note}
+                                        handleChange={(e) => setNote(e.target.value)}
+                                        rows="3"
+                                        placeholder="Введите текст комментария"
+                                        error={noteError}
+                                    />
+                                </AdminFormGroup>
+                                <div className="flex justify-end">
+                                    <PrimaryButton
+                                        type="submit"
+                                        disabled={addingNote || !note.trim()}
+                                        className="flex items-center"
+                                    >
+                                        {addingNote ? (
+                                            <>
+                                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Добавление...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                                </svg>
+                                                Добавить комментарий
+                                            </>
+                                        )}
+                                    </PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

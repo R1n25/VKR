@@ -4,6 +4,7 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
+import InfoButton from '@/Components/InfoButton';
 
 export default function Show({ auth, category, subcategories, spareParts }) {
     const confirmDelete = () => {
@@ -135,18 +136,18 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{subcategory.spare_parts_count}</td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         <div className="flex justify-center space-x-2">
-                                                            <Link
+                                                            <InfoButton
                                                                 href={route('admin.part-categories.show-inertia', subcategory.id)}
-                                                                className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                                                                className="text-xs px-2 py-1"
                                                             >
-                                                            Просмотр
-                                                        </Link>
-                                                            <Link
+                                                                Просмотр
+                                                            </InfoButton>
+                                                            <SecondaryButton
                                                                 href={route('admin.part-categories.edit-inertia', subcategory.id)}
-                                                                className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200 transition"
+                                                                className="text-xs px-2 py-1"
                                                             >
                                                                 Изменить
-                                                        </Link>
+                                                            </SecondaryButton>
                                                         </div>
                                                     </td>
                                                 </tr>
@@ -196,18 +197,18 @@ export default function Show({ auth, category, subcategories, spareParts }) {
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         <div className="flex justify-center space-x-2">
-                                                            <Link
+                                                            <InfoButton
                                                                 href={route('admin.spare-parts.show-inertia', part.id)}
-                                                                className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                                                                className="text-xs px-2 py-1"
                                                             >
-                                                            Просмотр
-                                                        </Link>
-                                                            <Link
+                                                                Просмотр
+                                                            </InfoButton>
+                                                            <SecondaryButton
                                                                 href={route('admin.spare-parts.edit-inertia', part.id)}
-                                                                className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200 transition"
+                                                                className="text-xs px-2 py-1"
                                                             >
                                                                 Изменить
-                                                        </Link>
+                                                            </SecondaryButton>
                                                         </div>
                                                     </td>
                                                 </tr>

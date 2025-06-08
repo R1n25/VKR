@@ -131,7 +131,6 @@ class OrderController extends Controller
                     'price' => $item->price,
                     'part_name' => $item->sp_name ?: $item->part_name,
                     'part_number' => $item->part_number ?: '',
-                    'description' => $item->description ?: '',
                     'brand_name' => $item->manufacturer ?: '',
                     'total' => $item->total ?: ($item->price * $item->quantity)
                 ];

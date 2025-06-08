@@ -2,18 +2,166 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Основные переменные */
+:root {
+    --color-primary: #0ea5e9;
+    --color-primary-hover: #0284c7;
+    --color-secondary: #8b5cf6;
+    --color-accent: #10b981;
+    --color-background: #f9fafb;
+    --color-text: #1f2937;
+    --color-text-light: #6b7280;
+    --color-border: #e5e7eb;
+    --transition-default: all 0.3s ease;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Сброс стилей */
+body {
+    @apply bg-gray-50;
+    color: var(--color-text);
+    font-family: 'Figtree', system-ui, sans-serif;
+    transition: var(--transition-default);
+}
+
 /* Пользовательские классы */
 @layer utilities {
     .max-w-8xl {
         max-width: 88rem; /* 1408px - шире чем max-w-7xl (80rem/1280px) */
     }
+    
+    .max-w-9xl {
+        max-width: 96rem; /* 1536px */
+    }
+    
+    .text-shadow {
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    .text-shadow-lg {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    }
+}
+
+/* Компоненты */
+@layer components {
+    /* Стили карточек */
+    .card {
+        @apply bg-white rounded-lg shadow transition-shadow duration-300 hover:shadow-md p-6;
+    }
+    
+    /* Стили кнопок */
+    .btn {
+        @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+    }
+    
+    .btn-primary {
+        @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    }
+    
+    .btn-secondary {
+        @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-2 focus:ring-secondary-500 focus:ring-offset-2;
+    }
+    
+    .btn-accent {
+        @apply bg-accent-600 text-white hover:bg-accent-700 focus:ring-2 focus:ring-accent-500 focus:ring-offset-2;
+    }
+    
+    .btn-outline {
+        @apply border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2;
+    }
+    
+    /* Таблицы */
+    .table-auto {
+        @apply w-full border-collapse;
+    }
+    
+    .table-auto th {
+        @apply py-3 px-4 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    }
+    
+    .table-auto td {
+        @apply py-4 px-4 border-t border-gray-200 text-sm;
+    }
+    
+    /* Бейджи */
+    .badge {
+        @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+    }
+    
+    .badge-success {
+        @apply bg-green-100 text-green-800;
+    }
+    
+    .badge-warning {
+        @apply bg-yellow-100 text-yellow-800;
+    }
+    
+    .badge-danger {
+        @apply bg-red-100 text-red-800;
+    }
+    
+    .badge-info {
+        @apply bg-blue-100 text-blue-800;
+    }
+    
+    /* Пагинация */
+    .pagination {
+        @apply flex mt-4 justify-center;
+    }
+    
+    .pagination-link {
+        @apply relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300;
+    }
+    
+    .pagination-link-active {
+        @apply bg-primary-50 border-primary-500 text-primary-600;
+    }
+}
+
+/* Анимации */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.animate-slide-in {
+    animation: slideInFromRight 0.3s ease-out;
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* Добавляем стили для адаптивности при максимальном отдалении */
 @media (max-width: 640px) {
     .container {
-        padding-left: 0.5rem;
-        padding-right: 0.5rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
     
     /* Уменьшаем размер шрифта для мобильных устройств */
@@ -67,9 +215,115 @@ footer.mt-auto {
     margin-top: auto;
 }
 
-/* Для поддержки IE11 и других старых браузеров */
-.sticky-footer {
-    position: sticky;
-    bottom: 0;
-    width: 100%;
+/* Улучшенные таблицы */
+.table-responsive {
+    @apply overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8;
+}
+
+.table-responsive table {
+    @apply min-w-full divide-y divide-gray-200;
+}
+
+/* Скроллбары */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(203, 213, 225, 1) transparent;
+}
+
+*::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: rgba(203, 213, 225, 1);
+    border-radius: 4px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(148, 163, 184, 1);
+}
+
+/* Дополнительные стили для админ-панели */
+.admin-card {
+    @apply bg-white overflow-hidden shadow-sm sm:rounded-lg transition-all duration-300 hover:shadow-md;
+}
+
+.admin-card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50 font-medium;
+}
+
+.admin-card-body {
+    @apply p-6;
+}
+
+.admin-table {
+    @apply min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden;
+}
+
+.admin-table-header {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+}
+
+.admin-table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+}
+
+.admin-table-row {
+    @apply hover:bg-gray-50 transition-colors duration-200;
+}
+
+/* Стили для форм */
+.admin-input {
+    @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-[#243969] focus:ring focus:ring-[#243969] focus:ring-opacity-20;
+}
+
+.admin-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.admin-form-group {
+    @apply mb-4;
+}
+
+/* Стили для админ-панели */
+.admin-sidebar {
+    @apply bg-[#243969] text-white w-64 min-h-screen flex-shrink-0 transition-all duration-300;
+}
+
+.admin-sidebar-link {
+    @apply block py-3 px-4 rounded-lg flex items-center transition-colors;
+}
+
+.admin-sidebar-link-active {
+    @apply bg-[#3a5085];
+}
+
+.admin-sidebar-link-inactive {
+    @apply hover:bg-[#3a5085];
+}
+
+/* Стили для кнопок */
+.btn-primary {
+    @apply inline-flex items-center justify-center rounded-md border border-transparent bg-[#243969] px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-300 ease-in-out hover:bg-[#3a5085] focus:bg-[#3a5085] focus:outline-none focus:ring-2 focus:ring-[#243969] focus:ring-offset-2 active:bg-[#172544] disabled:opacity-40;
+}
+
+.btn-secondary {
+    @apply inline-flex items-center justify-center rounded-md border border-[#d1d5db] bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[#3a5085] shadow-sm transition duration-300 ease-in-out hover:bg-gray-50 hover:text-[#243969] focus:outline-none focus:ring-2 focus:ring-[#243969] focus:ring-offset-2 disabled:opacity-40;
+}
+
+.btn-success {
+    @apply inline-flex items-center justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-300 ease-in-out hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 active:bg-green-800 disabled:opacity-40;
+}
+
+.btn-danger {
+    @apply inline-flex items-center justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-300 ease-in-out hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 active:bg-red-800 disabled:opacity-40;
+}
+
+.btn-info {
+    @apply inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 active:bg-blue-700 disabled:opacity-40;
 }

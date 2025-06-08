@@ -3,6 +3,19 @@ import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminFormGroup from '@/Components/AdminFormGroup';
+import AdminInput from '@/Components/AdminInput';
+import AdminSelect from '@/Components/AdminSelect';
+import AdminAlert from '@/Components/AdminAlert';
+import AdminTable from '@/Components/AdminTable';
+import AdminPagination from '@/Components/AdminPagination';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import DangerButton from '@/Components/DangerButton';
+import SuccessButton from '@/Components/SuccessButton';
+import InfoButton from '@/Components/InfoButton';
 
 export default function Index({ auth, spareParts, categories, filters }) {
     const page = usePage();
@@ -151,36 +164,6 @@ export default function Index({ auth, spareParts, categories, filters }) {
         }
     };
 
-    // Компонент уведомления
-    const Notification = ({ type, message }) => {
-        const bgColor = type === 'success' ? 'bg-green-100 border-green-500 text-green-700' : 'bg-red-100 border-red-500 text-red-700';
-        
-        return (
-            <div className={`fixed top-4 right-4 px-4 py-3 rounded border ${bgColor} max-w-md z-50`}>
-                <div className="flex items-center">
-                    {type === 'success' ? (
-                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
-                        </svg>
-                    ) : (
-                        <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    )}
-                    <span>{message}</span>
-                    <button 
-                        onClick={() => setNotification(null)} 
-                        className="ml-auto"
-                    >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        );
-    };
-
     return (
         <AdminLayout
             user={auth.user}
@@ -189,297 +172,210 @@ export default function Index({ auth, spareParts, categories, filters }) {
             <Head title="Управление запчастями" />
             
             {/* Отображение уведомления */}
-            {notification && <Notification type={notification.type} message={notification.message} />}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            {/* Фильтры */}
-                            <div className="mb-6">
-                                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                    <div>
-                                        <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Поиск
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="search"
-                                            name="search"
-                                            value={data.search}
-                                            onChange={e => setData('search', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            placeholder="Название или артикул..."
-                                        />
+                    <AdminCard>
+                        <AdminPageHeader 
+                            title="Управление запчастями" 
+                            subtitle={`Всего запчастей: ${spareParts.total}`} 
+                        />
+                        
+                        {/* Фильтры */}
+                        <div className="mb-6">
+                            <h3 className="text-lg font-semibold mb-4 flex items-center text-[#2a4075]">
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                </svg>
+                                Фильтры поиска
+                            </h3>
+                            
+                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                <form onSubmit={handleSearch}>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <AdminFormGroup label="Поиск" name="search">
+                                            <AdminInput
+                                                type="text"
+                                                name="search"
+                                                value={data.search}
+                                                handleChange={(e) => setData('search', e.target.value)}
+                                                placeholder="Название или артикул"
+                                            />
+                                        </AdminFormGroup>
+                                        
+                                        <AdminFormGroup label="Категория" name="category_id">
+                                            <AdminSelect
+                                                name="category_id"
+                                                value={data.category_id}
+                                                handleChange={(e) => setData('category_id', e.target.value)}
+                                            >
+                                                <option value="">Все категории</option>
+                                                {categories.map((category) => (
+                                                    <option key={category.id} value={category.id}>
+                                                        {category.name}
+                                                    </option>
+                                                ))}
+                                            </AdminSelect>
+                                        </AdminFormGroup>
+                                        
+                                        <AdminFormGroup label="Производитель" name="manufacturer">
+                                            <AdminSelect
+                                                name="manufacturer"
+                                                value={data.manufacturer}
+                                                handleChange={(e) => setData('manufacturer', e.target.value)}
+                                            >
+                                                <option value="">Все производители</option>
+                                                {manufacturers.map((manufacturer) => (
+                                                    <option key={manufacturer} value={manufacturer}>
+                                                        {manufacturer}
+                                                    </option>
+                                                ))}
+                                            </AdminSelect>
+                                        </AdminFormGroup>
                                     </div>
-
-                                    <div>
-                                        <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Категория
-                                        </label>
-                                        <select
-                                            id="category_id"
-                                            name="category_id"
-                                            value={data.category_id}
-                                            onChange={e => setData('category_id', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                        >
-                                            <option value="">Все категории</option>
-                                            {categories.map((category) => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Производитель
-                                        </label>
-                                        <select
-                                            id="manufacturer"
-                                            name="manufacturer"
-                                            value={data.manufacturer}
-                                            onChange={e => setData('manufacturer', e.target.value)}
-                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                        >
-                                            <option value="">Все производители</option>
-                                            {manufacturers.map((manufacturer) => (
-                                                <option key={manufacturer} value={manufacturer}>
-                                                    {manufacturer}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label htmlFor="per_page" className="block text-sm font-medium text-gray-700 mb-1">
-                                            Записей на странице
-                                        </label>
-                                        <select
-                                            id="per_page"
-                                            name="per_page"
-                                            value={data.per_page}
-                                            onChange={handlePerPageChange}
-                                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                        >
-                                            <option value="10">10</option>
-                                            <option value="20">20</option>
-                                            <option value="30">30</option>
-                                            <option value="50">50</option>
-                                            <option value="100">100</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="md:col-span-4 flex space-x-2">
-                                        <button
-                                            type="submit"
-                                            disabled={processing}
-                                            className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-25 transition ease-in-out duration-150"
-                                        >
-                                            Применить фильтры
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={handleReset}
-                                            className="px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 focus:bg-gray-300 active:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                        >
-                                            Сбросить
-                                        </button>
-                                        <Link
-                                            href={route('admin.spare-parts.create-inertia')}
-                                            className="ml-auto px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:bg-green-700 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                        >
-                                            Добавить запчасть
-                                        </Link>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleActivateAll()}
-                                            className="px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                        >
-                                            Активировать все
-                                        </button>
+                                    
+                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+                                        <div className="flex flex-wrap gap-2">
+                                            <PrimaryButton 
+                                                type="submit" 
+                                                disabled={processing}
+                                                className="flex items-center"
+                                            >
+                                                {processing ? (
+                                                    <>
+                                                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                        Применение...
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                                                        </svg>
+                                                        Применить фильтры
+                                                    </>
+                                                )}
+                                            </PrimaryButton>
+                                            <SecondaryButton
+                                                type="button"
+                                                onClick={handleReset}
+                                                className="flex items-center"
+                                            >
+                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                Сбросить
+                                            </SecondaryButton>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            <SuccessButton
+                                                href={route('admin.spare-parts.create-inertia')}
+                                                className="flex items-center"
+                                            >
+                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                                </svg>
+                                                Добавить запчасть
+                                            </SuccessButton>
+                                            <InfoButton
+                                                type="button"
+                                                onClick={() => handleActivateAll()}
+                                                className="flex items-center"
+                                            >
+                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Активировать все
+                                            </InfoButton>
+                                        </div>
                                     </div>
                                 </form>
                             </div>
+                        </div>
 
-                            {/* Таблица запчастей */}
-                            <div className="overflow-x-auto w-full">
-                                <table className="w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[5%]"
-                                                onClick={() => handleSort('id')}
-                                            >
-                                                ID {getSortIcon('id')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[30%]"
-                                                onClick={() => handleSort('name')}
-                                            >
-                                                Название {getSortIcon('name')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[15%]"
-                                                onClick={() => handleSort('part_number')}
-                                            >
-                                                Артикул {getSortIcon('part_number')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
-                                                onClick={() => handleSort('category_id')}
-                                            >
-                                                Категория {getSortIcon('category_id')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
-                                                onClick={() => handleSort('manufacturer')}
-                                            >
-                                                Производитель {getSortIcon('manufacturer')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[10%]"
-                                                onClick={() => handleSort('price')}
-                                            >
-                                                Цена {getSortIcon('price')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-[5%]"
-                                                onClick={() => handleSort('stock_quantity')}
-                                            >
-                                                Кол-во {getSortIcon('stock_quantity')}
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]"
-                                            >
-                                                Статус
-                                            </th>
-                                            <th
-                                                scope="col"
-                                                className="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-[5%]"
-                                            >
-                                                Действия
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {spareParts.data.length > 0 ? (
-                                            spareParts.data.map((part) => (
-                                                <tr key={part.id} className="hover:bg-gray-50">
-                                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">
-                                                        {part.id}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-900 break-words">
-                                                        {part.name}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.part_number}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.category_id ? (
-                                                            categories.find(cat => cat.id === part.category_id)?.name || '-'
-                                                        ) : '-'}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500 break-words">
-                                                        {part.manufacturer}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500 text-right">
-                                                        {part.price} ₽
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
-                                                        {part.stock_quantity}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm text-gray-500">
-                                                        {part.is_available ? (
-                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
-                                                        ) : (
-                                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-2 py-3 text-sm font-medium">
-                                                        <div className="flex flex-col space-y-1 items-center">
-                                                            <Link
-                                                                href={route('admin.spare-parts.edit-inertia', part.id)}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                Изменить
-                                                            </Link>
-                                                            <Link
-                                                                href={route('admin.spare-parts.show-inertia', part.id)}
-                                                                className="text-green-600 hover:text-green-900"
-                                                            >
-                                                                Просмотр
-                                                            </Link>
-                                                            <Link
-                                                                href={route('admin.spare-parts.analogs', part.id)}
-                                                                className="text-purple-600 hover:text-purple-900"
-                                                            >
-                                                                Аналоги
-                                                            </Link>
-                                                            <button
-                                                                onClick={() => handleDelete(part.id)}
-                                                                className="text-red-600 hover:text-red-900"
-                                                                type="button"
-                                                            >
-                                                                Удалить
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
+                        {/* Таблица запчастей */}
+                        <AdminTable
+                            headers={[
+                                'ID',
+                                'Название',
+                                'Артикул',
+                                'Категория',
+                                'Производитель',
+                                { content: 'Цена', props: { className: 'text-right' } },
+                                { content: 'Кол-во', props: { className: 'text-center' } },
+                                { content: 'Статус', props: { className: 'text-center' } },
+                                { content: 'Действия', props: { className: 'text-center' } }
+                            ]}
+                            data={spareParts.data}
+                            onSort={handleSort}
+                            currentSort={data.sort}
+                            currentDirection={data.direction}
+                            renderRow={(part) => (
+                                <>
+                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{part.id}</td>
+                                    <td className="px-2 py-3 text-sm text-gray-900 break-words">{part.name}</td>
+                                    <td className="px-2 py-3 text-sm text-gray-500">{part.part_number}</td>
+                                    <td className="px-2 py-3 text-sm text-gray-500">
+                                        {part.category_id ? (
+                                            categories.find(cat => cat.id === part.category_id)?.name || '-'
+                                        ) : '-'}
+                                    </td>
+                                    <td className="px-2 py-3 text-sm text-gray-500 break-words">{part.manufacturer}</td>
+                                    <td className="px-2 py-3 text-sm text-gray-500 text-right">{part.price} ₽</td>
+                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">{part.stock_quantity}</td>
+                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
+                                        {part.is_available ? (
+                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
                                         ) : (
-                                            <tr>
-                                                <td colSpan="9" className="px-6 py-4 text-center text-gray-500">
-                                                    Запчасти не найдены
-                                                </td>
-                                            </tr>
+                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
                                         )}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </td>
+                                    <td className="px-2 py-3 text-sm font-medium">
+                                        <div className="flex flex-col space-y-1 items-center">
+                                            <SecondaryButton
+                                                href={route('admin.spare-parts.edit-inertia', part.id)}
+                                                className="text-xs px-2 py-1 w-full"
+                                            >
+                                                Изменить
+                                            </SecondaryButton>
+                                            <InfoButton
+                                                href={route('admin.spare-parts.show-inertia', part.id)}
+                                                className="text-xs px-2 py-1 w-full"
+                                            >
+                                                Просмотр
+                                            </InfoButton>
+                                            <PrimaryButton
+                                                href={route('admin.spare-parts.analogs', part.id)}
+                                                className="text-xs px-2 py-1 w-full"
+                                            >
+                                                Аналоги
+                                            </PrimaryButton>
+                                            <DangerButton
+                                                onClick={() => handleDelete(part.id)}
+                                                className="text-xs px-2 py-1 w-full"
+                                            >
+                                                Удалить
+                                            </DangerButton>
+                                        </div>
+                                    </td>
+                                </>
+                            )}
+                            emptyMessage="Запчасти не найдены"
+                        />
 
-                            {/* Пагинация */}
-                            <div className="mt-4">
-                                <div className="flex justify-between items-center">
-                                    <div className="text-sm text-gray-700">
-                                        Показано с {spareParts.from || 0} по {spareParts.to || 0} из {spareParts.total} записей
-                                    </div>
-                                    <div className="flex space-x-1">
-                                        {spareParts.links.map((link, index) => (
-                                            link.url ? (
-                                                <Link
-                                                    key={index}
-                                                    href={link.url}
-                                                    className={`px-3 py-1 text-sm rounded ${
-                                                        link.active 
-                                                            ? 'bg-indigo-600 text-white'
-                                                            : 'bg-white text-gray-700 hover:bg-gray-100'
-                                                    }`}
-                                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                                />
-                                            ) : (
-                                                <span
-                                                    key={index}
-                                                    className="px-3 py-1 text-sm rounded opacity-50 cursor-not-allowed bg-white text-gray-700"
-                                                    dangerouslySetInnerHTML={{ __html: link.label }}
-                                                />
-                                            )
-                                        ))}
-                                    </div>
+                        {/* Пагинация */}
+                        <div className="mt-4">
+                            <div className="flex flex-col sm:flex-row justify-between items-center">
+                                <div className="mb-2 sm:mb-0 text-sm text-gray-700">
+                                    Показано с {spareParts.from || 0} по {spareParts.to || 0} из {spareParts.total} записей
                                 </div>
+                                <AdminPagination links={spareParts.links} />
                             </div>
                         </div>
-                    </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

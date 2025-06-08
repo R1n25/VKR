@@ -81,20 +81,33 @@ export default function Orders({ auth, orders }) {
 
             <div className="py-12">
                 <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-100">
                         <div className="p-6 text-gray-900">
                             {orders.length === 0 ? (
                                 <div className="text-center py-10">
-                                    <p className="text-lg mb-4">Заказов пока нет</p>
-                                    <Link
-                                        href="/"
-                                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                    >
-                                        Перейти к покупкам
-                                    </Link>
+                                    <div className="flex flex-col items-center justify-center space-y-4">
+                                        <svg className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                        </svg>
+                                        <p className="text-lg font-medium text-gray-600 mb-2">Заказов пока нет</p>
+                                        <p className="text-gray-500 mb-4">Оформите заказ, чтобы он появился в этом списке</p>
+                                        <Link
+                                            href="/"
+                                            className="btn btn-primary inline-flex items-center gap-2"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            Перейти к покупкам
+                                        </Link>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto">
+                                <div className="table-responsive overflow-hidden">
+                                    <div className="mb-6 border-b border-gray-200 pb-4">
+                                        <h3 className="text-lg font-semibold text-gray-800">История заказов</h3>
+                                        <p className="text-sm text-gray-500">Управление и отслеживание ваших заказов</p>
+                                    </div>
                                     <table className="min-w-full divide-y divide-gray-200 table-fixed">
                                         <thead className="bg-gray-50">
                                             <tr>
@@ -124,26 +137,21 @@ export default function Orders({ auth, orders }) {
                                         <tbody className="bg-white divide-y divide-gray-200">
                                             {orders.map((order) => (
                                                 <React.Fragment key={order.id}>
-                                                    <tr className={expandedOrders[order.id] ? "bg-gray-50" : ""}>
+                                                    <tr className={expandedOrders[order.id] ? "bg-gray-50" : "hover:bg-gray-50 transition-colors duration-150"}>
                                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                             <div className="flex items-center">
                                                                 <button 
                                                                     onClick={() => toggleOrderDetails(order.id)}
-                                                                    className="mr-2 text-indigo-600 focus:outline-none"
+                                                                    className="mr-2 text-primary-600 focus:outline-none transition-transform duration-200 ease-in-out transform" 
+                                                                    style={{ transform: expandedOrders[order.id] ? 'rotate(90deg)' : 'rotate(0)' }}
                                                                 >
-                                                                    {expandedOrders[order.id] ? (
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                                                        </svg>
-                                                                    ) : (
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                                                        </svg>
-                                                                    )}
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                                    </svg>
                                                                 </button>
-                                                                <Link href={`/orders/${order.id}`} className="text-indigo-600 hover:underline">
+                                                                <span className="text-gray-900 font-medium">
                                                                     {order.order_number || `#${order.id}`}
-                                                                </Link>
+                                                                </span>
                                                             </div>
                                                         </td>
                                                         <td className="px-6 py-4 text-sm text-gray-500">
@@ -152,19 +160,19 @@ export default function Orders({ auth, orders }) {
                                                         <td className="px-6 py-4 text-sm text-gray-500">
                                                             {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
                                                         </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-500">
+                                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                             {Number(order.total || 0).toFixed(2)} руб.
                                                         </td>
                                                         <td className="px-6 py-4 text-sm text-gray-500">
                                                             {Number(order.total_paid || 0).toFixed(2)} руб.
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
+                                                            <span className={`badge ${getStatusClass(order.status)}`}>
                                                                 {getStatusText(order.status)}
                                                             </span>
                                                         </td>
                                                         <td className="px-6 py-4">
-                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPaymentStatusClass(order.payment_status)}`}>
+                                                            <span className={`badge ${getPaymentStatusClass(order.payment_status)}`}>
                                                                 {getPaymentStatusText(order.payment_status)}
                                                             </span>
                                                         </td>
@@ -173,10 +181,15 @@ export default function Orders({ auth, orders }) {
                                                     {/* Развернутые детали заказа */}
                                                     {expandedOrders[order.id] && order.order_items && order.order_items.length > 0 && (
                                                         <tr>
-                                                            <td colSpan="7" className="px-6 py-4 bg-gray-50">
+                                                            <td colSpan="7" className="px-6 py-4 bg-gray-50 animate-fade-in">
                                                                 <div className="border-t border-gray-200 pt-4">
-                                                                    <h4 className="text-sm font-medium text-gray-900 mb-3">Товары в заказе</h4>
-                                                                    <div className="overflow-x-auto">
+                                                                    <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
+                                                                        <svg className="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                                                        </svg>
+                                                                        Товары в заказе
+                                                                    </h4>
+                                                                    <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
                                                                         <table className="min-w-full divide-y divide-gray-200">
                                                                             <thead className="bg-gray-100">
                                                                                 <tr>
@@ -202,69 +215,64 @@ export default function Orders({ auth, orders }) {
                                                                             </thead>
                                                                             <tbody className="bg-white divide-y divide-gray-200">
                                                                                 {order.order_items.map((item) => (
-                                                                                    <tr key={item.id}>
+                                                                                    <tr key={item.id} className="hover:bg-gray-50">
                                                                                         <td className="px-4 py-2 text-sm text-gray-900">
-                                                                                            {item.part_name || (item.spare_part && item.spare_part.name) || 'Н/Д'}
+                                                                                            {item.name}
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm text-gray-500">
-                                                                                            {item.part_number || (item.spare_part && item.spare_part.part_number) || 'Н/Д'}
+                                                                                            {item.sku}
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm text-gray-500">
-                                                                                            {(item.spare_part && item.spare_part.manufacturer) || 'Н/Д'}
+                                                                                            {item.brand}
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm text-gray-500">
-                                                                                            {Number(item.price || 0).toFixed(2)} руб.
+                                                                                            {Number(item.price).toFixed(2)} руб.
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm text-gray-500">
                                                                                             {item.quantity}
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm font-medium text-gray-900">
-                                                                                            {Number((item.price || 0) * (item.quantity || 0)).toFixed(2)} руб.
+                                                                                            {Number(item.price * item.quantity).toFixed(2)} руб.
                                                                                         </td>
                                                                                     </tr>
                                                                                 ))}
                                                                             </tbody>
-                                                                            <tfoot className="bg-gray-50">
-                                                                                <tr>
-                                                                                    <td colSpan="5" className="px-4 py-2 text-sm font-medium text-right text-gray-900">
-                                                                                        Итого:
-                                                                                    </td>
-                                                                                    <td className="px-4 py-2 text-sm font-bold text-gray-900">
-                                                                                        {Number(order.total || 0).toFixed(2)} руб.
-                                                                                    </td>
-                                                                                </tr>
-                                                                            </tfoot>
                                                                         </table>
                                                                     </div>
                                                                     
-                                                                    {/* Информация о доставке */}
-                                                                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                                        <div>
-                                                                            <h5 className="text-sm font-medium text-gray-900 mb-2">Информация о доставке</h5>
-                                                                            <p className="text-sm text-gray-600">
-                                                                                <span className="font-medium">Адрес:</span> {order.shipping_address || order.address || 'Не указан'}
-                                                                            </p>
-                                                                            {order.shipping_method && (
-                                                                                <p className="text-sm text-gray-600">
-                                                                                    <span className="font-medium">Способ доставки:</span> {order.shipping_method}
+                                                                    {order.shipping_address && (
+                                                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                                                                <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                                                                                    <svg className="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                                                    </svg>
+                                                                                    Адрес доставки
+                                                                                </h5>
+                                                                                <p className="text-sm text-gray-500">
+                                                                                    {order.shipping_address}
                                                                                 </p>
-                                                                            )}
+                                                                            </div>
+                                                                            
+                                                                            <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                                                                                <h5 className="text-sm font-medium text-gray-900 mb-2 flex items-center">
+                                                                                    <svg className="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                                                    </svg>
+                                                                                    Информация об оплате
+                                                                                </h5>
+                                                                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                                                                    <div className="text-gray-500">Метод оплаты:</div>
+                                                                                    <div className="text-gray-900">{order.payment_method || 'Н/Д'}</div>
+                                                                                    <div className="text-gray-500">Всего к оплате:</div>
+                                                                                    <div className="text-gray-900 font-medium">{Number(order.total || 0).toFixed(2)} руб.</div>
+                                                                                    <div className="text-gray-500">Оплачено:</div>
+                                                                                    <div className="text-gray-900 font-medium">{Number(order.total_paid || 0).toFixed(2)} руб.</div>
+                                                                                </div>
+                                                                            </div>
                                                                         </div>
-                                                                        <div>
-                                                                            <h5 className="text-sm font-medium text-gray-900 mb-2">Информация об оплате</h5>
-                                                                            <p className="text-sm text-gray-600">
-                                                                                <span className="font-medium">Способ оплаты:</span> {
-                                                                                    order.payment_method === 'cash' ? 'Наличными при получении' : 
-                                                                                    order.payment_method === 'card' ? 'Картой при получении' : 
-                                                                                    order.payment_method === 'online' ? 'Онлайн оплата' : 
-                                                                                    'Не указан'
-                                                                                }
-                                                                            </p>
-                                                                            <p className="text-sm text-gray-600">
-                                                                                <span className="font-medium">Оплачено:</span> {Number(order.total_paid || 0).toFixed(2)} руб. из {Number(order.total || 0).toFixed(2)} руб.
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
+                                                                    )}
                                                                 </div>
                                                             </td>
                                                         </tr>

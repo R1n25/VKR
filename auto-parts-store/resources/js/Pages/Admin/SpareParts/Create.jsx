@@ -1,9 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Head, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminFormGroup from '@/Components/AdminFormGroup';
+import AdminInput from '@/Components/AdminInput';
+import AdminSelect from '@/Components/AdminSelect';
+import AdminTextarea from '@/Components/AdminTextarea';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import AdminAlert from '@/Components/AdminAlert';
 
 export default function Create({ auth, categories, manufacturers, carModels }) {
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         part_number: '',
         description: '',
@@ -55,26 +64,23 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
     };
 
     const handleChange = (e) => {
-        const { name, value, type, checked, files } = e.target;
+        const { name, value } = e.target;
+        setData(name, value);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        setData('image', file);
         
-        if (type === 'file') {
-            const file = files[0];
-            setData(name, file);
-            
-            // Создаем предпросмотр изображения
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setPreview(reader.result);
-                };
-                reader.readAsDataURL(file);
-            } else {
-                setPreview(null);
-            }
-        } else if (type === 'checkbox') {
-            setData(name, checked);
+        // Создаем предпросмотр изображения
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreview(reader.result);
+            };
+            reader.readAsDataURL(file);
         } else {
-            setData(name, value);
+            setPreview(null);
         }
     };
 
@@ -96,278 +102,261 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            <form onSubmit={handleSubmit} encType="multipart/form-data">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {/* Название запчасти */}
-                                    <div>
-                                        <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                                            Название запчасти *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="name"
-                                            name="name"
-                                            value={data.name}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            required
-                                        />
-                                        {errors.name && <div className="text-red-500 text-sm mt-1">{errors.name}</div>}
-                                    </div>
+                    <AdminCard>
+                        <AdminPageHeader 
+                            title="Добавление новой запчасти" 
+                            subtitle="Заполните информацию о новой запчасти" 
+                        />
 
-                                    {/* Артикул */}
-                                    <div>
-                                        <label htmlFor="part_number" className="block text-sm font-medium text-gray-700">
-                                            Артикул *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="part_number"
-                                            name="part_number"
-                                            value={data.part_number}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            required
-                                        />
-                                        {errors.part_number && <div className="text-red-500 text-sm mt-1">{errors.part_number}</div>}
-                                    </div>
+                        <form onSubmit={handleSubmit} encType="multipart/form-data">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Название запчасти */}
+                                <AdminFormGroup label="Название запчасти *" name="name" error={errors.name}>
+                                    <AdminInput
+                                        type="text"
+                                        name="name"
+                                        value={data.name}
+                                        handleChange={handleChange}
+                                        required
+                                    />
+                                </AdminFormGroup>
 
-                                    {/* Категория */}
-                                    <div>
-                                        <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
-                                            Категория *
-                                        </label>
-                                        <select
-                                            id="category_id"
-                                            name="category_id"
-                                            value={data.category_id}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            required
+                                {/* Артикул */}
+                                <AdminFormGroup label="Артикул *" name="part_number" error={errors.part_number}>
+                                    <AdminInput
+                                        type="text"
+                                        name="part_number"
+                                        value={data.part_number}
+                                        handleChange={handleChange}
+                                        required
+                                    />
+                                </AdminFormGroup>
+
+                                {/* Категория */}
+                                <AdminFormGroup label="Категория *" name="category_id" error={errors.category_id}>
+                                    <AdminSelect
+                                        name="category_id"
+                                        value={data.category_id}
+                                        handleChange={handleChange}
+                                        required
+                                    >
+                                        <option value="">Выберите категорию</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </AdminSelect>
+                                </AdminFormGroup>
+
+                                {/* Производитель */}
+                                <AdminFormGroup label="Производитель *" name="manufacturer" error={errors.manufacturer}>
+                                    <AdminSelect
+                                        name="manufacturer"
+                                        value={data.manufacturer}
+                                        handleChange={handleChange}
+                                        required
+                                    >
+                                        <option value="">Выберите производителя</option>
+                                        {manufacturers.map((manufacturer) => (
+                                            <option key={manufacturer} value={manufacturer}>
+                                                {manufacturer}
+                                            </option>
+                                        ))}
+                                    </AdminSelect>
+                                    <div className="mt-1 text-sm text-gray-500">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const newManufacturer = prompt('Введите название нового производителя:');
+                                                if (newManufacturer && newManufacturer.trim()) {
+                                                    setData('manufacturer', newManufacturer.trim());
+                                                }
+                                            }}
+                                            className="text-[#2a4075] hover:text-[#1c2d52]"
                                         >
-                                            <option value="">Выберите категорию</option>
-                                            {categories.map((category) => (
-                                                <option key={category.id} value={category.id}>
-                                                    {category.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        {errors.category_id && <div className="text-red-500 text-sm mt-1">{errors.category_id}</div>}
+                                            + Добавить нового производителя
+                                        </button>
                                     </div>
+                                </AdminFormGroup>
 
-                                    {/* Производитель */}
-                                    <div>
-                                        <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700">
-                                            Производитель *
-                                        </label>
-                                        <select
-                                            id="manufacturer"
-                                            name="manufacturer"
-                                            value={data.manufacturer}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            required
-                                        >
-                                            <option value="">Выберите производителя</option>
-                                            {manufacturers.map((manufacturer) => (
-                                                <option key={manufacturer} value={manufacturer}>
-                                                    {manufacturer}
-                                                </option>
-                                            ))}
-                                        </select>
-                                        <div className="mt-1 text-sm text-gray-500">
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const newManufacturer = prompt('Введите название нового производителя:');
-                                                    if (newManufacturer && newManufacturer.trim()) {
-                                                        setData('manufacturer', newManufacturer.trim());
-                                                    }
-                                                }}
-                                                className="text-indigo-600 hover:text-indigo-800"
-                                            >
-                                                + Добавить нового производителя
-                                            </button>
-                                        </div>
-                                        {errors.manufacturer && <div className="text-red-500 text-sm mt-1">{errors.manufacturer}</div>}
-                                    </div>
-
-                                    {/* Цена */}
-                                    <div>
-                                        <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                                            Цена *
-                                        </label>
-                                        <input
+                                {/* Цена */}
+                                <AdminFormGroup label="Цена *" name="price" error={errors.price}>
+                                    <div className="relative">
+                                        <AdminInput
                                             type="number"
-                                            id="price"
                                             name="price"
                                             value={data.price}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            handleChange={handleChange}
                                             min="0"
                                             step="0.01"
                                             required
                                         />
-                                        {errors.price && <div className="text-red-500 text-sm mt-1">{errors.price}</div>}
+                                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                                            <span className="text-gray-500">₽</span>
+                                        </div>
                                     </div>
+                                </AdminFormGroup>
 
-                                    {/* Количество на складе */}
-                                    <div>
-                                        <label htmlFor="stock_quantity" className="block text-sm font-medium text-gray-700">
-                                            Количество на складе *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="stock_quantity"
-                                            name="stock_quantity"
-                                            value={data.stock_quantity}
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                                            min="0"
-                                            required
-                                        />
-                                        {errors.stock_quantity && <div className="text-red-500 text-sm mt-1">{errors.stock_quantity}</div>}
-                                    </div>
+                                {/* Количество на складе */}
+                                <AdminFormGroup label="Количество на складе *" name="stock_quantity" error={errors.stock_quantity}>
+                                    <AdminInput
+                                        type="number"
+                                        name="stock_quantity"
+                                        value={data.stock_quantity}
+                                        handleChange={handleChange}
+                                        min="0"
+                                        required
+                                    />
+                                </AdminFormGroup>
 
-                                    {/* Изображение */}
-                                    <div className="md:col-span-2">
-                                        <label htmlFor="image" className="block text-sm font-medium text-gray-700">
-                                            Изображение
-                                        </label>
+                                {/* Изображение */}
+                                <div className="md:col-span-2">
+                                    <AdminFormGroup label="Изображение" name="image" error={errors.image}>
                                         <input
                                             type="file"
                                             id="image"
                                             name="image"
-                                            onChange={handleChange}
-                                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                            onChange={handleFileChange}
+                                            className="mt-1 block w-full text-sm text-gray-500
+                                                file:mr-4 file:py-2 file:px-4
+                                                file:rounded-md file:border-0
+                                                file:text-sm file:font-semibold
+                                                file:bg-blue-50 file:text-[#2a4075]
+                                                hover:file:bg-blue-100"
                                             accept="image/*"
                                         />
-                                        {errors.image && <div className="text-red-500 text-sm mt-1">{errors.image}</div>}
-                                        
                                         {preview && (
                                             <div className="mt-2">
-                                                <img src={preview} alt="Preview" className="h-32 w-auto object-cover rounded-md" />
+                                                <img src={preview} alt="Предпросмотр" className="h-40 object-contain" />
                                             </div>
                                         )}
-                                    </div>
+                                    </AdminFormGroup>
+                                </div>
 
-                                    {/* Описание */}
-                                    <div className="md:col-span-2">
-                                        <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                                            Описание
-                                        </label>
-                                        <textarea
-                                            id="description"
+                                {/* Описание */}
+                                <div className="md:col-span-2">
+                                    <AdminFormGroup label="Описание" name="description" error={errors.description}>
+                                        <AdminTextarea
                                             name="description"
                                             value={data.description}
-                                            onChange={handleChange}
-                                            rows={4}
-                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                            handleChange={handleChange}
+                                            rows={5}
                                         />
-                                        {errors.description && <div className="text-red-500 text-sm mt-1">{errors.description}</div>}
-                                    </div>
+                                    </AdminFormGroup>
+                                </div>
+                            </div>
 
-                                    {/* Совместимые модели автомобилей */}
-                                    <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Совместимые модели автомобилей
-                                        </label>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {/* Колонка брендов */}
-                                            <div>
-                                                <h3 className="text-sm font-medium text-gray-700 mb-2">Марка автомобиля</h3>
-                                                <div className="overflow-y-auto h-60 border rounded-md p-2">
-                                                    {Object.keys(groupedCarModels).sort().map(brand => (
+                            {/* Совместимые модели */}
+                            <div className="mt-8">
+                                <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимые модели автомобилей</h3>
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                    <div className="mb-4">
+                                        <AdminFormGroup label="Выберите бренд" name="brand">
+                                            <AdminSelect
+                                                name="brand"
+                                                value={selectedBrand}
+                                                handleChange={(e) => handleBrandSelect(e.target.value)}
+                                            >
+                                                <option value="">Все бренды</option>
+                                                {Object.keys(groupedCarModels).map((brand) => (
+                                                    <option key={brand} value={brand}>{brand}</option>
+                                                ))}
+                                            </AdminSelect>
+                                        </AdminFormGroup>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                        {filteredCarModels.map((model) => (
+                                            <div 
+                                                key={model.id} 
+                                                className={`p-2 rounded border cursor-pointer transition-colors ${
+                                                    selectedModels.includes(model.id) 
+                                                        ? 'bg-[#2a4075] text-white border-[#2a4075]' 
+                                                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'
+                                                }`}
+                                                onClick={() => handleModelToggle(model.id)}
+                                            >
+                                                {model.brand ? `${model.brand.name} ${model.name}` : model.name}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
+                                    {filteredCarModels.length === 0 && (
+                                        <div className="text-gray-500 text-center py-4">
+                                            {selectedBrand 
+                                                ? 'Нет доступных моделей для выбранного бренда' 
+                                                : 'Выберите бренд для отображения моделей'}
+                                        </div>
+                                    )}
+                                    
+                                    {selectedModels.length > 0 && (
+                                        <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                                            <p className="font-medium text-[#2a4075] mb-2">
+                                                Выбрано моделей: {selectedModels.length}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedModels.map(modelId => {
+                                                    const model = carModels.find(m => m.id === modelId);
+                                                    return model ? (
                                                         <div 
-                                                            key={brand}
-                                                            className={`p-2 cursor-pointer rounded-md mb-1 ${selectedBrand === brand ? 'bg-indigo-100 font-medium' : 'hover:bg-gray-100'}`}
-                                                            onClick={() => handleBrandSelect(brand)}
+                                                            key={model.id}
+                                                            className="bg-white text-sm px-2 py-1 rounded-full border border-[#2a4075] text-[#2a4075] flex items-center"
                                                         >
-                                                            {brand.replace(/^"(.+)"$/, '$1')}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            
-                                            {/* Колонка моделей */}
-                                            <div>
-                                                <h3 className="text-sm font-medium text-gray-700 mb-2">Модели {selectedBrand && `(${selectedBrand})`}</h3>
-                                                <div className="overflow-y-auto h-60 border rounded-md p-2">
-                                                    {filteredCarModels.length > 0 ? (
-                                                        filteredCarModels.map(model => (
-                                                            <div 
-                                                                key={model.id}
-                                                                className={`p-2 cursor-pointer rounded-md mb-1 flex items-center ${
-                                                                    selectedModels.includes(model.id) ? 'bg-indigo-100' : 'hover:bg-gray-100'
-                                                                }`}
-                                                                onClick={() => handleModelToggle(model.id)}
+                                                            <span>{model.brand ? `${model.brand.name} ${model.name}` : model.name}</span>
+                                                            <button 
+                                                                type="button" 
+                                                                className="ml-1 text-[#2a4075] hover:text-red-500"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleModelToggle(model.id);
+                                                                }}
                                                             >
-                                                                <input 
-                                                                    type="checkbox" 
-                                                                    className="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600"
-                                                                    checked={selectedModels.includes(model.id)}
-                                                                    onChange={() => {}} // Обработка в onClick родителя
-                                                                />
-                                                                {model.name}
-                                                            </div>
-                                                        ))
-                                                    ) : (
-                                                        <div className="text-gray-500 p-2">
-                                                            {selectedBrand ? 'Нет доступных моделей для этой марки' : 'Выберите марку автомобиля'}
+                                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                                                </svg>
+                                                            </button>
                                                         </div>
-                                                    )}
-                                                </div>
+                                                    ) : null;
+                                                })}
                                             </div>
                                         </div>
-                                        
-                                        <div className="mt-2">
-                                            <p className="text-sm text-gray-500">Выбрано моделей: {selectedModels.length}</p>
-                                            {selectedModels.length > 0 && (
-                                                <div className="mt-2 flex flex-wrap gap-2">
-                                                    {selectedModels.map(modelId => {
-                                                        const model = carModels.find(m => m.id === modelId);
-                                                        return model && (
-                                                            <span 
-                                                                key={modelId}
-                                                                className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-indigo-100 text-indigo-800"
-                                                            >
-                                                                {model.brand?.name.replace(/^"(.+)"$/, '$1')} {model.name}
-                                                                <button
-                                                                    type="button"
-                                                                    className="ml-1 text-indigo-600 hover:text-indigo-900"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        handleModelToggle(modelId);
-                                                                    }}
-                                                                >
-                                                                    &times;
-                                                                </button>
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        {errors.compatible_car_models && <div className="text-red-500 text-sm mt-1">{errors.compatible_car_models}</div>}
-                                    </div>
+                                    )}
                                 </div>
+                            </div>
 
-                                <div className="mt-6 flex items-center justify-end">
-                                    <button
-                                        type="submit"
-                                        disabled={processing}
-                                        className="px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                    >
-                                        {processing ? 'Сохранение...' : 'Сохранить запчасть'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                            <div className="mt-8 flex justify-end space-x-3">
+                                <SecondaryButton
+                                    href={route('admin.spare-parts.inertia')}
+                                    className="flex items-center"
+                                >
+                                    Отмена
+                                </SecondaryButton>
+                                <PrimaryButton
+                                    type="submit"
+                                    className="flex items-center"
+                                    disabled={processing}
+                                >
+                                    {processing ? (
+                                        <>
+                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            Сохранение...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                            </svg>
+                                            Сохранить запчасть
+                                        </>
+                                    )}
+                                </PrimaryButton>
+                            </div>
+                        </form>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

@@ -159,12 +159,12 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                 disabled={isAdded || sparePart.stock_quantity === 0 || isLoading}
                 className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center justify-center ${
                     isAdded
-                        ? 'bg-green-500 text-white'
+                        ? 'bg-green-600 text-white'
                         : sparePart.stock_quantity === 0
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : isLoading
-                                ? 'bg-indigo-400 text-white cursor-wait'
-                                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                                ? 'bg-[#3a5085] text-white cursor-wait'
+                                : 'bg-[#243969] hover:bg-[#3a5085] text-white'
                 }`}
             >
                 {isAdded ? (

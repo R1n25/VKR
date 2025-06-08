@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Head, usePage, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import toast from 'react-hot-toast';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminInput from '@/Components/AdminInput';
+import AdminAlert from '@/Components/AdminAlert';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import DangerButton from '@/Components/DangerButton';
+import InfoButton from '@/Components/InfoButton';
 
 // Компонент для отображения одной категории и её подкатегорий
 const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
@@ -54,7 +62,7 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 
                 <Link 
                     href={route('admin.part-categories.show-inertia', category.id)}
-                    className="mr-2 text-gray-600 hover:text-blue-700"
+                    className="mr-2 text-gray-600 hover:text-[#2a4075]"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -64,7 +72,7 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 <div className="flex-grow">
                     <Link 
                         href={route('admin.part-categories.show-inertia', category.id)}
-                        className="font-medium text-blue-700 hover:text-blue-900 hover:underline cursor-pointer"
+                        className="font-medium text-[#2a4075] hover:text-[#1e325a] hover:underline cursor-pointer"
                     >
                         {category.name}
                     </Link>
@@ -76,24 +84,24 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 </div>
                 
                 <div className="flex space-x-2">
-                    <Link 
+                    <InfoButton
                         href={route('admin.part-categories.show-inertia', category.id)}
-                        className="px-3 py-1 bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition"
+                        className="text-xs py-1 px-3"
                     >
                         Просмотр
-                    </Link>
-                    <Link 
+                    </InfoButton>
+                    <SecondaryButton
                         href={route('admin.part-categories.edit-inertia', category.id)}
-                        className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded hover:bg-yellow-200 transition"
+                        className="text-xs py-1 px-3"
                     >
                         Изменить
-                    </Link>
-                    <button 
+                    </SecondaryButton>
+                    <DangerButton
                         onClick={() => onDelete(category.id)}
-                        className="px-3 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200 transition"
+                        className="text-xs py-1 px-3"
                     >
                         Удалить
-                    </button>
+                    </DangerButton>
                 </div>
             </div>
             
@@ -161,77 +169,80 @@ const CategoryList = () => {
             
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 bg-white border-b border-gray-200">
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-xl font-semibold text-gray-800">Категории запчастей</h2>
-                                <Link
-                                    href={route('admin.part-categories.create-inertia')}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                                >
-                                    Добавить категорию
-                                </Link>
-                            </div>
-
-                            {flash && flash.success && (
-                                <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
-                                    {flash.success}
-                                </div>
-                            )}
-
-                            {flash && flash.error && (
-                                <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-                                    {flash.error}
-                                </div>
-                            )}
-
-                            <div className="mb-4">
-                                <input
-                                    type="text"
-                                    placeholder="Поиск по названию"
-                                    className="w-full p-2 border border-gray-300 rounded"
-                                    value={searchText}
-                                    onChange={handleSearch}
-                                />
-                            </div>
-
-                            <div className="category-tree bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
-                                {searchText ? (
-                                    // При поиске показываем плоский список совпадающих категорий
-                                    filteredCategories.length > 0 ? (
-                                        filteredCategories.map(category => (
-                                            <CategoryItem 
-                                                key={category.id} 
-                                                category={category} 
-                                                categories={categories}
-                                                onDelete={handleDelete}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="py-3 text-center text-gray-500">
-                                            Категории не найдены
-                                        </div>
-                                    )
-                                ) : (
-                                    // Без поиска показываем древовидную структуру, начиная с корневых категорий
-                                    filteredCategories.length > 0 ? (
-                                        filteredCategories.map(category => (
-                                            <CategoryItem 
-                                                key={category.id} 
-                                                category={category} 
-                                                categories={categories}
-                                                onDelete={handleDelete}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="py-3 text-center text-gray-500">
-                                            Категории не найдены
-                                        </div>
-                                    )
-                                )}
-                            </div>
+                    <AdminCard>
+                        <div className="flex justify-between items-center mb-6">
+                            <AdminPageHeader 
+                                title="Категории запчастей" 
+                                subtitle="Управление древовидным каталогом категорий" 
+                            />
+                            <PrimaryButton
+                                href={route('admin.part-categories.create-inertia')}
+                                className="flex items-center"
+                            >
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                                Добавить категорию
+                            </PrimaryButton>
                         </div>
-                    </div>
+
+                        {flash && flash.success && (
+                            <div className="mb-4">
+                                <AdminAlert type="success" message={flash.success} />
+                            </div>
+                        )}
+
+                        {flash && flash.error && (
+                            <div className="mb-4">
+                                <AdminAlert type="error" message={flash.error} />
+                            </div>
+                        )}
+
+                        <div className="mb-4">
+                            <AdminInput
+                                type="text"
+                                placeholder="Поиск по названию"
+                                value={searchText}
+                                handleChange={handleSearch}
+                            />
+                        </div>
+
+                        <div className="category-tree bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                            {searchText ? (
+                                // При поиске показываем плоский список совпадающих категорий
+                                filteredCategories.length > 0 ? (
+                                    filteredCategories.map(category => (
+                                        <CategoryItem 
+                                            key={category.id} 
+                                            category={category} 
+                                            categories={categories}
+                                            onDelete={handleDelete}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="py-3 text-center text-gray-500">
+                                        Категории не найдены
+                                    </div>
+                                )
+                            ) : (
+                                // Без поиска показываем древовидную структуру, начиная с корневых категорий
+                                filteredCategories.length > 0 ? (
+                                    filteredCategories.map(category => (
+                                        <CategoryItem 
+                                            key={category.id} 
+                                            category={category} 
+                                            categories={categories}
+                                            onDelete={handleDelete}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="py-3 text-center text-gray-500">
+                                        Категории не найдены
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

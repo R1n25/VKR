@@ -2,6 +2,14 @@ import React, { useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { toast } from 'react-hot-toast';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminCard from '@/Components/AdminCard';
+import AdminTable from '@/Components/AdminTable';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import InfoButton from '@/Components/InfoButton';
+import SuccessButton from '@/Components/SuccessButton';
+import DangerButton from '@/Components/DangerButton';
 
 // Словарь соответствия ID категорий их названиям
 const categoryNames = {
@@ -48,12 +56,6 @@ function getCategoryNameById(categoryId) {
 }
 
 export default function Show({ auth, sparePart }) {
-    console.log('SparePart data:', sparePart);
-    console.log('Category data:', {
-        category_id: sparePart.category_id,
-        category: sparePart.category,
-        category_name: sparePart.category_name
-    });
     return (
         <AdminLayout
             user={auth.user}
@@ -63,37 +65,49 @@ export default function Show({ auth, sparePart }) {
             
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6">
-                            <div className="mb-4 flex justify-between items-center">
-                                <h1 className="text-2xl font-bold text-gray-800">{sparePart.name}</h1>
-                                <div className="flex space-x-2">
-                                    <Link
-                                        href={route('admin.spare-parts.inertia')}
-                                        className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
-                                    >
-                                        Назад к списку
-                                    </Link>
-                                    <Link
-                                        href={route('admin.spare-parts.analogs', sparePart.id)}
-                                        className="px-4 py-2 bg-purple-600 rounded-md text-white hover:bg-purple-700"
-                                    >
-                                        Управление аналогами
-                                    </Link>
-                                    <Link
-                                        href={route('admin.spare-parts.edit-inertia', sparePart.id)}
-                                        className="px-4 py-2 bg-indigo-600 rounded-md text-white hover:bg-indigo-700"
-                                    >
-                                        Редактировать
-                                    </Link>
-                                </div>
+                    <AdminCard>
+                        <div className="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                            <AdminPageHeader 
+                                title={sparePart.name} 
+                                subtitle={`Артикул: ${sparePart.part_number}`} 
+                            />
+                            <div className="mt-4 sm:mt-0 flex space-x-2">
+                                <SecondaryButton
+                                    href={route('admin.spare-parts.inertia')}
+                                    className="flex items-center justify-center w-44"
+                                >
+                                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                                    </svg>
+                                    Назад к списку
+                                </SecondaryButton>
+                                <PrimaryButton
+                                    href={route('admin.spare-parts.analogs', sparePart.id)}
+                                    className="flex items-center justify-center w-44"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+                                    </svg>
+                                    Управление аналогами
+                                </PrimaryButton>
+                                <SuccessButton
+                                    href={route('admin.spare-parts.edit-inertia', sparePart.id)}
+                                    className="flex items-center justify-center w-44"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                    </svg>
+                                    Редактировать
+                                </SuccessButton>
                             </div>
+                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                                {/* Информация о запчасти */}
-                                <div className="md:col-span-2 space-y-6">
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h2 className="text-lg font-semibold mb-4">Основная информация</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                            {/* Информация о запчасти */}
+                            <div className="md:col-span-2 space-y-6">
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Основная информация</h2>
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             <div>
                                                 <p className="text-sm text-gray-500">Название</p>
@@ -127,19 +141,33 @@ export default function Show({ auth, sparePart }) {
                                                 <p className="text-sm text-gray-500">Дата добавления</p>
                                                 <p className="font-medium">{new Date(sparePart.created_at).toLocaleDateString('ru-RU')}</p>
                                             </div>
+                                            <div>
+                                                <p className="text-sm text-gray-500">Статус</p>
+                                                <p className="font-medium">
+                                                    {sparePart.is_available ? (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
+                                                    ) : (
+                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
+                                                    )}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
+                                </AdminCard>
 
-                                    {sparePart.description && (
-                                        <div className="bg-gray-50 p-4 rounded-lg">
-                                            <h2 className="text-lg font-semibold mb-4">Описание</h2>
+                                {sparePart.description && (
+                                    <AdminCard className="!p-0">
+                                        <div className="p-4">
+                                            <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Описание</h2>
                                             <p className="whitespace-pre-wrap">{sparePart.description}</p>
                                         </div>
-                                    )}
+                                    </AdminCard>
+                                )}
 
-                                    {/* Совместимые модели автомобилей */}
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h2 className="text-lg font-semibold mb-4">Совместимые модели автомобилей</h2>
+                                {/* Совместимые модели автомобилей */}
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимые модели автомобилей</h2>
                                         {sparePart.car_models && sparePart.car_models.length > 0 ? (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                                 {sparePart.car_models.map((model) => (
@@ -152,100 +180,106 @@ export default function Show({ auth, sparePart }) {
                                             <p className="text-gray-500">Нет совместимых моделей</p>
                                         )}
                                     </div>
+                                </AdminCard>
 
-                                    {/* Аналоги */}
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h2 className="text-lg font-semibold mb-4">Аналоги</h2>
+                                {/* Аналоги */}
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Аналоги</h2>
                                         {sparePart.analogs && sparePart.analogs.length > 0 ? (
-                                            <div className="overflow-x-auto">
-                                                <table className="min-w-full divide-y divide-gray-200">
-                                                    <thead className="bg-gray-100">
-                                                        <tr>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Артикул</th>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Производитель</th>
-                                                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody className="bg-white divide-y divide-gray-200">
-                                                        {sparePart.analogs.map((analog) => (
-                                                            <tr key={analog.id}>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                                                    <Link 
-                                                                        href={route('admin.spare-parts.show-inertia', analog.analog_spare_part_id)}
-                                                                        className="text-indigo-600 hover:text-indigo-900"
-                                                                    >
-                                                                        {analog.analogSparePart.name}
-                                                                    </Link>
-                                                                </td>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{analog.analogSparePart.part_number}</td>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{analog.analogSparePart.manufacturer}</td>
-                                                                <td className="px-3 py-2 whitespace-nowrap text-sm">
-                                                                    {analog.is_direct ? (
-                                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Прямой</span>
-                                                                    ) : (
-                                                                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Непрямой</span>
-                                                                    )}
-                                                                </td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
+                                            <AdminTable
+                                                headers={[
+                                                    'Название',
+                                                    'Артикул',
+                                                    'Производитель',
+                                                    'Тип'
+                                                ]}
+                                                data={sparePart.analogs}
+                                                renderRow={(analog) => (
+                                                    <>
+                                                        <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                                            <Link 
+                                                                href={route('admin.spare-parts.show-inertia', analog.analog_spare_part_id)}
+                                                                className="text-indigo-600 hover:text-indigo-900"
+                                                            >
+                                                                {analog.analogSparePart.name}
+                                                            </Link>
+                                                        </td>
+                                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{analog.analogSparePart.part_number}</td>
+                                                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">{analog.analogSparePart.manufacturer}</td>
+                                                        <td className="px-3 py-2 whitespace-nowrap text-sm">
+                                                            {analog.is_direct ? (
+                                                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Прямой</span>
+                                                            ) : (
+                                                                <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Непрямой</span>
+                                                            )}
+                                                        </td>
+                                                    </>
+                                                )}
+                                                emptyMessage="Нет аналогов"
+                                            />
                                         ) : (
                                             <p className="text-gray-500">Нет аналогов</p>
                                         )}
                                     </div>
-                                </div>
+                                </AdminCard>
+                            </div>
 
-                                {/* Изображение и дополнительная информация */}
-                                <div className="space-y-6">
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h2 className="text-lg font-semibold mb-4">Изображение</h2>
-                                        {sparePart.image_url ? (
-                                            <img 
-                                                src={`/storage/${sparePart.image_url}`} 
-                                                alt={sparePart.name} 
-                                                className="w-full h-auto object-cover rounded-lg"
-                                            />
-                                        ) : (
-                                            <div className="bg-gray-200 rounded-lg p-8 flex items-center justify-center">
-                                                <p className="text-gray-500">Нет изображения</p>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="bg-gray-50 p-4 rounded-lg">
-                                        <h2 className="text-lg font-semibold mb-4">Действия</h2>
-                                        <div className="space-y-2">
-                                            <Link
-                                                href={route('admin.spare-parts.edit-inertia', sparePart.id)}
-                                                className="block w-full px-4 py-2 bg-indigo-600 text-center rounded-md text-white hover:bg-indigo-700"
-                                            >
-                                                Редактировать
-                                            </Link>
-                                            <Link
-                                                href={route('admin.spare-parts.analogs', sparePart.id)}
-                                                className="block w-full px-4 py-2 bg-purple-600 text-center rounded-md text-white hover:bg-purple-700"
-                                            >
-                                                Управление аналогами
-                                            </Link>
-                                            <button
-                                                onClick={() => {
-                                                    if (confirm('Вы действительно хотите удалить эту запчасть? Это действие нельзя будет отменить.')) {
-                                                        // Действие по удалению
-                                                    }
-                                                }}
-                                                className="block w-full px-4 py-2 bg-red-600 text-center rounded-md text-white hover:bg-red-700"
-                                            >
-                                                Удалить
-                                            </button>
+                            {/* Боковая панель */}
+                            <div className="space-y-6">
+                                {/* Изображение */}
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Изображение</h2>
+                                        <div className="bg-gray-100 aspect-square flex items-center justify-center rounded-lg">
+                                            {sparePart.image_url ? (
+                                                <img 
+                                                    src={sparePart.image_url} 
+                                                    alt={sparePart.name} 
+                                                    className="max-h-full object-contain"
+                                                />
+                                            ) : (
+                                                <div className="text-gray-400">Нет изображения</div>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
+                                </AdminCard>
+
+                                {/* Действия */}
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Действия</h2>
+                                        <div className="flex flex-col space-y-2">
+                                            <SuccessButton
+                                                href={route('admin.spare-parts.edit-inertia', sparePart.id)}
+                                                className="w-full justify-center"
+                                            >
+                                                Редактировать
+                                            </SuccessButton>
+                                            <PrimaryButton
+                                                href={route('admin.spare-parts.analogs', sparePart.id)}
+                                                className="w-full justify-center"
+                                            >
+                                                Управление аналогами
+                                            </PrimaryButton>
+                                            <DangerButton
+                                                href={route('admin.spare-parts.inertia')}
+                                                className="w-full justify-center"
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    if (confirm('Вы действительно хотите удалить эту запчасть?')) {
+                                                        router.delete(route('admin.spare-parts.destroy', sparePart.id));
+                                                    }
+                                                }}
+                                            >
+                                                Удалить
+                                            </DangerButton>
+                                        </div>
+                                    </div>
+                                </AdminCard>
                             </div>
                         </div>
-                    </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>
