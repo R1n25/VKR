@@ -14,8 +14,18 @@ export default function CartIcon({ user = null }) {
     const loadCart = () => {
         console.log('Загрузка корзины...');
         const storageKey = getStorageKey();
-        const storedCart = JSON.parse(localStorage.getItem(storageKey)) || [];
-        console.log('Содержимое корзины:', storedCart);
+        let storedCart = [];
+        try {
+            const storedData = localStorage.getItem(storageKey);
+            if (storedData) {
+                storedCart = JSON.parse(storedData);
+                console.log('Содержимое корзины (raw):', storedData);
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке корзины из localStorage:', error);
+            storedCart = [];
+        }
+        console.log('Содержимое корзины (parsed):', storedCart);
         const count = storedCart.reduce((total, item) => total + (parseInt(item.quantity) || 0), 0);
         console.log('Количество товаров в корзине:', count);
         setItemCount(count);
@@ -62,7 +72,7 @@ export default function CartIcon({ user = null }) {
                                     id: item.spare_part_id,
                                     name: itemData.name,
                                     price: item.price,
-                                    image: itemData.image_url,
+                                    image_url: itemData.image_url,
                                     quantity: item.quantity,
                                     stock: itemData.stock_quantity
                                 };
@@ -81,6 +91,15 @@ export default function CartIcon({ user = null }) {
         // Функция для обработки события обновления корзины
         const handleCartUpdated = (event) => {
             console.log('Событие cartUpdated получено!', event);
+            if (event && event.detail) {
+                const { cart, storageKey } = event.detail;
+                console.log('Данные из события cartUpdated:', { cart, storageKey });
+                
+                // Принудительно обновляем localStorage из события (для надежности)
+                if (cart && storageKey) {
+                    localStorage.setItem(storageKey, JSON.stringify(cart));
+                }
+            }
             loadCart();
         };
         
@@ -91,21 +110,21 @@ export default function CartIcon({ user = null }) {
         window.addEventListener('cartUpdated', handleCartUpdated);
         
         // Добавляем обработчик для хранилища localStorage
-        window.addEventListener('storage', (event) => {
+        const handleStorageEvent = (event) => {
             const storageKey = getStorageKey();
+            console.log('Событие storage получено!', event);
             if (event.key === storageKey) {
-                console.log('Событие storage получено!', event);
+                console.log('Ключ совпадает с текущим хранилищем корзины:', storageKey);
                 loadCart();
             }
-        });
+        };
+        
+        window.addEventListener('storage', handleStorageEvent);
         
         // Очистка слушателей при размонтировании
         return () => {
             window.removeEventListener('cartUpdated', handleCartUpdated);
-            window.removeEventListener('storage', (event) => {
-                const storageKey = getStorageKey();
-                if (event.key === storageKey) loadCart();
-            });
+            window.removeEventListener('storage', handleStorageEvent);
         };
     }, [user]);
     

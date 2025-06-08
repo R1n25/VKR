@@ -126,6 +126,18 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
                                 <p className="text-gray-600">Управление каталогом запчастей</p>
                             </Link>
                             
+                            <Link href={route('admin.car-models.index')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
+                                <div className="flex items-center mb-3">
+                                    <div className="bg-[#eef2ff] p-3 rounded-lg">
+                                        <svg className="w-6 h-6 text-[#2a4075]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                        </svg>
+                                    </div>
+                                    <h3 className="ml-3 text-lg font-semibold text-[#2a4075]">Модели автомобилей</h3>
+                                </div>
+                                <p className="text-gray-600">Управление моделями автомобилей</p>
+                            </Link>
+                            
                             <Link href={route('admin.suggestions.inertia')} className="block p-6 bg-white rounded-xl border border-gray-200 hover:border-[#2a4075] hover:shadow-lg hover:shadow-[#2a4075]/10 transition-all duration-300">
                                 <div className="flex items-center mb-3">
                                     <div className="bg-[#eef2ff] p-3 rounded-lg">

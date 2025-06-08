@@ -24,4 +24,10 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+
+    protected $commands = [
+        // ... существующие команды ...
+        \App\Console\Commands\AssignPartsToEngines::class,
+        \App\Console\Commands\AssignPartsByCategoryToEngines::class,
+    ];
 } 

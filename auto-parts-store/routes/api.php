@@ -12,6 +12,8 @@ use App\Http\Controllers\API\SparePartController;
 use App\Http\Controllers\SpareParts\SparePartController as SparePartsSparePartController;
 use App\Http\Controllers\API\BrandController;
 use App\Http\Controllers\VinSearchController;
+use App\Http\Controllers\API\CarEngineController;
+use App\Http\Controllers\API\EnginePartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +54,12 @@ Route::get('/brands/{id}/models', [BrandController::class, 'getModels']);
 Route::get('models', [CarModelController::class, 'index']);
 Route::get('models/{id}', [CarModelController::class, 'show']);
 Route::get('models/{id}/parts', [CarModelController::class, 'getParts']);
+// Маршрут для получения двигателей по ID модели
+Route::get('models/{id}/engines', [CarEngineController::class, 'getEnginesByModel']);
+
+// Маршруты для двигателей автомобилей
+Route::get('engines/{id}', [CarEngineController::class, 'show']);
+Route::get('engines/{id}/part-categories', [CarEngineController::class, 'getPartCategories']);
 
 // Маршруты для категорий запчастей
 Route::get('categories', [CategoryController::class, 'index']);
@@ -100,4 +108,14 @@ Route::middleware(['web'])->group(function () {
 // Остальные маршруты для заказов без дополнительных middleware
 Route::post('orders', [OrderController::class, 'store']);
 Route::put('orders/{id}', [OrderController::class, 'update']);
-Route::delete('orders/{id}', [OrderController::class, 'destroy']); 
+Route::delete('orders/{id}', [OrderController::class, 'destroy']);
+
+// Маршруты для связи двигателей и запчастей
+Route::prefix('engine-parts')->group(function () {
+    Route::get('engine/{engineId}/parts', [EnginePartController::class, 'getPartsByEngine']);
+    Route::get('part/{partId}/engines', [EnginePartController::class, 'getEnginesByPart']);
+    Route::post('engine/{engineId}/part/{partId}/attach', [EnginePartController::class, 'attachPartToEngine']);
+    Route::delete('engine/{engineId}/part/{partId}/detach', [EnginePartController::class, 'detachPartFromEngine']);
+    Route::put('engine/{engineId}/part/{partId}/notes', [EnginePartController::class, 'updateNotes']);
+    Route::post('engine/{engineId}/parts/bulk-attach', [EnginePartController::class, 'bulkAttachPartsToEngine']);
+}); 

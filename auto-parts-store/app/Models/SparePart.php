@@ -258,4 +258,22 @@ class SparePart extends Model
     {
         return $this->carModels();
     }
+
+    /**
+     * Получить модель автомобиля для этой запчасти
+     */
+    public function model()
+    {
+        return $this->belongsTo(CarModel::class, 'model_id');
+    }
+
+    /**
+     * Получить все двигатели, совместимые с этой запчастью.
+     */
+    public function carEngines(): BelongsToMany
+    {
+        return $this->belongsToMany(CarEngine::class, 'car_engine_spare_part')
+            ->withPivot('notes')
+            ->withTimestamps();
+    }
 } 

@@ -25,6 +25,7 @@ class CarModel extends Model
         'transmission_type',
         'drive_type',
         'is_popular',
+        'image_url',
     ];
 
     protected $casts = [

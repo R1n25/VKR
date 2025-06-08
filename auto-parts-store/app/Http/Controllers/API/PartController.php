@@ -16,12 +16,12 @@ class PartController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('parts')
-            ->join('car_brands', 'parts.brand_id', '=', 'car_brands.id')
-            ->join('car_models', 'parts.model_id', '=', 'car_models.id')
-            ->join('part_categories', 'parts.category_id', '=', 'part_categories.id')
+        $query = DB::table('spare_parts')
+            ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
+            ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
+            ->join('part_categories', 'spare_parts.category_id', '=', 'part_categories.id')
             ->select(
-                'parts.*', 
+                'spare_parts.*', 
                 'car_brands.name as brand_name', 
                 'car_models.name as model_name',
                 'part_categories.name as category_name'
@@ -31,9 +31,9 @@ class PartController extends Controller
         if ($request->has('search')) {
             $searchTerm = $request->search;
             $query->where(function($q) use ($searchTerm) {
-                $q->where('parts.name', 'like', "%{$searchTerm}%")
-                  ->orWhere('parts.sku', 'like', "%{$searchTerm}%")
-                  ->orWhere('parts.description', 'like', "%{$searchTerm}%")
+                $q->where('spare_parts.name', 'like', "%{$searchTerm}%")
+                  ->orWhere('spare_parts.sku', 'like', "%{$searchTerm}%")
+                  ->orWhere('spare_parts.description', 'like', "%{$searchTerm}%")
                   ->orWhere('car_brands.name', 'like', "%{$searchTerm}%")
                   ->orWhere('car_models.name', 'like', "%{$searchTerm}%");
             });
@@ -41,12 +41,39 @@ class PartController extends Controller
         
         // Фильтрация по бренду
         if ($request->has('brand_id')) {
-            $query->where('parts.brand_id', $request->brand_id);
+            $query->where('spare_parts.brand_id', $request->brand_id);
         }
         
         // Фильтрация по модели
         if ($request->has('model_id')) {
-            $query->where('parts.model_id', $request->model_id);
+            $query->where('spare_parts.model_id', $request->model_id);
+        }
+        
+        // Фильтрация по двигателю
+        if ($request->has('engine_id')) {
+            // Присоединяем таблицу с двигателями для фильтрации
+            $query->join('car_engines', function ($join) use ($request) {
+                $join->on('car_engines.model_id', '=', 'spare_parts.model_id')
+                    ->where('car_engines.id', '=', $request->engine_id);
+            });
+        }
+        
+        // Фильтрация по типу двигателя
+        if ($request->has('engine_type')) {
+            if (!$request->has('engine_id')) {
+                // Если не присоединили таблицу двигателей выше
+                $query->join('car_engines', 'car_engines.model_id', '=', 'spare_parts.model_id');
+            }
+            $query->where('car_engines.type', $request->engine_type);
+        }
+        
+        // Фильтрация по объему двигателя
+        if ($request->has('engine_volume')) {
+            if (!$request->has('engine_id') && !$request->has('engine_type')) {
+                // Если не присоединили таблицу двигателей выше
+                $query->join('car_engines', 'car_engines.model_id', '=', 'spare_parts.model_id');
+            }
+            $query->where('car_engines.volume', $request->engine_volume);
         }
         
         // Фильтрация по категории
@@ -62,25 +89,39 @@ class PartController extends Controller
             // Добавляем ID текущей категории
             $categoryIds = array_merge([$categoryId], $subcategoryIds);
             
-            $query->whereIn('parts.category_id', $categoryIds);
+            $query->whereIn('spare_parts.category_id', $categoryIds);
         }
         
         // Сортировка
-        if ($request->has('sort')) {
+        if ($request->has('sort_by') && $request->has('sort_order')) {
+            $sortField = $request->sort_by;
+            $sortDirection = $request->sort_order;
+            
+            switch ($sortField) {
+                case 'price':
+                    $query->orderBy('spare_parts.price', $sortDirection);
+                    break;
+                case 'name':
+                    $query->orderBy('spare_parts.name', $sortDirection);
+                    break;
+                default:
+                    $query->orderBy('spare_parts.id', 'desc');
+            }
+        } else if ($request->has('sort')) {
             $sortDirection = $request->has('direction') && $request->direction === 'desc' ? 'desc' : 'asc';
             
             switch ($request->sort) {
                 case 'price':
-                    $query->orderBy('parts.price', $sortDirection);
+                    $query->orderBy('spare_parts.price', $sortDirection);
                     break;
                 case 'name':
-                    $query->orderBy('parts.name', $sortDirection);
+                    $query->orderBy('spare_parts.name', $sortDirection);
                     break;
                 default:
-                    $query->orderBy('parts.id', 'desc');
+                    $query->orderBy('spare_parts.id', 'desc');
             }
         } else {
-            $query->orderBy('parts.id', 'desc');
+            $query->orderBy('spare_parts.id', 'desc');
         }
         
         $parts = $query->paginate(12);
@@ -99,17 +140,17 @@ class PartController extends Controller
      */
     public function show($id)
     {
-        $part = DB::table('parts')
-            ->join('car_brands', 'parts.brand_id', '=', 'car_brands.id')
-            ->join('car_models', 'parts.model_id', '=', 'car_models.id')
-            ->join('part_categories', 'parts.category_id', '=', 'part_categories.id')
+        $part = DB::table('spare_parts')
+            ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
+            ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
+            ->join('part_categories', 'spare_parts.category_id', '=', 'part_categories.id')
             ->select(
-                'parts.*', 
+                'spare_parts.*', 
                 'car_brands.name as brand_name', 
                 'car_models.name as model_name',
                 'part_categories.name as category_name'
             )
-            ->where('parts.id', $id)
+            ->where('spare_parts.id', $id)
             ->first();
         
         if (!$part) {
@@ -120,20 +161,20 @@ class PartController extends Controller
         }
         
         // Получаем связанные запчасти той же категории и марки
-        $relatedParts = DB::table('parts')
-            ->join('car_brands', 'parts.brand_id', '=', 'car_brands.id')
-            ->join('car_models', 'parts.model_id', '=', 'car_models.id')
+        $relatedParts = DB::table('spare_parts')
+            ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
+            ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
             ->select(
-                'parts.id', 
-                'parts.name', 
-                'parts.sku',
-                'parts.price',
-                'parts.image_url',
+                'spare_parts.id', 
+                'spare_parts.name', 
+                'spare_parts.sku',
+                'spare_parts.price',
+                'spare_parts.image_url',
                 'car_brands.name as brand_name', 
                 'car_models.name as model_name'
             )
-            ->where('parts.category_id', $part->category_id)
-            ->where('parts.id', '!=', $id)
+            ->where('spare_parts.category_id', $part->category_id)
+            ->where('spare_parts.id', '!=', $id)
             ->limit(4)
             ->get();
         

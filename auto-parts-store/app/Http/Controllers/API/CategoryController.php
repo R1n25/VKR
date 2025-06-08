@@ -24,6 +24,15 @@ class CategoryController extends Controller
         
         $categories = $query->get();
         
+        // Добавляем информацию о наличии подкатегорий
+        foreach ($categories as $category) {
+            $hasChildren = DB::table('part_categories')
+                ->where('parent_id', $category->id)
+                ->exists();
+            
+            $category->has_children = $hasChildren;
+        }
+        
         return response()->json([
             'status' => 'success',
             'data' => $categories
@@ -46,6 +55,11 @@ class CategoryController extends Controller
                 'message' => 'Категория не найдена'
             ], 404);
         }
+        
+        // Добавляем информацию о наличии подкатегорий
+        $category->has_children = DB::table('part_categories')
+            ->where('parent_id', $id)
+            ->exists();
         
         return response()->json([
             'status' => 'success',
@@ -73,6 +87,15 @@ class CategoryController extends Controller
         $subcategories = DB::table('part_categories')
             ->where('parent_id', $id)
             ->get();
+        
+        // Добавляем информацию о наличии подкатегорий для каждой подкатегории
+        foreach ($subcategories as $subcategory) {
+            $hasChildren = DB::table('part_categories')
+                ->where('parent_id', $subcategory->id)
+                ->exists();
+            
+            $subcategory->has_children = $hasChildren;
+        }
         
         return response()->json([
             'status' => 'success',
@@ -110,11 +133,8 @@ class CategoryController extends Controller
         $categoryIds = array_merge([$id], $subcategoryIds);
         
         // Получаем запчасти из текущей категории и всех подкатегорий
-        $parts = DB::table('parts')
+        $parts = DB::table('spare_parts')
             ->whereIn('category_id', $categoryIds)
-            ->join('car_brands', 'parts.brand_id', '=', 'car_brands.id')
-            ->join('car_models', 'parts.model_id', '=', 'car_models.id')
-            ->select('parts.*', 'car_brands.name as brand_name', 'car_models.name as model_name')
             ->get();
         
         return response()->json([

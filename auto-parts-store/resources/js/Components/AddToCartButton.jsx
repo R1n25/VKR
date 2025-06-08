@@ -16,8 +16,8 @@ export default function AddToCartButton({ sparePart, className = '', user = null
         const value = parseInt(e.target.value);
         if (value < 1) {
             setQuantity(1);
-        } else if (value > sparePart.stock) {
-            setQuantity(sparePart.stock);
+        } else if (value > sparePart.stock_quantity) {
+            setQuantity(sparePart.stock_quantity);
         } else {
             setQuantity(value);
         }
@@ -55,8 +55,8 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                 const newQuantity = cart[existingItemIndex].quantity + quantity;
                 
                 // Проверяем, не превышает ли новое количество доступное на складе
-                if (newQuantity > sparePart.stock) {
-                    setErrorMessage(`Максимальное доступное количество: ${sparePart.stock}`);
+                if (newQuantity > sparePart.stock_quantity) {
+                    setErrorMessage(`Максимальное доступное количество: ${sparePart.stock_quantity}`);
                     setIsLoading(false);
                     return;
                 }
@@ -68,9 +68,9 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                     id: sparePart.id,
                     name: sparePart.name,
                     price: sparePart.price,
-                    image: sparePart.image,
+                    image_url: sparePart.image_url || sparePart.image,
                     quantity: quantity,
-                    stock: sparePart.stock
+                    stock: sparePart.stock_quantity
                 });
             }
             
@@ -136,7 +136,7 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                     <input
                         type="number"
                         min="1"
-                        max={sparePart.stock}
+                        max={sparePart.stock_quantity}
                         value={quantity}
                         onChange={handleQuantityChange}
                         className="w-14 border-t border-b border-gray-300 text-center py-1"
@@ -144,23 +144,23 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                     />
                     <button
                         type="button"
-                        onClick={() => setQuantity(prev => Math.min(sparePart.stock, prev + 1))}
+                        onClick={() => setQuantity(prev => Math.min(sparePart.stock_quantity, prev + 1))}
                         className="px-2 py-1 border border-gray-300 rounded-r-md bg-gray-50 text-gray-500 hover:bg-gray-100"
-                        disabled={quantity >= sparePart.stock || isLoading}
+                        disabled={quantity >= sparePart.stock_quantity || isLoading}
                     >
                         +
                     </button>
                 </div>
-                <span className="text-sm text-gray-500 ml-3">В наличии: {sparePart.stock} шт.</span>
+                <span className="text-sm text-gray-500 ml-3">В наличии: {sparePart.stock_quantity} шт.</span>
             </div>
             
             <button
                 onClick={addToCart}
-                disabled={isAdded || sparePart.stock === 0 || isLoading}
+                disabled={isAdded || sparePart.stock_quantity === 0 || isLoading}
                 className={`px-4 py-2 rounded-md transition-all duration-300 flex items-center justify-center ${
                     isAdded
                         ? 'bg-green-500 text-white'
-                        : sparePart.stock === 0
+                        : sparePart.stock_quantity === 0
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : isLoading
                                 ? 'bg-indigo-400 text-white cursor-wait'
@@ -174,7 +174,7 @@ export default function AddToCartButton({ sparePart, className = '', user = null
                         </svg>
                         Добавлено
                     </>
-                ) : sparePart.stock === 0 ? (
+                ) : sparePart.stock_quantity === 0 ? (
                     'Нет в наличии'
                 ) : isLoading ? (
                     <>

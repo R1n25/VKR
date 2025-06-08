@@ -23,9 +23,10 @@ use App\Http\Controllers\Admin\SuggestionController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CatalogManagerController;
 use App\Http\Controllers\CartController;
-use App\Http\Controllers\Admin\PartCategoryController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\VinSearchController;
+use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\EngineController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,13 +59,26 @@ Route::get('/categories/{id}', [CategoriesController::class, 'show'])->name('cat
 
 // Маршруты для моделей
 Route::get('/models/{id}', function ($id) {
-    return Inertia::render('Models/Show', [
+    return redirect()->route('engines.index', ['id' => $id]);
+})->name('models.show');
+
+// Маршруты для двигателей
+Route::get('/models/{id}/engines', function ($id) {
+    return Inertia::render('Engines/Index', [
         'modelId' => $id,
         'auth' => [
             'user' => Auth::user(),
         ],
     ]);
-})->name('models.show');
+})->name('engines.index');
+Route::get('/engines/{id}/parts', function ($id) {
+    return Inertia::render('Engines/Parts', [
+        'engineId' => $id,
+        'auth' => [
+            'user' => Auth::user(),
+        ],
+    ]);
+})->name('engines.parts');
 
 // Маршруты для запчастей
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
@@ -444,6 +458,24 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/finances/users/{user}/create', [\App\Http\Controllers\Admin\FinanceController::class, 'create'])->name('finances.create');
     Route::post('/finances/users/{user}', [\App\Http\Controllers\Admin\FinanceController::class, 'store'])->name('finances.store');
     Route::patch('/finances/users/{user}/balance', [\App\Http\Controllers\Admin\FinanceController::class, 'updateBalance'])->name('finances.update-balance');
+
+    // Управление моделями автомобилей
+    Route::get('/car-models', [App\Http\Controllers\Admin\CarModelController::class, 'index'])->name('car-models.index');
+    Route::get('/car-models/create', [App\Http\Controllers\Admin\CarModelController::class, 'create'])->name('car-models.create');
+    Route::post('/car-models', [App\Http\Controllers\Admin\CarModelController::class, 'store'])->name('car-models.store');
+    Route::get('/car-models/{carModel}', [App\Http\Controllers\Admin\CarModelController::class, 'show'])->name('car-models.show');
+    Route::get('/car-models/{carModel}/edit', [App\Http\Controllers\Admin\CarModelController::class, 'edit'])->name('car-models.edit');
+    Route::put('/car-models/{carModel}', [App\Http\Controllers\Admin\CarModelController::class, 'update'])->name('car-models.update');
+    Route::delete('/car-models/{carModel}', [App\Http\Controllers\Admin\CarModelController::class, 'destroy'])->name('car-models.destroy');
+    Route::delete('/car-models/{carModel}/image', [App\Http\Controllers\Admin\CarModelController::class, 'deleteImage'])->name('car-models.delete-image');
 });
+
+// Маршруты для каталога автомобилей
+Route::get('/catalog', [CatalogController::class, 'index'])->name('catalog.index');
+Route::get('/catalog/{brandSlug}', [CatalogController::class, 'brand'])->name('catalog.brand');
+Route::get('/catalog/{brandSlug}/{modelSlug}', [CatalogController::class, 'model'])->name('catalog.model');
+Route::get('/catalog/{brandSlug}/{modelSlug}/{generation}', [CatalogController::class, 'generation'])->name('catalog.generation');
+Route::get('/catalog/{brandSlug}/{modelSlug}/{generation}/parts', [CatalogController::class, 'parts'])->name('catalog.parts');
+Route::get('/part/{partSlug}', [CatalogController::class, 'part'])->name('catalog.part');
 
 require __DIR__.'/auth.php';

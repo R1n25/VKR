@@ -112,9 +112,9 @@ export default function Cart({ auth }) {
                                                 {/* Изображение товара */}
                                                 <div className="sm:w-1/4 mb-4 sm:mb-0 sm:mr-6">
                                                     <div className="bg-gray-100 rounded-lg overflow-hidden h-40 flex items-center justify-center">
-                                                        {item.image ? (
+                                                        {item.image_url ? (
                                                             <img 
-                                                                src={`/storage/${item.image}`} 
+                                                                src={item.image_url} 
                                                                 alt={item.name} 
                                                                 className="object-contain h-full w-full"
                                                             />

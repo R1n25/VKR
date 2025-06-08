@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function CategoryShow({ auth, categoryId }) {
+export default function CategoryShow({ auth, categoryId, engine }) {
     const [category, setCategory] = useState(null);
     const [parts, setParts] = useState([]);
     const [subcategories, setSubcategories] = useState([]);
@@ -25,10 +25,22 @@ export default function CategoryShow({ auth, categoryId }) {
                 const subcategoriesResponse = await axios.get(`/api/categories?parent_id=${categoryId}`);
                 setSubcategories(subcategoriesResponse.data.data);
                 
-                // Получаем товары в категории
-                const partsResponse = await axios.get(
-                    `/api/parts?category_id=${categoryId}&sort_by=${sortBy}&sort_order=${sortOrder}&page=${currentPage}`
-                );
+                // Параметры запроса для частей
+                const params = {
+                    category_id: categoryId,
+                    sort_by: sortBy,
+                    sort_order: sortOrder,
+                    page: currentPage
+                };
+                
+                // Если есть выбранный двигатель, добавляем его параметры
+                if (engine) {
+                    params.engine_id = engine.id;
+                    params.model_id = engine.model_id;
+                }
+                
+                // Получаем товары в категории с учетом фильтров
+                const partsResponse = await axios.get('/api/parts', { params });
                 
                 setParts(partsResponse.data.data);
                 setTotalPages(partsResponse.data.meta.last_page || 1);
@@ -41,7 +53,7 @@ export default function CategoryShow({ auth, categoryId }) {
         };
 
         fetchData();
-    }, [categoryId, sortBy, sortOrder, currentPage]);
+    }, [categoryId, sortBy, sortOrder, currentPage, engine]);
 
     const handleSortChange = (e) => {
         const value = e.target.value;
@@ -72,11 +84,15 @@ export default function CategoryShow({ auth, categoryId }) {
             user={auth.user}
             header={
                 <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                    {loading ? 'Загрузка категории...' : category ? category.name : 'Категория'}
+                    {loading ? 'Загрузка категории...' : category ? (
+                        engine ? `${category.name} для ${engine.brand_name} ${engine.model_name}` : category.name
+                    ) : 'Категория'}
                 </h2>
             }
         >
-            <Head title={loading ? 'Категория автозапчастей' : category ? category.name : 'Категория'} />
+            <Head title={loading ? 'Категория автозапчастей' : category ? (
+                engine ? `${category.name} для ${engine.brand_name} ${engine.model_name}` : category.name
+            ) : 'Категория'} />
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
@@ -129,6 +145,45 @@ export default function CategoryShow({ auth, categoryId }) {
                                             </li>
                                         </ol>
                                     </nav>
+
+                                    {/* Информация о выбранном двигателе, если есть */}
+                                    {engine && (
+                                        <div className="mb-8 p-4 bg-indigo-50 border border-indigo-100 rounded-lg">
+                                            <h3 className="text-lg font-semibold text-indigo-700 mb-2">
+                                                Выбран двигатель: {engine.name}
+                                            </h3>
+                                            <div className="flex flex-wrap">
+                                                <div className="mr-6 mb-2">
+                                                    <span className="text-sm text-indigo-800 font-medium">Автомобиль:</span>
+                                                    <span className="text-sm ml-1">{engine.brand_name} {engine.model_name}</span>
+                                                </div>
+                                                <div className="mr-6 mb-2">
+                                                    <span className="text-sm text-indigo-800 font-medium">Тип:</span>
+                                                    <span className="text-sm ml-1">{engine.type}</span>
+                                                </div>
+                                                <div className="mr-6 mb-2">
+                                                    <span className="text-sm text-indigo-800 font-medium">Объем:</span>
+                                                    <span className="text-sm ml-1">{engine.volume} л</span>
+                                                </div>
+                                                <div className="mr-6 mb-2">
+                                                    <span className="text-sm text-indigo-800 font-medium">Мощность:</span>
+                                                    <span className="text-sm ml-1">{engine.power} л.с.</span>
+                                                </div>
+                                                <div className="mb-2">
+                                                    <span className="text-sm text-indigo-800 font-medium">Годы выпуска:</span>
+                                                    <span className="text-sm ml-1">{engine.year_start} - {engine.year_end || 'н.в.'}</span>
+                                                </div>
+                                            </div>
+                                            <div className="mt-2 text-sm">
+                                                <Link 
+                                                    href={`/engines/${engine.id}/parts`} 
+                                                    className="text-indigo-600 hover:text-indigo-800 font-medium"
+                                                >
+                                                    Другие категории запчастей для этого двигателя
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
 
                                     {/* Описание категории */}
                                     {category.description && (

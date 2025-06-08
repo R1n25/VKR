@@ -99,11 +99,11 @@ class CarModelController extends Controller
             ], 404);
         }
         
-        $parts = DB::table('parts')
+        $parts = DB::table('spare_parts')
             ->where('model_id', $id)
-            ->join('part_categories', 'parts.category_id', '=', 'part_categories.id')
-            ->select('parts.*', 'part_categories.name as category_name')
-            ->orderBy('parts.name', 'asc')
+            ->join('part_categories', 'spare_parts.category_id', '=', 'part_categories.id')
+            ->select('spare_parts.*', 'part_categories.name as category_name')
+            ->orderBy('spare_parts.name', 'asc')
             ->get();
         
         return response()->json([

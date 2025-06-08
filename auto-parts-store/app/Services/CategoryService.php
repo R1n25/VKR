@@ -117,19 +117,19 @@ class CategoryService
         $categoryIds = array_merge([$categoryId], $subcategoryIds);
         
         // Формируем запрос
-        $query = DB::table('parts')
+        $query = DB::table('spare_parts')
             ->whereIn('category_id', $categoryIds)
-            ->join('car_brands', 'parts.brand_id', '=', 'car_brands.id')
-            ->join('car_models', 'parts.model_id', '=', 'car_models.id')
-            ->select('parts.*', 'car_brands.name as brand_name', 'car_models.name as model_name');
+            ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
+            ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
+            ->select('spare_parts.*', 'car_brands.name as brand_name', 'car_models.name as model_name');
         
         // Применяем фильтры
         if (!empty($filters['price_min'])) {
-            $query->where('parts.price', '>=', $filters['price_min']);
+            $query->where('spare_parts.price', '>=', $filters['price_min']);
         }
         
         if (!empty($filters['price_max'])) {
-            $query->where('parts.price', '<=', $filters['price_max']);
+            $query->where('spare_parts.price', '<=', $filters['price_max']);
         }
         
         if (!empty($filters['brands'])) {
@@ -137,36 +137,66 @@ class CategoryService
         }
         
         if (!empty($filters['in_stock']) && $filters['in_stock']) {
-            $query->where('parts.stock', '>', 0);
+            $query->where('spare_parts.stock_quantity', '>', 0);
+        }
+        
+        // Фильтр по модели автомобиля
+        if (!empty($filters['model_id'])) {
+            $query->where('spare_parts.model_id', $filters['model_id']);
+        }
+        
+        // Фильтр по бренду автомобиля
+        if (!empty($filters['brand_id'])) {
+            $query->where('spare_parts.brand_id', $filters['brand_id']);
+        }
+        
+        // Фильтр по двигателю
+        if (!empty($filters['engine_id'])) {
+            // Присоединяем таблицу с двигателями
+            $query->join('car_engines', function ($join) use ($filters) {
+                $join->on('car_engines.model_id', '=', 'spare_parts.model_id')
+                    ->where('car_engines.id', '=', $filters['engine_id']);
+            });
+            
+            // Дополнительно можно добавить условия для фильтрации по параметрам двигателя
+            // Например, фильтр по объему двигателя
+            if (!empty($filters['engine_volume'])) {
+                $query->where('car_engines.volume', $filters['engine_volume']);
+            }
+            
+            // Фильтр по типу двигателя
+            if (!empty($filters['engine_type'])) {
+                $query->where('car_engines.type', $filters['engine_type']);
+            }
         }
         
         // Применяем сортировку
         if (!empty($filters['sort'])) {
-            $sortField = 'parts.name';
+            $sortField = 'spare_parts.name';
             $sortDirection = 'asc';
             
             switch ($filters['sort']) {
                 case 'price_asc':
-                    $sortField = 'parts.price';
+                    $sortField = 'spare_parts.price';
                     $sortDirection = 'asc';
                     break;
                 case 'price_desc':
-                    $sortField = 'parts.price';
+                    $sortField = 'spare_parts.price';
                     $sortDirection = 'desc';
                     break;
                 case 'name_asc':
-                    $sortField = 'parts.name';
+                    $sortField = 'spare_parts.name';
                     $sortDirection = 'asc';
                     break;
                 case 'name_desc':
-                    $sortField = 'parts.name';
+                    $sortField = 'spare_parts.name';
                     $sortDirection = 'desc';
                     break;
             }
             
             $query->orderBy($sortField, $sortDirection);
         } else {
-            $query->orderBy('parts.name', 'asc');
+            $query->orderBy('spare_parts.name', 'asc');
         }
         
         $parts = $query->get();

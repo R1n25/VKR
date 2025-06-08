@@ -53,7 +53,7 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                 id: part.id,
                 name: part.name,
                 price: isAdmin ? part.markup_price : part.price,
-                image: part.image_url,
+                image_url: part.image_url,
                 quantity: quantity,
                 stock: part.stock_quantity
             });
