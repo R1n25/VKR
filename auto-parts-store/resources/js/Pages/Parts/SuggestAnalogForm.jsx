@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputLabel from '@/Components/InputLabel';
@@ -8,7 +8,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function SuggestAnalogForm({ auth, sparePart }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         analog_article: '',
         analog_brand: '',
         analog_description: '',
@@ -18,9 +18,7 @@ export default function SuggestAnalogForm({ auth, sparePart }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('suggestions.store-analog', sparePart.id), {
-            onSuccess: () => reset(),
-        });
+        post(route('suggestions.store-analog', sparePart.id));
     };
 
     return (
@@ -142,9 +140,11 @@ export default function SuggestAnalogForm({ auth, sparePart }) {
                                 </div>
 
                                 <div className="flex items-center justify-end mt-6">
-                                    <SecondaryButton className="mr-4" as={Link} href={route('parts.show', sparePart.id)}>
+                                    <Link className="mr-4" href={route('spare-parts.show', sparePart.id)}>
+                                        <SecondaryButton>
                                         Отмена
                                     </SecondaryButton>
+                                    </Link>
                                     <PrimaryButton processing={processing}>
                                         Отправить
                                     </PrimaryButton>

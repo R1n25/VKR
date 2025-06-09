@@ -12,9 +12,11 @@ class SparePartCompatibility extends Model
     protected $fillable = [
         'spare_part_id',
         'car_model_id',
+        'car_engine_id',
         'start_year',
         'end_year',
         'notes',
+        'is_verified',
     ];
 
     /**
@@ -34,22 +36,12 @@ class SparePartCompatibility extends Model
     }
 
     /**
-     * Проверить, подходит ли запчасть для указанного года выпуска
+     * Получить двигатель автомобиля
      */
-    public function isCompatibleWithYear($year)
+    public function carEngine()
     {
-        if ($this->start_year && $this->end_year) {
-            return $year >= $this->start_year && $year <= $this->end_year;
-        }
-        
-        if ($this->start_year) {
-            return $year >= $this->start_year;
-        }
-        
-        if ($this->end_year) {
-            return $year <= $this->end_year;
-        }
-        
-        return true; // Если годы не указаны, считаем совместимой со всеми
+        return $this->belongsTo(CarEngine::class);
     }
+
+
 } 

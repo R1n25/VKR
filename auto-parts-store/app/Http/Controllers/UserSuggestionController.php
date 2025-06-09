@@ -7,9 +7,11 @@ use App\Models\SparePart;
 use App\Models\CarModel;
 use App\Models\SparePartAnalog;
 use App\Models\SparePartCompatibility;
+use App\Models\CarBrand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\DB;
 
 class UserSuggestionController extends Controller
 {
@@ -32,77 +34,62 @@ class UserSuggestionController extends Controller
     public function createCompatibility(SparePart $sparePart)
     {
         $carModels = CarModel::with('brand')->orderBy('name')->get();
+        $carBrands = CarBrand::orderBy('name')->get();
         
         return Inertia::render('Parts/SuggestCompatibilityForm', [
             'auth' => [
                 'user' => auth()->user(),
             ],
             'sparePart' => $sparePart,
-            'carModels' => $carModels
+            'carModels' => $carModels,
+            'carBrands' => $carBrands
         ]);
     }
     
     /**
-     * Сохранение предложения аналога
+     * Сохранение предложения аналога запчасти
      */
     public function storeAnalog(Request $request, SparePart $sparePart)
     {
         $validated = $request->validate([
-            'analog_article' => 'required|string|max:100',
+            'analog_article' => 'required|string|max:50',
             'analog_brand' => 'required|string|max:100',
-            'analog_description' => 'required|string|max:255',
-            'comment' => 'nullable|string|max:500',
-            'analog_type' => 'required|in:direct,partial',
+            'analog_description' => 'nullable|string|max:1000',
+            'analog_type' => 'required|in:direct,indirect,universal',
+            'comment' => 'nullable|string|max:1000',
         ]);
         
-        // Нормализуем артикул для дальнейшего поиска (приводим к верхнему регистру)
-        $normalizedArticle = strtoupper($validated['analog_article']);
-        $validated['analog_article'] = $normalizedArticle;
-        
-        // Проверяем, не существует ли уже запчасть с таким артикулом, используя UPPER для игнорирования регистра
-        $analogPart = SparePart::whereRaw('UPPER(part_number) = ?', [$normalizedArticle])
+        // Проверяем, существует ли уже такая запчасть в базе
+        $existingPart = SparePart::where('part_number', $validated['analog_article'])
             ->where('manufacturer', $validated['analog_brand'])
             ->first();
-            
-        // Если такой запчасти нет, сохраним информацию для будущего создания
-        $analogPartId = null;
-        if ($analogPart) {
-            $analogPartId = $analogPart->id;
-            
-            // Проверяем, не существует ли уже такой аналог
-            $existingAnalog = SparePartAnalog::where('spare_part_id', $sparePart->id)
-                ->where('analog_spare_part_id', $analogPartId)
-                ->first();
-                
-            if ($existingAnalog) {
-                return redirect()->route('parts.show', $sparePart)
-                    ->with('info', 'Этот аналог уже существует в системе.');
-            }
-        }
-
-        // Сохраняем предложение
+        
+        $suggestionData = [
+            'analog_article' => $validated['analog_article'],
+            'analog_brand' => $validated['analog_brand'],
+            'analog_description' => $validated['analog_description'],
+            'analog_type' => $validated['analog_type'],
+            'need_create_part' => !$existingPart,
+        ];
+        
+        // Создаем запись о предложении
         $suggestion = new UserSuggestion();
         $suggestion->user_id = Auth::id();
         $suggestion->suggestion_type = 'analog';
         $suggestion->spare_part_id = $sparePart->id;
-        $suggestion->analog_spare_part_id = $analogPartId; // Может быть null
+        
+        // Если аналог уже существует в базе, сохраняем ссылку на него
+        if ($existingPart) {
+            $suggestion->analog_spare_part_id = $existingPart->id;
+        }
+        
         $suggestion->comment = $validated['comment'];
         $suggestion->status = 'pending';
-        
-        // Сохраняем дополнительную информацию об аналоге
-        $suggestion->data = [
-            'is_direct' => $validated['analog_type'] === 'direct',
-            'analog_type' => $validated['analog_type'],
-            'analog_article' => $normalizedArticle, // Сохраняем нормализованный артикул (в верхнем регистре)
-            'analog_brand' => $validated['analog_brand'],
-            'analog_description' => $validated['analog_description'],
-            'need_create_part' => ($analogPartId === null) // Флаг, что нужно создать новую запчасть
-        ];
-        
+        $suggestion->data = $suggestionData;
         $suggestion->save();
         
-        return redirect()->route('parts.show', $sparePart)
-            ->with('success', "Ваше предложение аналога ({$validated['analog_brand']} {$normalizedArticle}) отправлено на модерацию. Спасибо за вклад!");
+        return redirect()->route('spare-parts.show', $sparePart->id)
+            ->with('success', 'Ваше предложение аналога успешно отправлено на модерацию.');
     }
     
     /**
@@ -111,9 +98,9 @@ class UserSuggestionController extends Controller
     public function storeCompatibility(Request $request, SparePart $sparePart)
     {
         $validated = $request->validate([
+            'car_brand_id' => 'required|exists:car_brands,id',
             'car_model_id' => 'required|exists:car_models,id',
-            'start_year' => 'nullable|integer|min:1900|max:2100',
-            'end_year' => 'nullable|integer|min:1900|max:2100|gte:start_year',
+            'car_engine_id' => 'nullable|exists:car_engines,id',
             'comment' => 'nullable|string|max:1000',
         ]);
 
@@ -126,9 +113,9 @@ class UserSuggestionController extends Controller
             'comment' => $validated['comment'] ?? null,
             'data' => [
                 'spare_part_id' => $sparePart->id,
+                'car_brand_id' => $validated['car_brand_id'],
                 'car_model_id' => $validated['car_model_id'],
-                'start_year' => $validated['start_year'] ?? null,
-                'end_year' => $validated['end_year'] ?? null,
+                'car_engine_id' => $validated['car_engine_id'] ?? null,
             ]
         ]);
 
@@ -145,12 +132,41 @@ class UserSuggestionController extends Controller
     {
         $this->authorize('manage-suggestions');
         
-        $suggestions = UserSuggestion::with(['sparePart', 'analogSparePart', 'carModel', 'user'])
+        $suggestions = UserSuggestion::with(['sparePart', 'analogSparePart', 'carModel.brand', 'user'])
             ->where('status', 'pending')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
             
-        return view('admin.suggestions.index', compact('suggestions'));
+        // Для каждого предложения совместимости загружаем дополнительную информацию
+        foreach ($suggestions as $suggestion) {
+            if ($suggestion->suggestion_type === 'compatibility') {
+                // Если в данных есть ID двигателя, загружаем информацию о нем
+                if (!empty($suggestion->data['car_engine_id'])) {
+                    $engine = DB::table('car_engines')
+                        ->where('id', $suggestion->data['car_engine_id'])
+                        ->first();
+                    
+                    if ($engine) {
+                        $suggestion->engine = $engine;
+                    }
+                }
+                
+                // Если в данных есть ID бренда, загружаем информацию о нем
+                if (!empty($suggestion->data['car_brand_id'])) {
+                    $brand = DB::table('car_brands')
+                        ->where('id', $suggestion->data['car_brand_id'])
+                        ->first();
+                    
+                    if ($brand) {
+                        $suggestion->brand = $brand;
+                    }
+                }
+            }
+        }
+            
+        return Inertia::render('Admin/Suggestions/Index', [
+            'suggestions' => $suggestions,
+        ]);
     }
     
     /**
@@ -160,7 +176,39 @@ class UserSuggestionController extends Controller
     {
         $this->authorize('manage-suggestions');
         
-        return view('admin.suggestions.show', compact('suggestion'));
+        // Загружаем дополнительные связи для предложения совместимости
+        if ($suggestion->suggestion_type === 'compatibility') {
+            $suggestion->load(['carModel.brand']);
+            
+            // Если в данных есть ID двигателя, загружаем информацию о нем
+            if (!empty($suggestion->data['car_engine_id'])) {
+                $engine = DB::table('car_engines')
+                    ->where('id', $suggestion->data['car_engine_id'])
+                    ->first();
+                
+                if ($engine) {
+                    $suggestion->engine = $engine;
+                }
+            }
+            
+            // Если в данных есть ID бренда, загружаем информацию о нем
+            if (!empty($suggestion->data['car_brand_id'])) {
+                $brand = DB::table('car_brands')
+                    ->where('id', $suggestion->data['car_brand_id'])
+                    ->first();
+                
+                if ($brand) {
+                    $suggestion->brand = $brand;
+                }
+            }
+        }
+        
+        return Inertia::render('Admin/Suggestions/Show', [
+            'suggestion' => $suggestion,
+            'analogTypeText' => $suggestion->suggestion_type === 'analog' && isset($suggestion->data['analog_type']) 
+                ? ($suggestion->data['analog_type'] === 'direct' ? 'Прямой аналог' : 'Неполный аналог') 
+                : null,
+        ]);
     }
     
     /**
@@ -190,11 +238,33 @@ class UserSuggestionController extends Controller
                 'notes' => $suggestion->comment,
             ]);
         } elseif ($suggestion->isCompatibilitySuggestion()) {
-            SparePartCompatibility::create([
-                'spare_part_id' => $suggestion->spare_part_id,
-                'car_model_id' => $suggestion->car_model_id,
-                'notes' => $suggestion->comment,
-            ]);
+            // Если указан двигатель, создаем запись о совместимости только с двигателем
+            if (!empty($suggestion->data['car_engine_id'])) {
+                $engine = \App\Models\CarEngine::find($suggestion->data['car_engine_id']);
+                
+                if ($engine) {
+                    // Добавляем запись в таблицу car_engine_spare_part
+                    SparePart::find($suggestion->spare_part_id)->carEngines()->syncWithoutDetaching([
+                        $suggestion->data['car_engine_id'] => [
+                            'notes' => $suggestion->comment ?? null
+                        ]
+                    ]);
+                    
+                    \Log::info('Added engine compatibility record', [
+                        'spare_part_id' => $suggestion->spare_part_id,
+                        'car_engine_id' => $suggestion->data['car_engine_id']
+                    ]);
+                }
+            } else {
+                // Если двигатель не указан, создаем запись о совместимости только с моделью
+                $compatibilityData = [
+                    'spare_part_id' => $suggestion->spare_part_id,
+                    'car_model_id' => $suggestion->car_model_id,
+                    'notes' => $suggestion->comment,
+                ];
+                
+                SparePartCompatibility::create($compatibilityData);
+            }
         }
         
         return redirect()->route('admin.suggestions.index')

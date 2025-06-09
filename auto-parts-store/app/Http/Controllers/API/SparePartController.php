@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SparePart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class SparePartController extends Controller
 {
@@ -177,5 +178,42 @@ class SparePartController extends Controller
                 'related_parts' => $relatedParts
             ]
         ]);
+    }
+
+    /**
+     * Получить полную информацию о запчасти по ID
+     */
+    public function getFullInfo($id)
+    {
+        try {
+            $sparePart = SparePart::with('category')->find($id);
+            
+            if (!$sparePart) {
+                Log::warning("API: Запчасть с ID {$id} не найдена");
+                return response()->json(['error' => 'Запчасть не найдена'], 404);
+            }
+            
+            Log::info("API: Запрошена информация о запчасти с ID {$id}, Название: {$sparePart->name}");
+            
+            return response()->json([
+                'id' => $sparePart->id,
+                'name' => $sparePart->name,
+                'part_number' => $sparePart->part_number,
+                'manufacturer' => $sparePart->manufacturer,
+                'description' => $sparePart->description,
+                'price' => $sparePart->price,
+                'stock_quantity' => $sparePart->stock_quantity,
+                'category_id' => $sparePart->category_id,
+                'category' => $sparePart->category ? [
+                    'id' => $sparePart->category->id,
+                    'name' => $sparePart->category->name,
+                ] : null,
+                'is_available' => $sparePart->is_available,
+                'is_active' => $sparePart->is_active,
+            ]);
+        } catch (\Exception $e) {
+            Log::error("API: Ошибка при получении информации о запчасти с ID {$id}: " . $e->getMessage());
+            return response()->json(['error' => 'Произошла ошибка при получении данных'], 500);
+        }
     }
 } 

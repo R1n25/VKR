@@ -55,9 +55,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <NavLink href={route('brands.index')} active={route().current('brands.index')}>
                                     Бренды
                                 </NavLink>
-                                <NavLink href={route('categories.index')} active={route().current('categories.index')}>
-                                    Категории
-                                </NavLink>
                                 <NavLink href={route('news')} active={route().current('news')}>
                                     Новости
                                 </NavLink>
@@ -259,20 +256,6 @@ export default function AuthenticatedLayout({ header, children }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                             </svg>
                             Бренды
-                        </ResponsiveNavLink>
-                        <ResponsiveNavLink
-                            href={route('categories.index')}
-                            active={route().current('categories.index')}
-                            className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('categories.index')
-                                    ? 'bg-[#2a4075] text-white font-semibold'
-                                    : 'text-white hover:bg-indigo-900'
-                            }`}
-                        >
-                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                            </svg>
-                            Категории
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
                             href={route('news')}

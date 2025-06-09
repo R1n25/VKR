@@ -35,25 +35,63 @@
 
 <div class="mt-4">
     <h3 class="text-lg font-semibold">Совместимость с автомобилями</h3>
-    @if($sparePart->compatibilities->count() > 0)
+    @if($sparePart->compatibilities && $sparePart->compatibilities->count() > 0)
         <ul class="mt-2 space-y-2">
             @foreach($sparePart->compatibilities as $compatibility)
                 <li class="border-b pb-2">
-                    <span class="font-medium">{{ $compatibility->carModel->brand->name }} {{ $compatibility->carModel->name }}</span>
-                    @if($compatibility->start_year || $compatibility->end_year)
+                    @if(isset($compatibility['brand']) && isset($compatibility['model']))
+                        <span class="font-medium">{{ $compatibility['brand'] }} {{ $compatibility['model'] }}</span>
+                    @elseif(isset($compatibility->carModel))
+                        <span class="font-medium">{{ $compatibility->carModel->brand->name }} {{ $compatibility->carModel->name }}</span>
+                    @else
+                        <span class="font-medium">Универсальная совместимость</span>
+                    @endif
+                    
+                    @if(isset($compatibility['years']))
+                        <span class="text-sm text-gray-600">
+                            ({{ $compatibility['years'] }})
+                        </span>
+                    @elseif(isset($compatibility->start_year) || isset($compatibility->end_year))
                         <span class="text-sm text-gray-600">
                             (
-                            @if($compatibility->start_year && $compatibility->end_year)
+                            @if(isset($compatibility->start_year) && isset($compatibility->end_year))
                                 {{ $compatibility->start_year }} - {{ $compatibility->end_year }}
-                            @elseif($compatibility->start_year)
+                            @elseif(isset($compatibility->start_year))
                                 с {{ $compatibility->start_year }}
-                            @elseif($compatibility->end_year)
+                            @elseif(isset($compatibility->end_year))
                                 до {{ $compatibility->end_year }}
                             @endif
                             )
                         </span>
                     @endif
-                    @if($compatibility->notes)
+                    
+                    @if(isset($compatibility['engine']))
+                        <div class="text-sm text-gray-700">
+                            <strong>Двигатель:</strong> 
+                            @if(is_array($compatibility['engine']))
+                                {{ $compatibility['engine']['name'] ?? 'Н/Д' }}
+                                @if(isset($compatibility['engine']['volume']))
+                                    {{ $compatibility['engine']['volume'] }} л.
+                                @endif
+                                @if(isset($compatibility['engine']['power']))
+                                    {{ $compatibility['engine']['power'] }} л.с.
+                                @endif
+                                @if(isset($compatibility['engine']['fuel_type']))
+                                    ({{ $compatibility['engine']['fuel_type'] }})
+                                @endif
+                            @elseif(is_object($compatibility['engine']))
+                                {{ $compatibility['engine']->name ?? 'Н/Д' }}
+                            @endif
+                        </div>
+                    @elseif(isset($compatibility->carEngine))
+                        <div class="text-sm text-gray-700">
+                            <strong>Двигатель:</strong> {{ $compatibility->carEngine->name ?? 'Н/Д' }}
+                        </div>
+                    @endif
+                    
+                    @if(isset($compatibility['notes']))
+                        <p class="text-sm text-gray-600">{{ $compatibility['notes'] }}</p>
+                    @elseif(isset($compatibility->notes))
                         <p class="text-sm text-gray-600">{{ $compatibility->notes }}</p>
                     @endif
                 </li>
@@ -61,6 +99,12 @@
         </ul>
     @else
         <p class="text-gray-600">Информации о совместимости пока нет</p>
+        <div class="mt-3 p-3 bg-blue-50 border border-blue-200 rounded">
+            <p class="text-sm">
+                <span class="font-semibold">Знаете с какими автомобилями совместима эта запчасть?</span> 
+                Поделитесь своими знаниями и помогите другим пользователям!
+            </p>
+        </div>
     @endif
     
     <div class="mt-2">

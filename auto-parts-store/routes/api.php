@@ -75,8 +75,8 @@ Route::get('/spare-parts/{id}', [SparePartController::class, 'show']);
 Route::get('/spare-parts/{id}/quantity', [SparePartsSparePartController::class, 'getQuantity']);
 Route::get('/spare-parts/{id}/info', [SparePartsSparePartController::class, 'getInfo']);
 
-// Маршрут для получения информации о товаре (stock_quantity)
-Route::get('/spare-parts/{id}/stock', function ($id) {
+// Маршрут для получения полной информации о запчасти по ID
+Route::get('/spare-parts/{id}/full', function ($id) {
     $sparePart = \App\Models\SparePart::find($id);
     if (!$sparePart) {
         return response()->json(['error' => 'Запчасть не найдена'], 404);
@@ -85,8 +85,22 @@ Route::get('/spare-parts/{id}/stock', function ($id) {
     return response()->json([
         'id' => $sparePart->id,
         'name' => $sparePart->name,
+        'part_number' => $sparePart->part_number,
+        'manufacturer' => $sparePart->manufacturer,
+        'description' => $sparePart->description,
+        'price' => $sparePart->price,
         'stock_quantity' => $sparePart->stock_quantity,
-        'is_available' => $sparePart->stock_quantity > 0,
+        'category_id' => $sparePart->category_id,
+        'is_available' => $sparePart->is_available,
+    ]);
+});
+
+// Маршрут для проверки существования запчасти
+Route::get('/spare-parts/{id}/exists', function ($id) {
+    $exists = \App\Models\SparePart::where('id', $id)->exists();
+    return response()->json([
+        'exists' => $exists,
+        'id' => $id
     ]);
 });
 

@@ -1,13 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import PartCard from '@/Components/Parts/PartCard';
 import { formatPrice } from '@/utils/helpers';
+import axios from 'axios';
 
-export default function PartShow({ auth, part, similarParts = [], recommendedAnalogs = [] }) {
+export default function PartShow({ auth, part, similarParts = [], recommendedAnalogs = [], pendingSuggestions = [], pendingAnalogSuggestions = [] }) {
     const [quantity, setQuantity] = useState(1);
     const [addingToCart, setAddingToCart] = useState(false);
     const [message, setMessage] = useState({ text: '', type: '' });
+    const [localPendingSuggestions, setLocalPendingSuggestions] = useState(pendingSuggestions);
+    const [localPendingAnalogSuggestions, setLocalPendingAnalogSuggestions] = useState(pendingAnalogSuggestions);
+    const [processing, setProcessing] = useState(false);
     
     // Получаем информацию о пользователе и его роли
     const isAdmin = auth.user && auth.user.is_admin;
@@ -15,6 +19,17 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
     // Получаем ключ для localStorage в зависимости от пользователя
     const getStorageKey = () => {
         return auth.user ? `cart_${auth.user.id}` : 'cart_guest';
+    };
+
+    // Сохраняем CSRF-токен для использования в запросах
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    
+    // Функция для отображения уведомления
+    const showNotification = (text, type = 'success') => {
+        setMessage({ text, type });
+        setTimeout(() => {
+            setMessage({ text: '', type: '' });
+        }, 3000);
     };
 
     const handleQuantityChange = (e) => {
@@ -83,6 +98,129 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
     // Функция для предложения аналога
     const handleSuggestAnalog = () => {
         window.location.href = `/suggestions/analog/${part.id}`;
+    };
+
+    // Обработчик для одобрения предложения
+    // Добавляем функцию для безопасного получения CSRF токена
+    const getCsrfToken = () => {
+        // Пытаемся получить CSRF токен из мета-тегов
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        
+        // Если нет мета-тега, пробуем другие источники
+        // Inertia.js обычно хранит CSRF токен в глобальной переменной или в window.Laravel
+        if (window.Laravel && window.Laravel.csrfToken) {
+            return window.Laravel.csrfToken;
+        }
+        
+        // Возвращаем пустую строку, если не удалось найти токен
+        console.warn('CSRF токен не найден. Это может вызвать проблемы с безопасностью запросов.');
+        return '';
+    };
+    
+    const handleApprove = async (suggestionId, type) => {
+        if (processing) return;
+        
+        setProcessing(true);
+        try {
+            // Получаем CSRF токен безопасным способом
+            const csrfToken = getCsrfToken();
+            
+            const response = await axios({
+                method: 'POST',
+                url: `/admin/suggestions/${suggestionId}/approve`,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.status === 200) {
+                // Удалить одобренное предложение из списка ожидающих
+                if (type === 'compatibility') {
+                    setLocalPendingSuggestions(localPendingSuggestions.filter(s => s.id !== suggestionId));
+                } else if (type === 'analog') {
+                    setLocalPendingAnalogSuggestions(localPendingAnalogSuggestions.filter(s => s.id !== suggestionId));
+                }
+                
+                showNotification('Предложение успешно одобрено');
+                
+                // Обновляем страницу через небольшую задержку, чтобы увидеть результат
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        } catch (error) {
+            console.error('Ошибка при одобрении предложения:', error);
+            
+            // Детальный вывод ошибки
+            let errorMessage = 'Произошла ошибка при одобрении предложения';
+            
+            if (error.response) {
+                // Извлекаем сообщение об ошибке из ответа сервера
+                const serverError = error.response.data;
+                console.log('Серверная ошибка:', serverError);
+                
+                if (serverError.message) {
+                    errorMessage = `Ошибка сервера: ${serverError.message}`;
+                } else if (typeof serverError === 'string') {
+                    errorMessage = `Ошибка сервера: ${serverError}`;
+                }
+            } else if (error.request) {
+                // Запрос был сделан, но ответ не получен
+                errorMessage = 'Сервер не отвечает. Проверьте подключение к интернету.';
+            } else {
+                // Что-то пошло не так при настройке запроса
+                errorMessage = `Ошибка при настройке запроса: ${error.message}`;
+            }
+            
+            showNotification(errorMessage, 'error');
+        } finally {
+            setProcessing(false);
+        }
+    };
+    
+    // Обработчик для отклонения предложения
+    const handleReject = async (suggestionId, type) => {
+        if (processing) return;
+        
+        setProcessing(true);
+        try {
+            // Получаем CSRF токен безопасным способом
+            const csrfToken = getCsrfToken();
+            
+            const response = await axios({
+                method: 'POST',
+                url: `/admin/suggestions/${suggestionId}/reject`,
+                data: { admin_comment: 'Отклонено администратором' },
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.status === 200) {
+                // Удалить отклоненное предложение из списка ожидающих
+                if (type === 'compatibility') {
+                    setLocalPendingSuggestions(localPendingSuggestions.filter(s => s.id !== suggestionId));
+                } else if (type === 'analog') {
+                    setLocalPendingAnalogSuggestions(localPendingAnalogSuggestions.filter(s => s.id !== suggestionId));
+                }
+                
+                showNotification('Предложение успешно отклонено');
+            }
+        } catch (error) {
+            console.error('Ошибка при отклонении предложения:', error);
+            showNotification('Произошла ошибка при отклонении предложения', 'error');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     return (
@@ -230,6 +368,77 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                     <div className="mt-8">
                         <h2 className="text-xl font-semibold mb-4">Аналоги запчасти</h2>
                         
+                        {/* Неодобренные предложения аналогов (только для администраторов) */}
+                        {isAdmin && localPendingAnalogSuggestions.length > 0 && (
+                            <div className="mb-6">
+                                <h4 className="text-lg font-medium text-amber-700 mb-3">
+                                    Ожидающие проверки предложения аналогов ({localPendingAnalogSuggestions.length})
+                                </h4>
+                                
+                                <div className="bg-amber-50 rounded-lg p-4 mb-4">
+                                    <ul className="space-y-4">
+                                        {localPendingAnalogSuggestions.map(suggestion => (
+                                            <li key={suggestion.id} className="border-b border-amber-200 pb-4">
+                                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                                    <div>
+                                                        {suggestion.analogSparePart ? (
+                                                            <p className="font-medium">
+                                                                {suggestion.analogSparePart.name} ({suggestion.analogSparePart.part_number})
+                                                            </p>
+                                                        ) : (
+                                                            <p className="font-medium">
+                                                                {suggestion.data?.analog_brand} {suggestion.data?.analog_article}
+                                                                {suggestion.data?.analog_description && ` - ${suggestion.data.analog_description}`}
+                                                            </p>
+                                                        )}
+                                                        
+                                                        <p className="text-sm text-gray-600 mt-1">
+                                                            <span className="font-medium">Тип аналога: </span>
+                                                            {suggestion.data?.analog_type === 'direct' ? 'Прямой аналог' : 
+                                                             suggestion.data?.analog_type === 'indirect' ? 'Непрямой аналог' : 
+                                                             suggestion.data?.analog_type === 'universal' ? 'Универсальный аналог' : 'Неизвестный тип'}
+                                                        </p>
+                                                        
+                                                        {suggestion.comment && (
+                                                            <p className="text-sm text-gray-600 mt-1">
+                                                                <span className="font-medium">Комментарий: </span>
+                                                                {suggestion.comment}
+                                                            </p>
+                                                        )}
+                                                        
+                                                        <p className="text-xs text-gray-500 mt-2">
+                                                            Предложено: {suggestion.user?.name || 'Неизвестный пользователь'} 
+                                                            {suggestion.created_at && ` • ${new Date(suggestion.created_at).toLocaleDateString()}`}
+                                                        </p>
+                                                    </div>
+                                                    
+                                                    <div className="flex space-x-2 mt-2 md:mt-0">
+                                                        <button
+                                                            type="button"
+                                                            className={`px-3 py-1 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-colors ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            onClick={() => handleApprove(suggestion.id, 'analog')}
+                                                            disabled={processing}
+                                                        >
+                                                            Одобрить
+                                                        </button>
+                                                        
+                                                        <button
+                                                            type="button"
+                                                            className={`px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 transition-colors ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            onClick={() => handleReject(suggestion.id, 'analog')}
+                                                            disabled={processing}
+                                                        >
+                                                            Отклонить
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
+                        
                         {recommendedAnalogs && recommendedAnalogs.length > 0 ? (
                             <div>
                                 <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
@@ -278,15 +487,99 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                         <div className="p-6">
                             <h3 className="text-xl font-semibold mb-4">Совместимые автомобили</h3>
                             
+                            {/* Отладочная информация */}
+                            {/* <div className="bg-blue-50 p-2 mb-4 text-xs">
+                                <p>ID запчасти: {part.id}</p>
+                                <p>Совместимостей: {part.compatibilities ? part.compatibilities.length : 0}</p>
+                                <p>Данные совместимостей: {JSON.stringify(part.compatibilities)}</p>
+                            </div> */}
+                            
+                            {/* Неодобренные предложения совместимости (только для администраторов) */}
+                            {isAdmin && localPendingSuggestions.length > 0 && (
+                                <div className="mb-6">
+                                    <h4 className="text-lg font-medium text-amber-700 mb-3">
+                                        Ожидающие проверки предложения совместимости ({localPendingSuggestions.length})
+                                    </h4>
+                                    
+                                    <div className="bg-amber-50 rounded-lg p-4 mb-4">
+                                        <ul className="space-y-4">
+                                            {localPendingSuggestions.map(suggestion => (
+                                                <li key={suggestion.id} className="border-b border-amber-200 pb-4">
+                                                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                                                        <div>
+                                                            <p className="font-medium">
+                                                                {suggestion.carModel?.brand?.name} {suggestion.carModel?.name}
+                                                                {suggestion.carModel?.generation && ` (${suggestion.carModel.generation})`}
+                                                            </p>
+                                                            
+                                                            {suggestion.engine && (
+                                                                <p className="text-sm text-gray-600 mt-1">
+                                                                    <span className="font-medium">Двигатель: </span>
+                                                                    {suggestion.engine.name}
+                                                                    {suggestion.engine.volume && ` ${suggestion.engine.volume}`}
+                                                                    {suggestion.engine.power && ` (${suggestion.engine.power} л.с.)`}
+                                                                    {suggestion.engine.fuel_type && `, ${suggestion.engine.fuel_type}`}
+                                                                </p>
+                                                            )}
+                                                            
+                                                            {suggestion.comment && (
+                                                                <p className="text-sm text-gray-600 mt-1">
+                                                                    <span className="font-medium">Комментарий: </span>
+                                                                    {suggestion.comment}
+                                                                </p>
+                                                            )}
+                                                            
+                                                            <p className="text-xs text-gray-500 mt-2">
+                                                                Предложено: {suggestion.user?.name || 'Неизвестный пользователь'} 
+                                                                {suggestion.created_at && ` • ${new Date(suggestion.created_at).toLocaleDateString()}`}
+                                                            </p>
+                                                        </div>
+                                                        
+                                                        <div className="flex space-x-2 mt-2 md:mt-0">
+                                                            <button
+                                                                type="button"
+                                                                className={`px-3 py-1 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-colors ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                onClick={() => handleApprove(suggestion.id, 'compatibility')}
+                                                                disabled={processing}
+                                                            >
+                                                                Одобрить
+                                                            </button>
+                                                            
+                                                            <button
+                                                                type="button"
+                                                                className={`px-3 py-1 bg-red-600 text-white text-xs font-semibold rounded hover:bg-red-700 transition-colors ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                                onClick={() => handleReject(suggestion.id, 'compatibility')}
+                                                                disabled={processing}
+                                                            >
+                                                                Отклонить
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            )}
+                            
                             {part.compatibilities && part.compatibilities.length > 0 ? (
                                 <ul className="space-y-3 mb-4">
-                                    {part.compatibilities.map(compatibility => (
-                                        <li key={compatibility.id} className="border-b pb-2">
+                                    {part.compatibilities.map((compatibility, index) => (
+                                        <li key={compatibility.id || `compatibility-${index}`} className="border-b pb-2">
                                             <span className="font-medium">{compatibility.brand} {compatibility.model}</span>
                                             {compatibility.years && (
                                                 <span className="text-sm text-gray-600 ml-2">
                                                     ({compatibility.years})
                                                 </span>
+                                            )}
+                                            {compatibility.engine && (
+                                                <div className="text-sm text-gray-600 mt-1">
+                                                    <span className="font-medium">Двигатель: </span>
+                                                    {compatibility.engine.name}
+                                                    {compatibility.engine.volume && ` ${compatibility.engine.volume}`}
+                                                    {compatibility.engine.power && ` (${compatibility.engine.power} л.с.)`}
+                                                    {compatibility.engine.fuel_type && `, ${compatibility.engine.fuel_type}`}
+                                                </div>
                                             )}
                                             {compatibility.notes && (
                                                 <p className="text-sm text-gray-500 mt-1">{compatibility.notes}</p>
@@ -301,8 +594,13 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                             )}
                             
                             <div className="mt-4">
-                                <Link 
-                                    href={route('suggestions.create-compatibility', part.id)}
+                                <button 
+                                    onClick={() => {
+                                        // Сохраняем текущий URL, чтобы после успешного добавления 
+                                        // предложения мы могли вернуться на эту страницу
+                                        localStorage.setItem('returnToPartDetails', window.location.href);
+                                        window.location.href = route('suggestions.create-compatibility', part.id);
+                                    }}
                                     className="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:bg-blue-700 active:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
@@ -310,7 +608,7 @@ export default function PartShow({ auth, part, similarParts = [], recommendedAna
                                         <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1v-5h2a1 1 0 00.8-.4l3-4a1 1 0 00.2-.6V5a1 1 0 00-1-1H3z" />
                                     </svg>
                                     Предложить совместимость
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </div>

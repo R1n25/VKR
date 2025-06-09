@@ -1,14 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import axios from 'axios';
 
 export default function Show({ auth, suggestion, analogTypeText }) {
     const [isApproving, setIsApproving] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [sparePartData, setSparePartData] = useState(null);
+    const [analogSparePartData, setAnalogSparePartData] = useState(null);
+    
+    // Отладка данных
+    console.log('Suggestion data:', suggestion);
+    console.log('Original part:', suggestion.sparePart);
+    console.log('Analog part:', suggestion.analogSparePart);
+    console.log('Car model:', suggestion.carModel);
+    console.log('Suggestion type:', suggestion.suggestion_type);
+    console.log('Engine:', suggestion.engine);
+    
+    // Загружаем данные о запчастях при монтировании компонента
+    useEffect(() => {
+        // Если sparePart не загружен, но есть ID, сначала проверяем существование запчасти
+        if (!suggestion.sparePart && suggestion.spare_part_id) {
+            // Сначала проверяем, существует ли запчасть
+            fetch(`/api/spare-parts/${suggestion.spare_part_id}/exists`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Spare part exists check:', data);
+                    
+                    if (data.exists) {
+                        // Если запчасть существует, загружаем полные данные
+                        fetch(`/api/spare-parts/${suggestion.spare_part_id}/full`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Ошибка загрузки данных о запчасти');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('Loaded spare part data:', data);
+                                setSparePartData(data);
+                            })
+                            .catch(error => {
+                                console.error('Ошибка при загрузке данных о запчасти:', error);
+                            });
+                    } else {
+                        console.warn(`Запчасть с ID ${suggestion.spare_part_id} не существует в базе данных`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при проверке существования запчасти:', error);
+                });
+        }
+        
+        // Если analogSparePart не загружен, но есть ID, сначала проверяем существование запчасти-аналога
+        if (!suggestion.analogSparePart && suggestion.analog_spare_part_id) {
+            // Сначала проверяем, существует ли запчасть-аналог
+            fetch(`/api/spare-parts/${suggestion.analog_spare_part_id}/exists`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Analog spare part exists check:', data);
+                    
+                    if (data.exists) {
+                        // Если запчасть-аналог существует, загружаем полные данные
+                        fetch(`/api/spare-parts/${suggestion.analog_spare_part_id}/full`)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error('Ошибка загрузки данных о запчасти-аналоге');
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                console.log('Loaded analog spare part data:', data);
+                                setAnalogSparePartData(data);
+                            })
+                            .catch(error => {
+                                console.error('Ошибка при загрузке данных о запчасти-аналоге:', error);
+                            });
+                    } else {
+                        console.warn(`Запчасть-аналог с ID ${suggestion.analog_spare_part_id} не существует в базе данных`);
+                    }
+                })
+                .catch(error => {
+                    console.error('Ошибка при проверке существования запчасти-аналога:', error);
+                });
+        }
+    }, [suggestion]);
     
     const { data, setData, post, processing, reset, errors } = useForm({
         admin_comment: '',
@@ -48,24 +128,22 @@ export default function Show({ auth, suggestion, analogTypeText }) {
     
     const handleApprove = (e) => {
         e.preventDefault();
-        post(route('admin.suggestions.approve', suggestion.id), {
-            onSuccess: () => {
-                setIsApproving(false);
-                reset();
-                window.location.href = route('admin.suggestions.inertia');
-            },
-        });
+        
+        // Добавляем отладочную информацию
+        console.log('Approving suggestion:', suggestion.id);
+        
+        // Закрываем модальное окно, так как теперь у нас есть отдельная форма для одобрения
+        setIsApproving(false);
     };
     
     const handleReject = (e) => {
         e.preventDefault();
-        post(route('admin.suggestions.reject', suggestion.id), {
-            onSuccess: () => {
-                setIsRejecting(false);
-                reset();
-                window.location.href = route('admin.suggestions.inertia');
-            },
-        });
+        
+        // Добавляем отладочную информацию
+        console.log('Rejecting suggestion:', suggestion.id);
+        
+        // Отправляем форму для POST-запроса
+        document.getElementById('rejectForm').submit();
     };
     
     const handleDelete = (e) => {
@@ -88,6 +166,10 @@ export default function Show({ auth, suggestion, analogTypeText }) {
             console.error('Error:', error);
         });
     };
+    
+    // Определяем, какие данные о запчасти использовать (из отношения или из загруженных данных)
+    const actualSparePart = suggestion.sparePart || sparePartData;
+    const actualAnalogSparePart = suggestion.analogSparePart || analogSparePartData;
     
     return (
         <AdminLayout
@@ -172,14 +254,6 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                                                 <p className="text-sm text-gray-600">Email:</p>
                                                 <p className="font-semibold">{suggestion.user.email}</p>
                                             </div>
-                                            <div>
-                                                <Link 
-                                                    href={route('admin.users.edit', suggestion.user.id)} 
-                                                    className="text-sm text-indigo-600 hover:text-indigo-900"
-                                                >
-                                                    Профиль пользователя
-                                                </Link>
-                                            </div>
                                         </>
                                     ) : (
                                         <p className="text-gray-500">Информация о пользователе не найдена</p>
@@ -191,30 +265,149 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Информация о запчасти</h3>
                             <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                                {suggestion.sparePart ? (
+                                {actualSparePart ? (
                                     <>
                                         <div className="mb-4">
                                             <p className="text-sm text-gray-600">Название:</p>
-                                            <p className="font-semibold">{suggestion.sparePart.name}</p>
+                                            <p className="font-semibold">{actualSparePart.name}</p>
                                         </div>
                                         <div className="mb-4">
                                             <p className="text-sm text-gray-600">Артикул:</p>
-                                            <p className="font-semibold">{suggestion.sparePart.part_number}</p>
+                                            <p className="font-semibold">{actualSparePart.part_number}</p>
                                         </div>
-                                        <div>
-                                            <Link 
-                                                href={route('admin.spare-parts.show', suggestion.sparePart.id)} 
-                                                className="text-sm text-indigo-600 hover:text-indigo-900"
-                                            >
-                                                Посмотреть запчасть
-                                            </Link>
+                                        <div className="mb-4">
+                                            <h3 className="text-sm font-medium text-gray-600">Производитель:</h3>
+                                            <p className="font-semibold">{actualSparePart.manufacturer}</p>
+                                        </div>
+                                        
+                                        {/* Совместимость с автомобилем */}
+                                        <div className="mt-6 border-t pt-4">
+                                            <h3 className="text-base font-semibold mb-3">Совместимость с автомобилем:</h3>
+                                            
+                                            {(suggestion.carModel || suggestion.car_model_data) && (
+                                                <div className="bg-blue-50 p-3 rounded-md">
+                                                    {/* Информация о бренде */}
+                                                    <div className="mb-2">
+                                                        <span className="text-sm text-gray-600">Бренд:</span>{' '}
+                                                        <span className="font-semibold">
+                                                            {suggestion.carModel?.brand?.name || 
+                                                             suggestion.car_model_data?.brand?.name || 
+                                                             'Не указан'}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    {/* Информация о модели */}
+                                                    <div className="mb-2">
+                                                        <span className="text-sm text-gray-600">Модель:</span>{' '}
+                                                        <span className="font-semibold">
+                                                            {suggestion.carModel?.name || suggestion.car_model_data?.name}
+                                                            {(suggestion.carModel?.generation || suggestion.car_model_data?.generation) && 
+                                                                ` (${suggestion.carModel?.generation || suggestion.car_model_data?.generation})`}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                                                                            {/* Информация о двигателе */}
+                                                        {suggestion.engine && (
+                                                            <div className="mb-2">
+                                                                <span className="text-sm text-gray-600">Двигатель:</span>{' '}
+                                                                <span className="font-semibold">
+                                                                    {suggestion.engine.volume && `${suggestion.engine.volume}L `}
+                                                                    {suggestion.engine.power && `${suggestion.engine.power} л.с. `}
+                                                                    {suggestion.engine.fuel_type && `(${suggestion.engine.fuel_type})`}
+                                                                </span>
+                                                                {suggestion.engine.description && (
+                                                                    <p className="text-xs text-gray-500 mt-1">
+                                                                        {suggestion.engine.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                </div>
+                                            )}
+                                            
+                                            {!suggestion.carModel && !suggestion.car_model_data && suggestion.car_model_id && (
+                                                <div className="mb-2 bg-yellow-50 p-2 rounded">
+                                                    <p className="text-sm font-medium text-yellow-700 mb-1">
+                                                        Информация о модели загружается напрямую:
+                                                    </p>
+                                                    <p className="text-sm text-yellow-800">
+                                                        ID модели: {suggestion.car_model_id}
+                                                    </p>
+                                                    <button 
+                                                        onClick={() => window.location.reload()}
+                                                        className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
+                                                    >
+                                                        Обновить страницу
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     </>
+                                ) : suggestion.spare_part_id ? (
+                                    <div className="p-3 bg-yellow-50 rounded-md">
+                                        <p className="text-yellow-800">
+                                            <span className="font-semibold">ID запчасти:</span> {suggestion.spare_part_id}
+                                        </p>
+                                        <p className="text-yellow-800 mt-2">Проверка наличия запчасти в базе данных...</p>
+                                    </div>
                                 ) : (
                                     <p className="text-gray-500">Информация о запчасти не найдена</p>
                                 )}
                             </div>
                         </div>
+                        
+                        {suggestion.suggestion_type === 'analog' && (
+                            <div className="mb-8">
+                                <h3 className="text-lg font-semibold mb-4">Информация о запчасти-аналоге</h3>
+                                <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                                    {actualAnalogSparePart ? (
+                                        <>
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Название:</p>
+                                                <p className="font-semibold">{actualAnalogSparePart.name}</p>
+                                            </div>
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Артикул:</p>
+                                                <p className="font-semibold">{actualAnalogSparePart.part_number}</p>
+                                            </div>
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Производитель:</p>
+                                                <p className="font-semibold">{actualAnalogSparePart.manufacturer}</p>
+                                            </div>
+                                        </>
+                                    ) : suggestion.analog_spare_part_id ? (
+                                        <div className="p-3 bg-yellow-50 rounded-md">
+                                            <p className="text-yellow-800">
+                                                <span className="font-semibold">ID запчасти-аналога:</span> {suggestion.analog_spare_part_id}
+                                            </p>
+                                            <p className="text-yellow-800 mt-2">Проверка наличия запчасти-аналога в базе данных...</p>
+                                        </div>
+                                    ) : suggestion.data?.analog_article ? (
+                                        <>
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Артикул:</p>
+                                                <p className="font-semibold">{suggestion.data.analog_article}</p>
+                                            </div>
+                                            <div className="mb-4">
+                                                <p className="text-sm text-gray-600">Производитель:</p>
+                                                <p className="font-semibold">{suggestion.data.analog_brand || 'Не указан'}</p>
+                                            </div>
+                                            {suggestion.data.analog_description && (
+                                                <div className="mb-4">
+                                                    <p className="text-sm text-gray-600">Описание:</p>
+                                                    <p className="font-semibold">{suggestion.data.analog_description}</p>
+                                                </div>
+                                            )}
+                                            <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md">
+                                                <p className="text-sm">Запчасть-аналог еще не существует в базе данных и будет создана при одобрении.</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-gray-500">Информация о запчасти-аналоге не найдена</p>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Содержание предложения</h3>
@@ -225,51 +418,10 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                                             <p className="text-sm text-gray-600">Тип аналога:</p>
                                             <p className="font-semibold">{analogTypeText}</p>
                                         </div>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-gray-600">Предлагаемый аналог (артикул):</p>
-                                            <p className="font-semibold">
-                                                {suggestion.analogSparePart ? 
-                                                    suggestion.analogSparePart.part_number : 
-                                                    suggestion.data?.analog_article || 'Не указан'}
-                                            </p>
-                                        </div>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-gray-600">Производитель аналога:</p>
-                                            <p className="font-semibold">
-                                                {suggestion.analogSparePart ? 
-                                                    suggestion.analogSparePart.manufacturer : 
-                                                    suggestion.data?.analog_brand || 'Не указан'}
-                                            </p>
-                                        </div>
-                                        {suggestion.data?.analog_description && (
-                                            <div className="mb-4">
-                                                <p className="text-sm text-gray-600">Описание:</p>
-                                                <p className="font-semibold">{suggestion.data.analog_description}</p>
-                                            </div>
-                                        )}
                                     </>
                                 )}
                                 
-                                {suggestion.suggestion_type === 'compatibility' && suggestion.carModel && (
-                                    <>
-                                        <div className="mb-4">
-                                            <p className="text-sm text-gray-600">Совместимая модель:</p>
-                                            <p className="font-semibold">
-                                                {suggestion.carModel.brand ? 
-                                                    `${suggestion.carModel.brand.name} ${suggestion.carModel.name}` : 
-                                                    suggestion.carModel.name}
-                                            </p>
-                                        </div>
-                                        {suggestion.data && (suggestion.data.start_year || suggestion.data.end_year) && (
-                                            <div className="mb-4">
-                                                <p className="text-sm text-gray-600">Годы выпуска:</p>
-                                                <p className="font-semibold">
-                                                    {suggestion.data.start_year || '-'} - {suggestion.data.end_year || 'н.в.'}
-                                                </p>
-                                            </div>
-                                        )}
-                                    </>
-                                )}
+                                {/* Информация о совместимости перенесена в блок запчасти */}
                                 
                                 <div className="mb-4">
                                     <p className="text-sm text-gray-600">Комментарий пользователя:</p>
@@ -287,15 +439,18 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                         
                         {suggestion.status === 'pending' && (
                             <div className="flex space-x-4">
-                                <button
-                                    onClick={() => setIsApproving(true)}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                    Одобрить
-                                </button>
+                                <form method="POST" action={route('admin.suggestions.approve', suggestion.id)}>
+                                    <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')} />
+                                    <button
+                                        type="submit"
+                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Одобрить
+                                    </button>
+                                </form>
                                 
                                 <button
                                     onClick={() => setIsRejecting(true)}
@@ -347,15 +502,20 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                 confirmText="Отклонить"
                 confirmButtonClass="bg-red-600 hover:bg-red-700"
             >
-                <p className="mb-4">Укажите причину отклонения предложения:</p>
-                <textarea
-                    value={data.admin_comment}
-                    onChange={e => setData('admin_comment', e.target.value)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                    rows="3"
-                    placeholder="Причина отклонения"
-                ></textarea>
-                {errors.admin_comment && <div className="text-red-500 text-sm mt-1">{errors.admin_comment}</div>}
+                <form id="rejectForm" method="POST" action={route('admin.suggestions.reject', suggestion.id)}>
+                    <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')} />
+                    
+                    <p className="mb-4">Укажите причину отклонения предложения:</p>
+                    <textarea
+                        name="admin_comment"
+                        value={data.admin_comment}
+                        onChange={e => setData('admin_comment', e.target.value)}
+                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                        rows="3"
+                        placeholder="Причина отклонения"
+                    ></textarea>
+                    {errors.admin_comment && <div className="text-red-500 text-sm mt-1">{errors.admin_comment}</div>}
+                </form>
             </ConfirmationModal>
             
             {/* Модальное окно для удаления */}

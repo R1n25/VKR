@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { FormattedPrice } from '@/utils/helpers';
 import axios from 'axios';
 import AddToCartButton from '@/Components/AddToCartButton';
 
 const Show = ({ auth, sparePart, isAdmin }) => {
+    const { flash } = usePage().props;
     const [analogs, setAnalogs] = useState([]);
     const [loading, setLoading] = useState(false);
     const [partData, setPartData] = useState(sparePart);
     const [quantityLoading, setQuantityLoading] = useState(false);
     const [availableQuantity, setAvailableQuantity] = useState(0);
     const [isAvailable, setIsAvailable] = useState(false);
+    const [showSuccessMessage, setShowSuccessMessage] = useState(!!flash?.success);
 
     useEffect(() => {
         loadAnalogs();
@@ -32,6 +34,16 @@ const Show = ({ auth, sparePart, isAdmin }) => {
             window.removeEventListener('productUpdated', handleProductUpdate);
         };
     }, [sparePart.part_number, sparePart.id]);
+
+    // Скрываем сообщение об успехе через 5 секунд
+    useEffect(() => {
+        if (showSuccessMessage) {
+            const timer = setTimeout(() => {
+                setShowSuccessMessage(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [showSuccessMessage]);
 
     // Функция для обновления количества товара
     const updateQuantity = async () => {
@@ -81,6 +93,22 @@ const Show = ({ auth, sparePart, isAdmin }) => {
             <Head title={sparePart.name} />
             
             <div className="container mx-auto px-4 py-8">
+                {showSuccessMessage && flash.success && (
+                    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4 flex items-center justify-between" role="alert">
+                        <div className="flex items-center">
+                            <svg className="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span>{flash.success}</span>
+                        </div>
+                        <button onClick={() => setShowSuccessMessage(false)} className="ml-4">
+                            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                )}
+                
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
                     <div className="md:flex">
                         <div className="md:w-1/3 p-4">

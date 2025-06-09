@@ -430,7 +430,9 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/suggestions-inertia', [App\Http\Controllers\Admin\SuggestionController::class, 'indexInertia'])->name('suggestions.inertia');
     Route::get('/suggestions-show-inertia/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'showInertia'])->name('suggestions.show-inertia')->whereNumber('suggestion');
     Route::get('/suggestions', [App\Http\Controllers\Admin\SuggestionController::class, 'index'])->name('suggestions.index');
-    Route::get('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'show'])->name('suggestions.show');
+    Route::get('/suggestions/{suggestion}', function($suggestion) {
+        return redirect()->route('admin.suggestions.show-inertia', $suggestion);
+    })->name('suggestions.show');
     Route::post('/suggestions/{suggestion}/approve', [App\Http\Controllers\Admin\SuggestionController::class, 'approve'])->name('suggestions.approve');
     Route::post('/suggestions/{suggestion}/reject', [App\Http\Controllers\Admin\SuggestionController::class, 'reject'])->name('suggestions.reject');
     Route::delete('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'destroy'])->name('suggestions.destroy');

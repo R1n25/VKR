@@ -129,9 +129,6 @@ export default function Orders({ auth, orders }) {
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     Статус заказа
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
-                                                    Статус оплаты
-                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
@@ -171,17 +168,12 @@ export default function Orders({ auth, orders }) {
                                                                 {getStatusText(order.status)}
                                                             </span>
                                                         </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className={`badge ${getPaymentStatusClass(order.payment_status)}`}>
-                                                                {getPaymentStatusText(order.payment_status)}
-                                                            </span>
-                                                        </td>
                                                     </tr>
                                                     
                                                     {/* Развернутые детали заказа */}
                                                     {expandedOrders[order.id] && order.order_items && order.order_items.length > 0 && (
                                                         <tr>
-                                                            <td colSpan="7" className="px-6 py-4 bg-gray-50 animate-fade-in">
+                                                            <td colSpan="6" className="px-6 py-4 bg-gray-50 animate-fade-in">
                                                                 <div className="border-t border-gray-200 pt-4">
                                                                     <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                                                                         <svg className="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -219,11 +211,12 @@ export default function Orders({ auth, orders }) {
                                                                                         <td className="px-4 py-2 text-sm text-gray-900">
                                                                                             {item.name}
                                                                                         </td>
-                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
-                                                                                            {item.sku}
+                                                                                        <td className="px-4 py-2 text-sm font-mono text-gray-700">
+                                                                                            {item.part_number || item.sku || (item.product && item.product.sku) || 'Н/Д'}
                                                                                         </td>
-                                                                                        <td className="px-4 py-2 text-sm text-gray-500">
-                                                                                            {item.brand}
+                                                                                        <td className="px-4 py-2 text-sm font-semibold text-gray-700">
+                                                                                            {item.manufacturer || (item.spare_part && item.spare_part.manufacturer) || 
+                                                                                            (item.product && item.product.brand && item.product.brand.name) || 'Н/Д'}
                                                                                         </td>
                                                                                         <td className="px-4 py-2 text-sm text-gray-500">
                                                                                             {Number(item.price).toFixed(2)} руб.

@@ -54,12 +54,73 @@ class SparePartService
      */
     public function getSparePartById(int $id, bool $isAdmin = false, ?float $markupPercent = null)
     {
-        $sparePart = SparePart::with(['carModels', 'category'])->find($id);
+        // Загружаем запчасть с отношениями
+        $sparePart = SparePart::with([
+            'carModels', 
+            'category',
+            'compatibilities.carModel.brand',  // Добавляем загрузку совместимостей
+            'compatibilities.carEngine'        // и связанных двигателей
+        ])->find($id);
         
         if ($sparePart) {
             // Если наценка не указана, используем наценку текущего пользователя или значение по умолчанию
             if ($markupPercent === null) {
                 $markupPercent = $this->getUserMarkupPercent();
+            }
+            
+            // Форматируем данные о совместимости для удобного отображения
+            if ($sparePart->relationLoaded('compatibilities') && $sparePart->compatibilities->count() > 0) {
+                $formattedCompatibilities = [];
+                
+                foreach ($sparePart->compatibilities as $compatibility) {
+                    if ($compatibility->carModel) {
+                        $formattedCompatibility = [
+                            'id' => $compatibility->id,
+                            'model' => $compatibility->carModel->name,
+                            'brand' => $compatibility->carModel->brand ? $compatibility->carModel->brand->name : 'Неизвестный бренд',
+                            'notes' => $compatibility->notes,
+                        ];
+                        
+                        // Добавляем информацию о годах выпуска, если она есть
+                        if ($compatibility->start_year || $compatibility->end_year) {
+                            $years = '';
+                            if ($compatibility->start_year) {
+                                $years .= $compatibility->start_year;
+                            }
+                            $years .= ' - ';
+                            if ($compatibility->end_year) {
+                                $years .= $compatibility->end_year;
+                            } else {
+                                $years .= 'н.в.';
+                            }
+                            $formattedCompatibility['years'] = $years;
+                        }
+                        
+                        // Добавляем информацию о двигателе, если она есть
+                        if ($compatibility->carEngine) {
+                            $formattedCompatibility['engine'] = [
+                                'id' => $compatibility->carEngine->id,
+                                'name' => $compatibility->carEngine->name,
+                                'volume' => $compatibility->carEngine->volume,
+                                'power' => $compatibility->carEngine->power,
+                                'fuel_type' => $compatibility->carEngine->fuel_type,
+                            ];
+                        }
+                        
+                        $formattedCompatibilities[] = $formattedCompatibility;
+                    }
+                }
+                
+                // Добавляем отформатированные данные о совместимости
+                $sparePart->compatibilities = $formattedCompatibilities;
+                
+                // Добавляем отладочную информацию
+                \Log::info("Загружены данные о совместимости для запчасти ID: {$id}", [
+                    'count' => count($formattedCompatibilities)
+                ]);
+            } else {
+                $sparePart->compatibilities = [];
+                \Log::info("Нет данных о совместимости для запчасти ID: {$id}");
             }
             
             $this->formatSparePartWithPrice($sparePart, $isAdmin, $markupPercent);

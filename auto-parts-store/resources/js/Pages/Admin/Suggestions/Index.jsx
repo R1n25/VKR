@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
@@ -15,6 +15,7 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
 import InfoButton from '@/Components/InfoButton';
+import axios from 'axios';
 
 export default function Index({ auth, suggestions }) {
     const [statusFilter, setStatusFilter] = useState('');
@@ -24,13 +25,43 @@ export default function Index({ auth, suggestions }) {
     const [isApproving, setIsApproving] = useState(false);
     const [isRejecting, setIsRejecting] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [localSuggestions, setLocalSuggestions] = useState(suggestions);
+    const [processing, setProcessing] = useState(false);
+    const [message, setMessage] = useState({ text: '', type: '' });
     
-    const { data, setData, post, processing, reset, errors } = useForm({
+    // Добавляем функцию для безопасного получения CSRF токена
+    const getCsrfToken = () => {
+        // Пытаемся получить CSRF токен из мета-тегов
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag) {
+            return metaTag.getAttribute('content');
+        }
+        
+        // Если нет мета-тега, пробуем другие источники
+        // Inertia.js обычно хранит CSRF токен в глобальной переменной или в window.Laravel
+        if (window.Laravel && window.Laravel.csrfToken) {
+            return window.Laravel.csrfToken;
+        }
+        
+        // Возвращаем пустую строку, если не удалось найти токен
+        console.warn('CSRF токен не найден. Это может вызвать проблемы с безопасностью запросов.');
+        return '';
+    };
+
+    // Функция для отображения уведомления
+    const showNotification = (text, type = 'success') => {
+        setMessage({ text, type });
+        setTimeout(() => {
+            setMessage({ text: '', type: '' });
+        }, 3000);
+    };
+    
+    const { data, setData, reset, errors } = useForm({
         admin_comment: '',
     });
 
     // Фильтрация предложений
-    const filteredSuggestions = suggestions.filter(suggestion => {
+    const filteredSuggestions = localSuggestions.filter(suggestion => {
         let matchesStatus = true;
         let matchesType = true;
         let matchesSearch = true;
@@ -98,53 +129,124 @@ export default function Index({ auth, suggestions }) {
         return format(date, 'dd.MM.yyyy HH:mm');
     };
     
-    const handleApprove = () => {
-        if (!selectedSuggestion) return;
+    const handleApprove = async () => {
+        if (!selectedSuggestion || processing) return;
         
-        post(route('admin.suggestions.approve', selectedSuggestion.id), {
-            onSuccess: () => {
+        setProcessing(true);
+        try {
+            // Получаем CSRF токен безопасным способом
+            const csrfToken = getCsrfToken();
+            
+            const response = await axios({
+                method: 'POST',
+                url: `/admin/suggestions/${selectedSuggestion.id}/approve`,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.status === 200) {
+                // Обновляем локальное состояние
+                setLocalSuggestions(localSuggestions.map(suggestion => 
+                    suggestion.id === selectedSuggestion.id 
+                        ? {...suggestion, status: 'approved', approved_at: new Date().toISOString(), approved_by: auth.user.id} 
+                        : suggestion
+                ));
+                
                 setIsApproving(false);
                 setSelectedSuggestion(null);
                 reset();
-                window.location.reload();
-            },
-        });
+                showNotification('Предложение успешно одобрено');
+            }
+        } catch (error) {
+            console.error('Ошибка при одобрении предложения:', error);
+            showNotification('Произошла ошибка при одобрении предложения', 'error');
+        } finally {
+            setProcessing(false);
+        }
     };
     
-    const handleReject = () => {
-        if (!selectedSuggestion) return;
+    const handleReject = async () => {
+        if (!selectedSuggestion || processing) return;
         
-        post(route('admin.suggestions.reject', selectedSuggestion.id), {
-            onSuccess: () => {
+        setProcessing(true);
+        try {
+            // Получаем CSRF токен безопасным способом
+            const csrfToken = getCsrfToken();
+            
+            const response = await axios({
+                method: 'POST',
+                url: `/admin/suggestions/${selectedSuggestion.id}/reject`,
+                data: { admin_comment: data.admin_comment || 'Отклонено администратором' },
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.status === 200) {
+                // Обновляем локальное состояние
+                setLocalSuggestions(localSuggestions.map(suggestion => 
+                    suggestion.id === selectedSuggestion.id 
+                        ? {...suggestion, status: 'rejected', approved_at: new Date().toISOString(), approved_by: auth.user.id, admin_comment: data.admin_comment || 'Отклонено администратором'} 
+                        : suggestion
+                ));
+                
                 setIsRejecting(false);
                 setSelectedSuggestion(null);
                 reset();
-                window.location.reload();
-            },
-        });
+                showNotification('Предложение успешно отклонено');
+            }
+        } catch (error) {
+            console.error('Ошибка при отклонении предложения:', error);
+            showNotification('Произошла ошибка при отклонении предложения', 'error');
+        } finally {
+            setProcessing(false);
+        }
     };
     
-    const handleDelete = () => {
-        if (!selectedSuggestion) return;
+    const handleDelete = async () => {
+        if (!selectedSuggestion || processing) return;
         
-        const formData = new FormData();
-        formData.append('_method', 'DELETE');
-        
-        fetch(route('admin.suggestions.destroy', selectedSuggestion.id), {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-            }
-        }).then(response => {
-            if (response.ok) {
+        setProcessing(true);
+        try {
+            // Получаем CSRF токен безопасным способом
+            const csrfToken = getCsrfToken();
+            
+            // Для Laravel необходимо отправлять DELETE как POST с параметром _method=DELETE
+            const formData = new FormData();
+            formData.append('_method', 'DELETE');
+            
+            const response = await axios({
+                method: 'POST',
+                url: `/admin/suggestions/${selectedSuggestion.id}`,
+                data: formData,
+                headers: {
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            
+            if (response.status === 200) {
+                // Обновляем локальное состояние
+                setLocalSuggestions(localSuggestions.filter(suggestion => suggestion.id !== selectedSuggestion.id));
+                
                 setIsDeleting(false);
                 setSelectedSuggestion(null);
-                window.location.reload();
+                showNotification('Предложение успешно удалено');
             }
-        }).catch(error => {
-            console.error('Error:', error);
-        });
+        } catch (error) {
+            console.error('Ошибка при удалении предложения:', error);
+            showNotification('Произошла ошибка при удалении предложения', 'error');
+        } finally {
+            setProcessing(false);
+        }
     };
 
     // Функция сброса фильтров
@@ -163,6 +265,13 @@ export default function Index({ auth, suggestions }) {
 
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Сообщение об успешном действии */}
+                    {message.text && (
+                        <div className={`mb-4 p-4 rounded-md ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                            {message.text}
+                        </div>
+                    )}
+                    
                     <AdminCard>
                         <AdminPageHeader 
                             title="Предложения пользователей" 
@@ -250,6 +359,20 @@ export default function Index({ auth, suggestions }) {
                                             <div>
                                                 <div>{suggestion.sparePart.part_number}</div>
                                                 <div className="text-xs text-gray-400">{suggestion.sparePart.name}</div>
+                                                {suggestion.suggestion_type === 'analog' && suggestion.analogSparePart && (
+                                                    <div className="mt-1">
+                                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                                            Аналог: {suggestion.analogSparePart.part_number}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {suggestion.suggestion_type === 'analog' && !suggestion.analogSparePart && suggestion.data?.analog_article && (
+                                                    <div className="mt-1">
+                                                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full">
+                                                            Аналог: {suggestion.data.analog_article}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : '-'}
                                     </td>
@@ -257,6 +380,14 @@ export default function Index({ auth, suggestions }) {
                                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadgeClass(suggestion.status)}`}>
                                             {getStatusText(suggestion.status)}
                                         </span>
+                                        {suggestion.suggestion_type === 'compatibility' && (
+                                            <div className="mt-1 text-xs text-gray-500">
+                                                {suggestion.brand ? suggestion.brand.name : 
+                                                 (suggestion.carModel?.brand ? suggestion.carModel.brand.name : '')}
+                                                {suggestion.carModel ? ` ${suggestion.carModel.name}` : ''}
+                                                {suggestion.engine ? ` (${suggestion.engine.name})` : ''}
+                                            </div>
+                                        )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(suggestion.created_at)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -278,8 +409,9 @@ export default function Index({ auth, suggestions }) {
                                                             setSelectedSuggestion(suggestion);
                                                             setIsApproving(true);
                                                         }}
-                                                        className="text-green-600 hover:text-green-900"
+                                                        className={`text-green-600 hover:text-green-900 ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         title="Одобрить"
+                                                        disabled={processing}
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -290,8 +422,9 @@ export default function Index({ auth, suggestions }) {
                                                             setSelectedSuggestion(suggestion);
                                                             setIsRejecting(true);
                                                         }}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        className={`text-red-600 hover:text-red-900 ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         title="Отклонить"
+                                                        disabled={processing}
                                                     >
                                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

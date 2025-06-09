@@ -182,6 +182,44 @@ export default function Show({ auth, sparePart }) {
                                     </div>
                                 </AdminCard>
 
+                                {/* Совместимость с двигателями */}
+                                <AdminCard className="!p-0">
+                                    <div className="p-4">
+                                        <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимость с двигателями</h2>
+                                        {sparePart.engine_compatibilities && sparePart.engine_compatibilities.length > 0 ? (
+                                            <div className="space-y-3">
+                                                {sparePart.engine_compatibilities.map((compatibility, index) => (
+                                                    <div key={compatibility.id || `engine-compat-${index}`} className="border-b pb-2">
+                                                        <div className="font-medium">{compatibility.brand} {compatibility.model}</div>
+                                                        {compatibility.years && (
+                                                            <div className="text-sm text-gray-600">
+                                                                Годы выпуска: {compatibility.years}
+                                                            </div>
+                                                        )}
+                                                        {compatibility.engine && (
+                                                            <div className="text-sm text-gray-600">
+                                                                <span className="font-medium">Двигатель: </span>
+                                                                {compatibility.engine.name}
+                                                                {compatibility.engine.volume && ` ${compatibility.engine.volume}`}
+                                                                {compatibility.engine.power && ` (${compatibility.engine.power} л.с.)`}
+                                                                {compatibility.engine.fuel_type && `, ${compatibility.engine.fuel_type}`}
+                                                            </div>
+                                                        )}
+                                                        {compatibility.notes && (
+                                                            <div className="text-sm text-gray-500 mt-1">
+                                                                <span className="font-medium">Примечание: </span>
+                                                                {compatibility.notes}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <p className="text-gray-500">Нет данных о совместимости с двигателями</p>
+                                        )}
+                                    </div>
+                                </AdminCard>
+
                                 {/* Аналоги */}
                                 <AdminCard className="!p-0">
                                     <div className="p-4">

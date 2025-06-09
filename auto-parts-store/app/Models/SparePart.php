@@ -152,23 +152,20 @@ class SparePart extends Model
     }
 
     /**
-     * Проверить, совместима ли запчасть с указанной моделью автомобиля и годом выпуска
+     * Проверить, совместима ли запчасть с указанной моделью автомобиля и двигателем
      */
-    public function isCompatibleWith($carModelId, $year = null)
+    public function isCompatibleWith($carModelId, $carEngineId = null)
     {
-        $compatibility = $this->compatibilities()
-                              ->where('car_model_id', $carModelId)
-                              ->first();
+        $query = $this->compatibilities()
+                      ->where('car_model_id', $carModelId);
         
-        if (!$compatibility) {
-            return false;
+        if ($carEngineId !== null) {
+            // Если указан двигатель, ищем точное соответствие
+            return $query->where('car_engine_id', $carEngineId)->exists();
         }
         
-        if ($year === null) {
-            return true;
-        }
-        
-        return $compatibility->isCompatibleWithYear($year);
+        // Если двигатель не указан, ищем любую совместимость с моделью
+        return $query->exists();
     }
 
     /**
@@ -186,12 +183,11 @@ class SparePart extends Model
     /**
      * Добавить совместимость с моделью автомобиля
      */
-    public function addCompatibility($carModelId, $startYear = null, $endYear = null, $notes = null)
+    public function addCompatibility($carModelId, $carEngineId = null, $notes = null)
     {
         return $this->compatibilities()->create([
             'car_model_id' => $carModelId,
-            'start_year' => $startYear,
-            'end_year' => $endYear,
+            'car_engine_id' => $carEngineId,
             'notes' => $notes,
         ]);
     }

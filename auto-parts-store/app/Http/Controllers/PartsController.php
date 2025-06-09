@@ -8,6 +8,7 @@ use App\Services\SparePartService;
 use App\Services\BrandService;
 use App\Services\CategoryService;
 use App\Models\SparePart;
+use Illuminate\Support\Facades\DB;
 
 class PartsController extends Controller
 {
@@ -53,8 +54,144 @@ class PartsController extends Controller
             $part->category_name = 'Без категории';
         }
         
+        // Загружаем данные о совместимости
+        // Сначала из таблицы SparePartCompatibility
+        $compatibilities = \App\Models\SparePartCompatibility::where('spare_part_id', $id)
+            ->where('is_verified', true)
+            ->whereNull('car_engine_id') // Берем только записи без двигателя
+            ->with(['carModel.brand', 'carEngine'])
+            ->get()
+            ->map(function ($compatibility) {
+                // Формируем годы в виде диапазона, если указаны
+                $years = null;
+                if ($compatibility->start_year || $compatibility->end_year) {
+                    if ($compatibility->start_year && $compatibility->end_year) {
+                        $years = $compatibility->start_year . '-' . $compatibility->end_year;
+                    } elseif ($compatibility->start_year) {
+                        $years = 'с ' . $compatibility->start_year;
+                    } else {
+                        $years = 'до ' . $compatibility->end_year;
+                    }
+                }
+                
+                return [
+                    'id' => $compatibility->id,
+                    'brand' => $compatibility->carModel->brand->name,
+                    'model' => $compatibility->carModel->name,
+                    'years' => $years,
+                    'engine' => $compatibility->carEngine,
+                    'notes' => $compatibility->notes
+                ];
+            });
+        
+        // Затем добавляем данные из таблицы car_engine_spare_part
+        try {
+            \Log::info('Выполняем запрос для получения совместимости двигателей для запчасти ID: ' . $id);
+            
+            // Получаем все записи из car_engine_spare_part для данной запчасти
+            $engineSparePartRecords = DB::table('car_engine_spare_part')
+                ->where('spare_part_id', $id)
+                ->get();
+                
+            \Log::info('Найдено записей car_engine_spare_part: ' . $engineSparePartRecords->count());
+            
+            // Если записи найдены, получаем данные о двигателях
+            $engineCompatibilities = collect();
+            
+            if ($engineSparePartRecords->count() > 0) {
+                // Получаем ID двигателей
+                $engineIds = $engineSparePartRecords->pluck('car_engine_id')->toArray();
+                \Log::info('ID двигателей: ' . implode(', ', $engineIds));
+                
+                // Получаем данные о двигателях
+                $engines = DB::table('car_engines')
+                    ->whereIn('id', $engineIds)
+                    ->get();
+                    
+                \Log::info('Найдено двигателей: ' . $engines->count());
+                
+                // Создаем словарь для быстрого поиска двигателей по ID
+                $enginesById = [];
+                foreach ($engines as $engine) {
+                    $enginesById[$engine->id] = $engine;
+                }
+                
+                // Создаем записи совместимости
+                foreach ($engineSparePartRecords as $record) {
+                    if (isset($enginesById[$record->car_engine_id])) {
+                        $engine = $enginesById[$record->car_engine_id];
+                        
+                        // Получаем данные о модели автомобиля
+                        $carModel = null;
+                        try {
+                            $carModel = DB::table('car_models')
+                                ->join('car_brands', 'car_models.brand_id', '=', 'car_brands.id')
+                                ->where('car_models.id', $engine->model_id)
+                                ->select(
+                                    'car_models.id',
+                                    'car_models.name as model_name',
+                                    'car_brands.name as brand_name'
+                                )
+                                ->first();
+                        } catch (\Exception $e) {
+                            \Log::warning('Не удалось получить данные о модели автомобиля: ' . $e->getMessage());
+                        }
+                        
+                        $engineData = [
+                            'name' => $engine->name ?? 'Неизвестный двигатель',
+                            'volume' => $engine->volume,
+                            'power' => $engine->power,
+                            'fuel_type' => $engine->type
+                        ];
+                        
+                        $years = null;
+                        if ($engine->year_start || $engine->year_end) {
+                            if ($engine->year_start && $engine->year_end) {
+                                $years = $engine->year_start . '-' . $engine->year_end;
+                            } elseif ($engine->year_start) {
+                                $years = 'с ' . $engine->year_start;
+                            } else {
+                                $years = 'до ' . $engine->year_end;
+                            }
+                        }
+                        
+                        $compatibility = [
+                            'id' => 'engine_' . $record->id,
+                            'brand' => $carModel ? $carModel->brand_name : 'Универсальная совместимость',
+                            'model' => $carModel ? $carModel->model_name : 'Для всех моделей с данным двигателем',
+                            'years' => $years,
+                            'engine' => $engineData,
+                            'notes' => $record->notes,
+                            'source' => 'engine_compatibility'
+                        ];
+                        
+                        $engineCompatibilities->push($compatibility);
+                    }
+                }
+            }
+            
+            \Log::info('Подготовлено записей совместимости: ' . $engineCompatibilities->count());
+            \Log::info('Данные совместимости:', $engineCompatibilities->toArray());
+            
+            // Объединяем данные из обоих источников
+            $allCompatibilities = $compatibilities->concat($engineCompatibilities);
+            
+            \Log::info('Всего записей совместимости: ' . $allCompatibilities->count());
+            
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при загрузке совместимостей двигателей: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            // В случае ошибки используем только основные совместимости
+            $allCompatibilities = $compatibilities;
+        }
+            
+        // Добавляем совместимости к объекту запчасти
+        $part->compatibilities = $allCompatibilities;
+        
         // Отладочный вывод
         \Log::info('Part data:', ['part' => $part->toArray()]);
+        \Log::info('Compatibilities count: ' . $allCompatibilities->count());
+        \Log::info('Compatibilities data:', $allCompatibilities->toArray());
         
         // Получаем похожие запчасти
         $similarParts = $this->sparePartService->getSimilarParts($id, 4, $isAdmin);
@@ -62,14 +199,50 @@ class PartsController extends Controller
         // Получаем рекомендуемые аналоги
         $recommendedAnalogs = $this->getRecommendedAnalogs($part);
         
+        // Загружаем неодобренные предложения совместимости для администраторов
+        $pendingSuggestions = [];
+        $pendingAnalogSuggestions = [];
+        if ($isAdmin) {
+            $pendingSuggestions = \App\Models\UserSuggestion::where('spare_part_id', $id)
+                ->where('suggestion_type', 'compatibility')
+                ->where('status', 'pending')
+                ->with(['user', 'carModel.brand'])
+                ->get();
+                
+            // Для каждого предложения загружаем информацию о двигателе, если она есть
+            foreach ($pendingSuggestions as $suggestion) {
+                if (!empty($suggestion->data['car_engine_id'])) {
+                    $engine = \App\Models\CarEngine::find($suggestion->data['car_engine_id']);
+                    if ($engine) {
+                        $suggestion->engine = $engine;
+                    }
+                }
+            }
+            
+            // Загружаем неодобренные предложения аналогов
+            $pendingAnalogSuggestions = \App\Models\UserSuggestion::where('spare_part_id', $id)
+                ->where('suggestion_type', 'analog')
+                ->where('status', 'pending')
+                ->with(['user', 'analogSparePart'])
+                ->get();
+        }
+        
+        // Преобразуем объект запчасти в массив для передачи в компонент
+        $partData = $part->toArray();
+        
+        // Преобразуем коллекцию совместимостей в массив
+        $partData['compatibilities'] = $allCompatibilities->toArray();
+        
         return Inertia::render('Parts/Show', [
             'auth' => [
                 'user' => auth()->user(),
             ],
-            'part' => $part,
+            'part' => $partData,
             'similarParts' => $similarParts,
             'recommendedAnalogs' => $recommendedAnalogs,
-            'isAdmin' => $isAdmin
+            'isAdmin' => $isAdmin,
+            'pendingSuggestions' => $pendingSuggestions ?? [],
+            'pendingAnalogSuggestions' => $pendingAnalogSuggestions ?? []
         ]);
     }
 
