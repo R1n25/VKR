@@ -30,7 +30,6 @@ class OrderService
                 'order_number' => $this->generateOrderNumber(),
                 'total_price' => $cart->total_price,
                 'status' => 'pending',
-                'payment_method' => $orderData['payment_method'] ?? 'cash',
                 'shipping_address' => $orderData['shipping_address'] ?? null,
                 'shipping_city' => $orderData['shipping_city'] ?? null,
                 'shipping_zip' => $orderData['shipping_zip'] ?? null,

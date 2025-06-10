@@ -28,13 +28,19 @@ class AuthenticatedSessionController extends Controller
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $request->authenticate();
+        // Создаем новый экземпляр LoginRequest
+        $loginRequest = new LoginRequest($request->all());
+        
+        // Аутентифицируем пользователя
+        $loginRequest->authenticate();
 
+        // Регенерируем сессию
         $request->session()->regenerate();
 
-        return redirect()->intended(auth()->user()->role === 'admin' ? RouteServiceProvider::ADMIN_HOME : RouteServiceProvider::HOME);
+        // Перенаправляем на домашнюю страницу
+        return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
@@ -48,6 +54,6 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        return redirect('/login');
     }
 }

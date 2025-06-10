@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { UserCircleIcon, KeyIcon } from '@heroicons/react/24/outline';
+
+
 
 export default function Dashboard({ auth, vinRequests }) {
     const [recentOrders, setRecentOrders] = useState([]);
@@ -290,6 +293,9 @@ export default function Dashboard({ auth, vinRequests }) {
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                     Описание
                                                 </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Действия
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
@@ -299,7 +305,7 @@ export default function Dashboard({ auth, vinRequests }) {
                                                         {request.id}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                        {request.vin_code}
+                                                        {request.vin}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {formatDate(request.created_at)}
@@ -311,6 +317,14 @@ export default function Dashboard({ auth, vinRequests }) {
                                                     </td>
                                                     <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                                         {request.parts_description}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                        <Link
+                                                            href={route('vin-request.show', request.id)}
+                                                            className="text-indigo-600 hover:text-indigo-900"
+                                                        >
+                                                            {request.status === 'completed' ? 'Посмотреть ответ' : 'Подробнее'}
+                                                        </Link>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -558,6 +572,21 @@ export default function Dashboard({ auth, vinRequests }) {
                                     </p>
                                 </Link>
                             </div>
+                        </div>
+                    </div>
+
+                    {/* Настройки профиля */}
+                    <div className="mt-4 border rounded-lg shadow-sm bg-white p-4">
+                        <h3 className="text-lg font-semibold mb-4">Настройки профиля</h3>
+                        <div className="space-y-2">
+                            <Link href={route('profile.edit')} className="text-indigo-600 hover:text-indigo-900 block">
+                                <UserCircleIcon className="w-5 h-5 inline-block mr-2" />
+                                Редактировать профиль
+                            </Link>
+                            <Link href={route('profile.edit')} className="text-indigo-600 hover:text-indigo-900 block">
+                                <KeyIcon className="w-5 h-5 inline-block mr-2" />
+                                Изменить пароль
+                            </Link>
                         </div>
                     </div>
                 </div>

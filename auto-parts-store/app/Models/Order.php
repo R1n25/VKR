@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -22,11 +21,8 @@ class Order extends Model
      */
     protected $fillable = [
         'user_id',
-        'payment_id',
         'total_price',
         'status',
-        'payment_method',
-        'payment_status',
         'shipping_method',
         'address',
         'shipping_city',
@@ -115,22 +111,6 @@ class Order extends Model
     {
         return $this->belongsToMany(SparePart::class, 'order_items', 'order_id', 'spare_part_id')
                     ->withPivot('quantity', 'price');
-    }
-    
-    /**
-     * Get the payments for this order.
-     */
-    public function payments(): HasMany
-    {
-        return $this->hasMany(Payment::class);
-    }
-    
-    /**
-     * Get the primary payment for this order.
-     */
-    public function payment(): BelongsTo
-    {
-        return $this->belongsTo(Payment::class);
     }
     
     /**
@@ -261,78 +241,6 @@ class Order extends Model
     {
         // Если есть notes_json, возвращаем его, иначе возвращаем старые notes
         return $this->notes_json ?? ($value ? [$value] : []);
-    }
-    
-    /**
-     * Получить сумму платежей для заказа
-     */
-    public function getTotalPaidAmount()
-    {
-        return $this->payments()->where('status', 'completed')->sum('amount');
-    }
-    
-    /**
-     * Проверить, полностью ли оплачен заказ
-     */
-    public function isFullyPaid()
-    {
-        $total = $this->total ?? $this->total_price;
-        $totalPaid = $this->getTotalPaidAmount();
-        
-        return $totalPaid >= $total;
-    }
-    
-    /**
-     * Получить остаток к оплате
-     */
-    public function getRemainingAmount()
-    {
-        $total = $this->total ?? $this->total_price;
-        $totalPaid = $this->getTotalPaidAmount();
-        
-        return max(0, $total - $totalPaid);
-    }
-    
-    /**
-     * Получить статус оплаты
-     */
-    public function getPaymentStatus()
-    {
-        if ($this->isFullyPaid()) {
-            return 'paid';
-        } elseif ($this->getTotalPaidAmount() > 0) {
-            return 'partially_paid';
-        } else {
-            return 'unpaid';
-        }
-    }
-    
-    /**
-     * Получить название статуса оплаты
-     */
-    public function getPaymentStatusName()
-    {
-        $statuses = [
-            'paid' => 'Оплачен',
-            'partially_paid' => 'Частично оплачен',
-            'unpaid' => 'Не оплачен',
-        ];
-        
-        return $statuses[$this->getPaymentStatus()] ?? $this->getPaymentStatus();
-    }
-    
-    /**
-     * Получить класс стиля для статуса оплаты
-     */
-    public function getPaymentStatusClass()
-    {
-        $classes = [
-            'paid' => 'bg-green-100 text-green-800',
-            'partially_paid' => 'bg-blue-100 text-blue-800',
-            'unpaid' => 'bg-red-100 text-red-800',
-        ];
-        
-        return $classes[$this->getPaymentStatus()] ?? 'bg-gray-100 text-gray-800';
     }
     
     /**

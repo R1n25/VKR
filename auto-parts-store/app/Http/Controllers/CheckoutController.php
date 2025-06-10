@@ -23,7 +23,6 @@ class CheckoutController extends Controller
         
         return Inertia::render('Checkout', [
             'user' => $user,
-            'balance' => $user ? $user->balance : 0,
         ]);
     }
     
@@ -117,30 +116,10 @@ class CheckoutController extends Controller
             $order->total = $totalAmount;
             $order->save();
             
-            // Если пользователь авторизован, списываем с его баланса
+            // Если пользователь авторизован, меняем статус заказа
             if ($user) {
-                // Обновляем баланс пользователя
-                $oldBalance = $user->balance;
-                $user->balance = $oldBalance - $totalAmount;
-                $user->save();
-                
-                // Добавляем запись в журнал
-                Log::info("Списание с баланса пользователя за заказ #{$order->order_number}", [
-                    'user_id' => $user->id,
-                    'order_id' => $order->id,
-                    'order_number' => $order->order_number,
-                    'amount' => $totalAmount,
-                    'old_balance' => $oldBalance,
-                    'new_balance' => $user->balance,
-                ]);
-                
-                // Добавляем заметку к заказу
-                $order->addNote("Автоматическое списание {$totalAmount} руб. с баланса пользователя");
-                
-                // Если баланс был достаточным, меняем статус заказа
-                if ($oldBalance >= $totalAmount) {
-                    $order->updateStatus('processing');
-                }
+                // Изменяем статус заказа
+                $order->updateStatus('processing');
             }
             
             DB::commit();
@@ -152,7 +131,6 @@ class CheckoutController extends Controller
                 'order_id' => $order->id,
                 'order_number' => $order->order_number,
                 'total' => $order->total,
-                'new_balance' => $user ? $user->balance : 0,
             ]);
             
         } catch (\Exception $e) {

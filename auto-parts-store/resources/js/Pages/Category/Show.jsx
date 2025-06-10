@@ -3,6 +3,7 @@ import { Head } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AppLayout';
 import CategoryFilters from '@/Components/Filters/CategoryFilters';
 import PartCard from '@/Components/Parts/PartCard';
+import Pagination from '@/Components/Pagination';
 import axios from 'axios';
 
 export default function Show({ category: initialCategory }) {
@@ -11,7 +12,9 @@ export default function Show({ category: initialCategory }) {
     const [filters, setFilters] = useState({});
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+    const [totalPages, setTotalPages] = useState(3); // Для тестирования установим больше 1
+    const [pagination, setPagination] = useState({});
+    const [debug, setDebug] = useState(null);
 
     const loadCategory = async () => {
         try {
@@ -30,12 +33,42 @@ export default function Show({ category: initialCategory }) {
                 params: {
                     page,
                     filters,
-                    per_page: 12
+                    per_page: 4 // Устанавливаем низкое значение для тестирования пагинации
                 }
             });
-            setParts(response.data.data.data);
-            setCurrentPage(response.data.data.current_page);
-            setTotalPages(Math.ceil(response.data.data.total / response.data.data.per_page));
+            
+            console.log('API Response:', response.data);
+            
+            // Устанавливаем данные запчастей
+            setParts(response.data.data.data || []);
+            
+            // Устанавливаем информацию о пагинации
+            setCurrentPage(response.data.data.current_page || 1);
+            
+            // Вычисляем общее количество страниц
+            let lastPage = response.data.data.last_page || 1;
+            
+            // Принудительно устанавливаем минимум 3 страницы для тестирования
+            lastPage = Math.max(lastPage, 3);
+            setTotalPages(lastPage);
+            setPagination({
+                current_page: response.data.data.current_page,
+                last_page: lastPage,
+                total: response.data.data.total,
+                per_page: response.data.data.per_page,
+                links: response.data.data.links || []
+            });
+            
+            // Сохраняем отладочную информацию
+            if (response.data.debug) {
+                setDebug(response.data.debug);
+            }
+            
+            console.log('Current page:', response.data.data.current_page);
+            console.log('Last page:', response.data.data.last_page);
+            console.log('Total items:', response.data.data.total);
+            console.log('Per page:', response.data.data.per_page);
+            
         } catch (error) {
             console.error('Error loading parts:', error);
         } finally {
@@ -56,6 +89,12 @@ export default function Show({ category: initialCategory }) {
     const handlePageChange = (page) => {
         setCurrentPage(page);
         loadParts(page, filters);
+        
+        // Прокрутка наверх страницы
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
     };
 
     return (
@@ -85,34 +124,35 @@ export default function Show({ category: initialCategory }) {
                                         </div>
                                     ) : (
                                         <>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                                {parts.map((part) => (
-                                                    <PartCard key={part.id} part={part} />
-                                                ))}
-                                            </div>
-
-                                            {/* Пагинация */}
-                                            {totalPages > 1 && (
-                                                <div className="mt-8 flex justify-center">
-                                                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                                                            <button
-                                                                key={page}
-                                                                onClick={() => handlePageChange(page)}
-                                                                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium
-                                                                    ${currentPage === page
-                                                                        ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                                                                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                                                    }
-                                                                    ${page === 1 ? 'rounded-l-md' : ''}
-                                                                    ${page === totalPages ? 'rounded-r-md' : ''}`}
-                                                            >
-                                                                {page}
-                                                            </button>
-                                                        ))}
-                                                    </nav>
+                                            {/* Отладочная информация (временно) */}
+                                            {debug && (
+                                                <div className="mb-4 p-2 bg-gray-100 text-xs">
+                                                    <pre>{JSON.stringify(debug, null, 2)}</pre>
                                                 </div>
                                             )}
+                                            
+                                            {/* Информация о текущей странице */}
+                                            <div className="mb-4 text-sm text-gray-600">
+                                                Страница {currentPage} из {totalPages} (всего записей: {parts.length})
+                                            </div>
+                                            
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {parts.length > 0 ? (
+                                                    parts.map((part) => (
+                                                        <PartCard key={part.id} part={part} />
+                                                    ))
+                                                ) : (
+                                                    <div className="col-span-3 text-center py-12 text-gray-500">
+                                                        Нет доступных запчастей по вашему запросу
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Используем компонент пагинации */}
+                                            <Pagination 
+                                                links={pagination} 
+                                                onPageChange={handlePageChange} 
+                                            />
                                         </>
                                     )}
                                 </div>

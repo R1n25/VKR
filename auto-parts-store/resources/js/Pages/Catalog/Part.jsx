@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MainLayout from '@/Layouts/MainLayout';
 import { ChevronRightIcon, ShoppingCartIcon, TagIcon, TruckIcon, ArrowPathIcon, CheckIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 
 export default function Part({ auth, sparePart, similarParts, analogParts }) {
@@ -33,7 +33,7 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
     const isAvailable = sparePart.stock_quantity > 0;
     
     return (
-        <Layout user={auth?.user}>
+        <MainLayout user={auth?.user}>
             <Head title={sparePart.name} />
 
             <div className="py-6">
@@ -463,6 +463,6 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
 }

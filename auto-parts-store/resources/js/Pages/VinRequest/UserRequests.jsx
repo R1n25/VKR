@@ -83,6 +83,9 @@ export default function UserRequests({ auth, requests }) {
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Описание запроса
                                             </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Действия
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
@@ -92,7 +95,7 @@ export default function UserRequests({ auth, requests }) {
                                                     {request.id}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                    {request.vin_code}
+                                                    {request.vin}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {formatDate(request.created_at)}
@@ -102,6 +105,14 @@ export default function UserRequests({ auth, requests }) {
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
                                                     {request.parts_description}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <Link
+                                                        href={route('vin-request.show', request.id)}
+                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                    >
+                                                        {request.status === 'completed' ? 'Посмотреть ответ' : 'Подробнее'}
+                                                    </Link>
                                                 </td>
                                             </tr>
                                         ))}

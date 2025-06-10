@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\VinRequestController;
 use App\Http\Controllers\InfoController;
 use App\Http\Controllers\OrderController;
-use App\Http\Controllers\PaymentController;
 use Illuminate\Http\Request;
 use App\Http\Controllers\UserSuggestionController;
 use App\Http\Controllers\Admin\SparePartController as AdminSparePartController;
@@ -24,9 +23,9 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\CatalogManagerController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
-use App\Http\Controllers\VinSearchController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\EngineController;
+use App\Http\Controllers\CategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -47,15 +46,12 @@ Route::get('/home', [HomeController::class, 'index'])->name('home');
 Route::get('/brands', [BrandsController::class, 'index'])->name('brands.index');
 Route::get('/brands/{id}', [BrandsController::class, 'show'])->name('brands.show');
 
-// Маршруты для VIN-кода
-Route::get('/vin-decoder', function () {
-    return Inertia::render('VinDecoder/Index');
-})->name('vin-decoder');
-Route::get('/vin-search', [VinSearchController::class, 'index'])->name('vin-search');
-
 // Маршруты для категорий
 Route::get('/categories', [CategoriesController::class, 'index'])->name('categories.index');
 Route::get('/categories/{id}', [CategoriesController::class, 'show'])->name('categories.show');
+
+// Новый маршрут для просмотра категории с пагинацией
+Route::get('/category/{id}', [CategoryController::class, 'show'])->name('category.show');
 
 // Маршруты для моделей
 Route::get('/models/{id}', function ($id) {
@@ -82,218 +78,11 @@ Route::get('/engines/{id}/parts', function ($id) {
 
 // Маршруты для запчастей
 Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
-Route::get('/spare-parts/{id}', [PartsController::class, 'show'])->name('spare-parts.show');
+// Дублирующийся маршрут (закомментирован, так как дублирует parts.show)
+// Route::get('/spare-parts/{id}', [PartsController::class, 'show'])->name('spare-parts.show');
 Route::get('/search', [PartsController::class, 'search'])->name('search');
 Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
 
-// Тестовый маршрут для отладки поиска
-Route::get('/search-debug', function (Illuminate\Http\Request $request) {
-    $controller = app()->make(App\Http\Controllers\PartsController::class);
-    $result = $controller->search($request);
-    return response()->json([
-        'request' => $request->all(),
-        'response_type' => get_class($result),
-        'data' => $result
-    ]);
-})->name('search.debug');
-
-// Тестовый маршрут для проверки структуры запчасти
-Route::get('/test-spare-part/{id}', function ($id) {
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return response()->json(['error' => 'Запчасть не найдена'], 404);
-    }
-    
-    return response()->json([
-        'id' => $sparePart->id,
-        'name' => $sparePart->name,
-        'fields' => array_keys($sparePart->getAttributes()),
-        'stock_quantity' => $sparePart->stock_quantity,
-        'quantity' => $sparePart->quantity ?? 'field not exists',
-        'is_available' => $sparePart->is_available,
-    ]);
-});
-
-// Тестовый маршрут для уменьшения количества запчасти
-Route::get('/test-decrease-quantity/{id}/{quantity}', function ($id, $quantity) {
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return response()->json(['error' => 'Запчасть не найдена'], 404);
-    }
-    
-    $before = $sparePart->stock_quantity;
-    
-    // Уменьшаем количество используя метод updateAvailability
-    $sparePart->updateAvailability(-$quantity);
-    
-    return response()->json([
-        'id' => $sparePart->id,
-        'name' => $sparePart->name,
-        'before' => $before,
-        'after' => $sparePart->stock_quantity,
-        'decreased_by' => $quantity,
-        'is_available' => $sparePart->is_available,
-    ]);
-});
-
-// Тестовый маршрут для проверки уменьшения количества товара
-Route::get('/test-decrease/{id}/{quantity}', function ($id, $quantity) {
-    // Находим товар
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return 'Товар не найден';
-    }
-    
-    // Выводим текущее количество
-    $before = $sparePart->stock_quantity;
-    
-    // Уменьшаем количество используя метод updateAvailability
-    $sparePart->updateAvailability(-$quantity);
-    
-    return "Товар ID: {$id}, Было: {$before}, Стало: {$sparePart->stock_quantity}, Уменьшено на: {$quantity}";
-});
-
-// Тестовый маршрут для создания заказа
-Route::get('/test-create-order/{id}/{quantity}', function ($id, $quantity) {
-    // Находим товар
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return 'Товар не найден';
-    }
-    
-    // Создаем тестовые данные заказа
-    $orderData = [
-        'customer_name' => 'Тестовый клиент',
-        'email' => 'test@example.com',
-        'phone' => '+7 999 123-45-67',
-        // 'delivery_method' => 'pickup', // Поле не существует в базе данных
-        'payment_method' => 'cash',
-        'items' => [
-            [
-                'id' => $sparePart->id,
-                'quantity' => (int)$quantity,
-                'price' => (float)$sparePart->price,
-                'name' => $sparePart->name
-            ]
-        ]
-    ];
-    
-    // Вызываем метод контроллера напрямую
-    $controller = new \App\Http\Controllers\API\OrderController(new \App\Services\OrderService());
-    $request = new \Illuminate\Http\Request();
-    $request->replace($orderData);
-    
-    // Выполняем метод store
-    $response = $controller->store($request);
-    
-    // Возвращаем результат
-    return $response;
-});
-
-// Тестовый маршрут для обновления количества товара напрямую через модель
-Route::get('/test-update-quantity/{id}/{quantity}', function ($id, $quantity) {
-    // Находим товар
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return 'Товар не найден';
-    }
-    
-    // Выводим текущее количество
-    $before = $sparePart->stock_quantity;
-    
-    // Вычисляем изменение количества
-    $change = (int)$quantity - $before;
-    
-    // Устанавливаем новое количество через метод updateAvailability
-    $sparePart->updateAvailability($change);
-    
-    // Логируем SQL-запрос
-    \Illuminate\Support\Facades\DB::enableQueryLog();
-    \Illuminate\Support\Facades\DB::disableQueryLog();
-    
-    return [
-        'id' => $sparePart->id,
-        'name' => $sparePart->name,
-        'before' => $before,
-        'after' => $sparePart->stock_quantity,
-        'set_to' => (int)$quantity,
-        'change' => $change,
-        'is_available' => $sparePart->is_available
-    ];
-});
-
-// Тестовый маршрут для проверки транзакций при обновлении количества товара
-Route::get('/test-transaction/{id}/{quantity}', function ($id, $quantity) {
-    // Находим товар
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return 'Товар не найден';
-    }
-    
-    // Выводим текущее количество
-    $before = $sparePart->stock_quantity;
-    
-    // Начинаем транзакцию
-    \Illuminate\Support\Facades\DB::beginTransaction();
-    
-    try {
-        // Вычисляем изменение количества
-        $change = (int)$quantity - $before;
-        
-        // Устанавливаем новое количество через метод updateAvailability
-        $sparePart->updateAvailability($change);
-        
-        // Фиксируем транзакцию
-        \Illuminate\Support\Facades\DB::commit();
-        
-        return [
-            'id' => $sparePart->id,
-            'name' => $sparePart->name,
-            'before' => $before,
-            'after' => $sparePart->stock_quantity,
-            'set_to' => (int)$quantity,
-            'change' => $change,
-            'is_available' => $sparePart->is_available,
-            'transaction' => 'committed'
-        ];
-    } catch (\Exception $e) {
-        // Откатываем транзакцию
-        \Illuminate\Support\Facades\DB::rollBack();
-        
-        return [
-            'error' => $e->getMessage(),
-            'transaction' => 'rolled back'
-        ];
-    }
-});
-
-// Тестовый маршрут для обновления количества товара через SQL-запрос
-Route::get('/test-update-sql/{id}/{quantity}', function ($id, $quantity) {
-    // Находим товар
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return 'Товар не найден';
-    }
-    
-    // Выводим текущее количество
-    $before = $sparePart->stock_quantity;
-    
-    // Вычисляем изменение количества
-    $change = (int)$quantity - $before;
-    
-    // Используем метод updateAvailability вместо прямого SQL-запроса
-    $sparePart->updateAvailability($change);
-    
-    return [
-        'id' => $sparePart->id,
-        'name' => $sparePart->name,
-        'before' => $before,
-        'after' => $sparePart->stock_quantity,
-        'set_to' => (int)$quantity,
-        'change' => $change,
-        'is_available' => $sparePart->is_available
-    ];
-});
 
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -310,14 +99,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // История VIN-запросов пользователя
     Route::get('/my-vin-requests', [VinRequestController::class, 'userRequests'])->name('vin-request.user');
-    
-    // Маршруты для работы с финансами
-    Route::get('/finances', [PaymentController::class, 'index'])->name('finances.index');
-    Route::get('/finances/create', [PaymentController::class, 'create'])->name('finances.create');
-    Route::post('/finances', [PaymentController::class, 'store'])->name('finances.store');
-    Route::get('/finances/{id}', [PaymentController::class, 'show'])->name('finances.show');
-    Route::put('/finances/{id}/status', [PaymentController::class, 'updateStatus'])->name('finances.update-status');
-    Route::get('/orders/{id}/add-payment', [PaymentController::class, 'createForOrder'])->name('orders.add-payment');
 });
 
 // Маршрут для корзины
@@ -341,8 +122,7 @@ Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth'])->
 // Маршрут для просмотра деталей заказа (требуется аутентификация)
 Route::get('/orders/{id}', [OrderController::class, 'show'])->middleware(['auth'])->name('orders.show');
 
-// Маршрут для оплаты заказа с баланса пользователя
-Route::post('/orders/{id}/pay-from-balance', [OrderController::class, 'payFromBalance'])->name('orders.pay-from-balance');
+
 
 // Маршруты для информационных страниц
 Route::get('/news', [InfoController::class, 'news'])->name('news');
@@ -354,6 +134,7 @@ Route::get('/location-map', [InfoController::class, 'locationMap'])->name('locat
 Route::get('/vin-request', [VinRequestController::class, 'index'])->name('vin-request.index');
 Route::post('/vin-request', [VinRequestController::class, 'store'])->name('vin-request.store');
 Route::get('/vin-request/success', [VinRequestController::class, 'success'])->name('vin-request.success');
+Route::get('/vin-request/{id}', [VinRequestController::class, 'show'])->name('vin-request.show');
 
 // Маршруты для предложений пользователей
 Route::middleware(['auth'])->group(function () {
@@ -412,19 +193,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::post('/orders/{id}/note', [\App\Http\Controllers\Admin\OrderController::class, 'addNote'])->name('orders.add-note');
     Route::get('/orders-export', [\App\Http\Controllers\Admin\OrderController::class, 'export'])->name('orders.export');
     
-    // Управление платежами
-    Route::get('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'index'])->name('payments.index');
-    Route::get('/payments/create', [App\Http\Controllers\Admin\PaymentController::class, 'create'])->name('payments.create');
-    Route::post('/payments', [App\Http\Controllers\Admin\PaymentController::class, 'store'])->name('payments.store');
-    Route::get('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'show'])->name('payments.show');
-    Route::put('/payments/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'update'])->name('payments.update');
-    Route::get('/payments-export', [App\Http\Controllers\Admin\PaymentController::class, 'export'])->name('payments.export');
-    Route::get('/orders/{id}/add-payment', [App\Http\Controllers\Admin\PaymentController::class, 'createForOrder'])->name('orders.add-payment');
-    
-    // Управление методами оплаты
-    Route::get('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'paymentMethods'])->name('payment-methods');
-    Route::post('/payment-methods', [App\Http\Controllers\Admin\PaymentController::class, 'storePaymentMethod'])->name('payment-methods.store');
-    Route::put('/payment-methods/{id}', [App\Http\Controllers\Admin\PaymentController::class, 'updatePaymentMethod'])->name('payment-methods.update');
+
 
     // Управление предложениями пользователей
     Route::get('/suggestions-inertia', [App\Http\Controllers\Admin\SuggestionController::class, 'indexInertia'])->name('suggestions.inertia');
@@ -454,12 +223,7 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::put('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update-inertia');
     Route::delete('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy-inertia');
 
-    // Управление финансами пользователей
-    Route::get('/finances', [\App\Http\Controllers\Admin\FinanceController::class, 'index'])->name('finances.index');
-    Route::get('/finances/users/{user}', [\App\Http\Controllers\Admin\FinanceController::class, 'show'])->name('finances.show');
-    Route::get('/finances/users/{user}/create', [\App\Http\Controllers\Admin\FinanceController::class, 'create'])->name('finances.create');
-    Route::post('/finances/users/{user}', [\App\Http\Controllers\Admin\FinanceController::class, 'store'])->name('finances.store');
-    Route::patch('/finances/users/{user}/balance', [\App\Http\Controllers\Admin\FinanceController::class, 'updateBalance'])->name('finances.update-balance');
+
 
     // Управление моделями автомобилей
     Route::get('/car-models', [App\Http\Controllers\Admin\CarModelController::class, 'index'])->name('car-models.index');

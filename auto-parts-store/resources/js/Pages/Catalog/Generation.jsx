@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
-import { ChevronRightIcon, EngineIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import MainLayout from '@/Layouts/MainLayout';
+import { ChevronRightIcon, WrenchIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 
 export default function Generation({ auth, brand, model, engineVolumes, bodyTypes }) {
     const [selectedEngine, setSelectedEngine] = useState('');
@@ -47,7 +47,7 @@ export default function Generation({ auth, brand, model, engineVolumes, bodyType
     };
     
     return (
-        <Layout user={auth?.user}>
+        <MainLayout user={auth?.user}>
             <Head title={`${brand.name} ${model.name} ${model.generation} - Выбор модификации`} />
 
             <div className="py-6">
@@ -225,6 +225,6 @@ export default function Generation({ auth, brand, model, engineVolumes, bodyType
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
-} 
+}

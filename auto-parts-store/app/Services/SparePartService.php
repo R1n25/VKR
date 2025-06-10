@@ -81,20 +81,7 @@ class SparePartService
                             'notes' => $compatibility->notes,
                         ];
                         
-                        // Добавляем информацию о годах выпуска, если она есть
-                        if ($compatibility->start_year || $compatibility->end_year) {
-                            $years = '';
-                            if ($compatibility->start_year) {
-                                $years .= $compatibility->start_year;
-                            }
-                            $years .= ' - ';
-                            if ($compatibility->end_year) {
-                                $years .= $compatibility->end_year;
-                            } else {
-                                $years .= 'н.в.';
-                            }
-                            $formattedCompatibility['years'] = $years;
-                        }
+                        // Примечание: колонки start_year и end_year были удалены из таблицы
                         
                         // Добавляем информацию о двигателе, если она есть
                         if ($compatibility->carEngine) {
@@ -311,8 +298,8 @@ class SparePartService
      */
     public function getSparePartsByCarModel(int $carModelId, array $filters = [], bool $isAdmin = false, ?float $markupPercent = null)
     {
-        $query = SparePart::whereHas('carModels', function (Builder $query) use ($carModelId) {
-            $query->where('car_models.id', $carModelId);
+        $query = SparePart::whereHas('compatibilities', function (Builder $query) use ($carModelId) {
+            $query->where('car_model_id', $carModelId);
         });
         
         // Применяем фильтры

@@ -40,9 +40,7 @@ class AdminController extends Controller
             ->get();
             
         // Добавляем информацию о суммах платежей
-        foreach ($recentOrders as $order) {
-            $order->total_paid = $order->getTotalPaidAmount();
-        }
+        
         
         // Получаем основные категории для отображения
         $topCategories = PartCategory::whereNull('parent_id')

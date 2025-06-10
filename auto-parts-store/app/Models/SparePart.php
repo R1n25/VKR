@@ -84,7 +84,8 @@ class SparePart extends Model
      */
     public function carModels(): BelongsToMany
     {
-        return $this->belongsToMany(CarModel::class, 'car_model_spare_part')
+        return $this->belongsToMany(CarModel::class, 'spare_part_compatibilities')
+            ->withPivot(['notes'])
             ->withTimestamps();
     }
 
@@ -131,7 +132,7 @@ class SparePart extends Model
     public function compatibleCarModels()
     {
         return $this->belongsToMany(CarModel::class, 'spare_part_compatibilities')
-                    ->withPivot('start_year', 'end_year', 'notes')
+                    ->withPivot('notes')
                     ->withTimestamps();
     }
 

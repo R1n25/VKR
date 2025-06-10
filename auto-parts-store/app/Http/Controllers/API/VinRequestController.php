@@ -5,7 +5,6 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\VinRequest;
 use App\Models\CarModel;
-use App\Models\PartScheme;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -17,7 +16,11 @@ class VinRequestController extends Controller
     public function decode(Request $request)
     {
         $validated = $request->validate([
-            'vin' => 'required|string|size:17'
+            'vin' => 'required|string|size:17',
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|string|email|max:255',
+            'phone' => 'nullable|string|max:20',
+            'parts_description' => 'nullable|string',
         ]);
 
         try {
@@ -35,36 +38,34 @@ class VinRequestController extends Controller
                 $vinRequest = VinRequest::create([
                     'vin' => $validated['vin'],
                     'user_id' => $request->user()?->id,
-                    'vehicle_info' => $data,
-                    // Извлекаем основную информацию из ответа API
-                    'make' => $this->extractFromResponse($data, 'Make'),
-                    'model' => $this->extractFromResponse($data, 'Model'),
-                    'year' => $this->extractFromResponse($data, 'ModelYear'),
-                    'engine' => $this->extractFromResponse($data, 'EngineModel'),
-                    'transmission' => $this->extractFromResponse($data, 'TransmissionStyle'),
-                    'body_type' => $this->extractFromResponse($data, 'BodyClass')
+                    'name' => $validated['name'] ?? null,
+                    'email' => $validated['email'] ?? null,
+                    'phone' => $validated['phone'] ?? null,
+                    'parts_description' => $validated['parts_description'] ?? null,
+                    'status' => 'pending',
                 ]);
 
                 // Находим соответствующую модель автомобиля в нашей базе
-                $carModel = CarModel::where('name', 'like', "%{$vinRequest->model}%")
-                    ->whereHas('brand', function ($query) use ($vinRequest) {
-                        $query->where('name', 'like', "%{$vinRequest->make}%");
+                $carModel = CarModel::where('name', 'like', "%{$this->extractFromResponse($data, 'Model')}%")
+                    ->whereHas('brand', function ($query) use ($data) {
+                        $query->where('name', 'like', "%{$this->extractFromResponse($data, 'Make')}%");
                     })
                     ->first();
 
-                // Получаем схемы запчастей для данной модели
-                $schemes = $carModel ? PartScheme::where('car_model_id', $carModel->id)
-                    ->with(['category', 'parts'])
-                    ->get()
-                    : collect();
-
                 return response()->json([
                     'success' => true,
-                    'message' => 'VIN успешно декодирован',
+                    'message' => 'VIN-запрос успешно создан',
                     'data' => [
                         'vin_request' => $vinRequest,
                         'car_model' => $carModel,
-                        'schemes' => $schemes
+                        'vin_data' => [
+                            'make' => $this->extractFromResponse($data, 'Make'),
+                            'model' => $this->extractFromResponse($data, 'Model'),
+                            'year' => $this->extractFromResponse($data, 'ModelYear'),
+                            'engine' => $this->extractFromResponse($data, 'EngineModel'),
+                            'transmission' => $this->extractFromResponse($data, 'TransmissionStyle'),
+                            'body_type' => $this->extractFromResponse($data, 'BodyClass')
+                        ]
                     ]
                 ]);
             }
@@ -84,29 +85,45 @@ class VinRequestController extends Controller
     }
 
     /**
-     * Получить схемы запчастей для автомобиля
+     * Получить информацию о VIN-коде
      */
-    public function getSchemes(string $vin)
+    public function getVinInfo(string $vin)
     {
         $vinRequest = VinRequest::where('vin', $vin)
             ->latest()
             ->firstOrFail();
 
-        $carModel = CarModel::where('name', 'like', "%{$vinRequest->model}%")
-            ->whereHas('brand', function ($query) use ($vinRequest) {
-                $query->where('name', 'like', "%{$vinRequest->make}%");
-            })
-            ->firstOrFail();
+        // Используем данные API из ответа для поиска модели
+        $response = Http::get("https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/{$vin}?format=json");
+        $data = $response->json();
+        
+        $make = $this->extractFromResponse($data, 'Make');
+        $model = $this->extractFromResponse($data, 'Model');
 
-        $schemes = PartScheme::where('car_model_id', $carModel->id)
-            ->with(['category', 'parts'])
-            ->get();
+        $carModel = CarModel::where('name', 'like', "%{$model}%")
+            ->whereHas('brand', function ($query) use ($make) {
+                $query->where('name', 'like', "%{$make}%");
+            })
+            ->first();
+
+        if (!$carModel) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Модель автомобиля не найдена в нашей базе данных'
+            ], 404);
+        }
 
         return response()->json([
             'success' => true,
             'data' => [
-                'schemes' => $schemes,
-                'car_info' => $vinRequest
+                'car_info' => [
+                    'vin' => $vin,
+                    'make' => $make,
+                    'model' => $model,
+                    'year' => $this->extractFromResponse($data, 'ModelYear'),
+                    'engine' => $this->extractFromResponse($data, 'EngineModel')
+                ],
+                'car_model' => $carModel
             ]
         ]);
     }

@@ -9,7 +9,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 
 export default function VinRequestIndex({ auth }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        vin_code: '',
+        vin_code: '', // Оставляем это поле для совместимости с формой
         name: auth.user ? auth.user.name : '',
         email: auth.user ? auth.user.email : '',
         phone: '',

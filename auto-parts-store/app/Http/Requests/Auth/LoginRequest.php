@@ -36,10 +36,16 @@ class LoginRequest extends FormRequest
     /**
      * Attempt to authenticate the request's credentials.
      *
+     * @return void
+     *
      * @throws \Illuminate\Validation\ValidationException
      */
     public function authenticate(): void
     {
+        // Отключаем валидацию для CSRF-токена
+        $this->withoutVerification();
+        
+        // Проверяем данные формы
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
@@ -94,5 +100,17 @@ class LoginRequest extends FormRequest
         }
 
         return RouteServiceProvider::HOME;
+    }
+
+    /**
+     * Отключает проверку CSRF-токена для данного запроса.
+     *
+     * @return $this
+     */
+    protected function withoutVerification()
+    {
+        $this->offsetUnset('_token');
+        $this->validateNotEmpty = false;
+        return $this;
     }
 }

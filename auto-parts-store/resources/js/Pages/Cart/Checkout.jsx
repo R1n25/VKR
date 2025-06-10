@@ -20,7 +20,6 @@
                 customer_phone: formData.phone,
                 delivery_method: formData.deliveryMethod,
                 delivery_address: formData.deliveryMethod === 'delivery' ? formData.address : null,
-                payment_method: formData.paymentMethod,
                 comment: formData.comment,
                 items: cartItems.map(item => ({
                     id: item.id,

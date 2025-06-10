@@ -124,8 +124,6 @@ const MainLayout = ({ auth, children }) => {
                                     </Link>
                                     <Link
                                         href={route('logout')}
-                                        method="post"
-                                        as="button"
                                         className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition ease-in-out duration-150"
                                     >
                                         <svg 

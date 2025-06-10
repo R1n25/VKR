@@ -141,7 +141,6 @@ class OrderController extends Controller
                 'phone' => 'required|string|max:20',
                 'delivery_address' => 'nullable|string|max:500',
                 // 'delivery_method' => 'required|string|in:pickup,delivery', // Поле не существует в базе данных
-                'payment_method' => 'required|string|in:cash,card,online',
                 'items' => 'required|array|min:1',
                 'items.*.id' => 'required|exists:spare_parts,id',
                 'items.*.quantity' => 'required|integer|min:1',
@@ -162,7 +161,6 @@ class OrderController extends Controller
             $order->phone = $validated['phone'];
             $order->address = $validated['delivery_address'] ?? null;
             // $order->delivery_method = $validated['delivery_method']; // Поле не существует в базе данных
-            $order->payment_method = $validated['payment_method'];
             $order->status = 'pending'; // Начальный статус - "Ожидает обработки"
             $order->notes = $validated['comment'] ?? null;
             
@@ -282,35 +280,39 @@ class OrderController extends Controller
     {
         // Загружаем заказ с детальной информацией
         $order = Order::with([
-            'orderItems.sparePart', 
+            'orderItems.sparePart',
             'orderItems.sparePart.category',
             'orderItems.sparePart.brand',
-            'payments.paymentMethod',
-            'user'
-        ])->findOrFail($id);
+            'user',
+        ])->where('id', $id)->first();
         
-        // Преобразуем числовые значения для корректного отображения
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Заказ не найден',
+            ], 404);
+        }
+        
+        // Проверяем права доступа
+        if (!auth()->check() || (auth()->id() !== $order->user_id && !auth()->user()->isAdmin())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'У вас нет прав для просмотра этого заказа',
+            ], 403);
+        }
+        
+        // Форматируем цены
         $order->total = floatval($order->total);
         
-        // Добавляем статус оплаты и информацию о платежах
-        $order->payment_status = $order->getPaymentStatus();
-        $order->total_paid = $order->getTotalPaidAmount();
-        $order->remaining_amount = $order->getRemainingAmount();
-        
-        // Если есть товары в заказе, форматируем их цены
+        // Форматируем товары в заказе
         if ($order->orderItems) {
             foreach ($order->orderItems as $item) {
                 $item->price = floatval($item->price);
+                $item->total = floatval($item->total);
+                
                 if ($item->sparePart) {
                     $item->sparePart->price = floatval($item->sparePart->price);
                 }
-            }
-        }
-        
-        // Если есть платежи, форматируем суммы
-        if ($order->payments) {
-            foreach ($order->payments as $payment) {
-                $payment->amount = floatval($payment->amount);
             }
         }
         

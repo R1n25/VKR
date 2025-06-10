@@ -13,14 +13,14 @@ export default function VinRequestsIndex({ auth, requests }) {
         let matchesSearch = true;
         let matchesStatus = true;
         
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            matchesSearch = 
-                request.vin_code.toLowerCase().includes(query) ||
-                request.name.toLowerCase().includes(query) ||
-                request.email.toLowerCase().includes(query) ||
-                (request.phone && request.phone.includes(query));
-        }
+                    if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                matchesSearch = 
+                    request.vin.toLowerCase().includes(query) ||
+                    request.name.toLowerCase().includes(query) ||
+                    request.email.toLowerCase().includes(query) ||
+                    (request.phone && request.phone.includes(query));
+            }
         
         if (statusFilter && statusFilter !== 'all') {
             matchesStatus = request.status === statusFilter;
@@ -138,7 +138,7 @@ export default function VinRequestsIndex({ auth, requests }) {
                                                 {request.id}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-mono">
-                                                {request.vin_code}
+                                                {request.vin}
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                                                 {request.name}

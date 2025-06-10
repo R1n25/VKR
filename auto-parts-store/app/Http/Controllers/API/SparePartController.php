@@ -199,21 +199,92 @@ class SparePartController extends Controller
                 'id' => $sparePart->id,
                 'name' => $sparePart->name,
                 'part_number' => $sparePart->part_number,
-                'manufacturer' => $sparePart->manufacturer,
-                'description' => $sparePart->description,
                 'price' => $sparePart->price,
+                'discount_price' => $sparePart->discount_price,
+                'description' => $sparePart->description,
+                'manufacturer' => $sparePart->manufacturer,
+                'country' => $sparePart->country,
+                'warranty' => $sparePart->warranty,
                 'stock_quantity' => $sparePart->stock_quantity,
-                'category_id' => $sparePart->category_id,
+                'weight' => $sparePart->weight,
+                'dimensions' => $sparePart->dimensions,
+                'image_url' => $sparePart->image_url,
                 'category' => $sparePart->category ? [
                     'id' => $sparePart->category->id,
-                    'name' => $sparePart->category->name,
+                    'name' => $sparePart->category->name
                 ] : null,
-                'is_available' => $sparePart->is_available,
-                'is_active' => $sparePart->is_active,
+                'specifications' => $sparePart->specifications,
+                'is_featured' => $sparePart->is_featured,
+                'is_new' => $sparePart->is_new,
+                'is_bestseller' => $sparePart->is_bestseller
             ]);
         } catch (\Exception $e) {
             Log::error("API: Ошибка при получении информации о запчасти с ID {$id}: " . $e->getMessage());
-            return response()->json(['error' => 'Произошла ошибка при получении данных'], 500);
+            return response()->json(['error' => 'Внутренняя ошибка сервера'], 500);
         }
+    }
+    
+    /**
+     * Альтернативный метод для получения списка запчастей через Query Builder
+     * @deprecated Используйте метод index() вместо этого
+     */
+    public function indexWithQueryBuilder(Request $request)
+    {
+        $query = DB::table('spare_parts')
+            ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
+            ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
+            ->join('part_categories', 'spare_parts.category_id', '=', 'part_categories.id')
+            ->select(
+                'spare_parts.*', 
+                'car_brands.name as brand_name', 
+                'car_models.name as model_name',
+                'part_categories.name as category_name'
+            );
+        
+        // Поиск по запросу
+        if ($request->has('search')) {
+            $searchTerm = $request->search;
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('spare_parts.name', 'like', "%{$searchTerm}%")
+                  ->orWhere('spare_parts.sku', 'like', "%{$searchTerm}%")
+                  ->orWhere('spare_parts.description', 'like', "%{$searchTerm}%")
+                  ->orWhere('car_brands.name', 'like', "%{$searchTerm}%")
+                  ->orWhere('car_models.name', 'like', "%{$searchTerm}%");
+            });
+        }
+        
+        // Фильтрация по бренду
+        if ($request->has('brand_id')) {
+            $query->where('spare_parts.brand_id', $request->brand_id);
+        }
+        
+        // Фильтрация по модели
+        if ($request->has('model_id')) {
+            $query->where('spare_parts.model_id', $request->model_id);
+        }
+        
+        // Фильтрация по категории
+        if ($request->has('category_id')) {
+            $query->where('spare_parts.category_id', $request->category_id);
+        }
+        
+        // Фильтрация по наличию
+        if ($request->has('in_stock') && $request->in_stock) {
+            $query->where('spare_parts.stock_quantity', '>', 0);
+        }
+        
+        // Сортировка
+        $sortField = $request->input('sort', 'id');
+        $sortDirection = $request->input('direction', 'asc');
+        $query->orderBy($sortField, $sortDirection);
+        
+        // Пагинация
+        $perPage = $request->input('per_page', 20);
+        $spareParts = $query->paginate($perPage);
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => $spareParts
+        ]);
     }
 } 

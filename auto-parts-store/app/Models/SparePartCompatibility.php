@@ -13,8 +13,6 @@ class SparePartCompatibility extends Model
         'spare_part_id',
         'car_model_id',
         'car_engine_id',
-        'start_year',
-        'end_year',
         'notes',
         'is_verified',
     ];

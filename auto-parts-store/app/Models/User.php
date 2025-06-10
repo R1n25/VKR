@@ -24,7 +24,6 @@ class User extends Authenticatable
         'password',
         'role',
         'markup_percent',
-        'balance',
     ];
 
     /**
@@ -48,7 +47,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'markup_percent' => 'float',
-            'balance' => 'decimal:2',
         ];
     }
 

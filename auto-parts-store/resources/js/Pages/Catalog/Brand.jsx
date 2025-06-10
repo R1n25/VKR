@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MainLayout from '@/Layouts/MainLayout';
 import { MagnifyingGlassIcon, ChevronRightIcon, StarIcon } from '@heroicons/react/24/outline';
 
 export default function Brand({ auth, brand, models, popularModels }) {
@@ -36,7 +36,7 @@ export default function Brand({ auth, brand, models, popularModels }) {
     };
     
     return (
-        <Layout user={auth?.user}>
+        <MainLayout user={auth?.user}>
             <Head title={`${brand.name} - Каталог моделей`} />
 
             <div className="py-6">
@@ -180,6 +180,6 @@ export default function Brand({ auth, brand, models, popularModels }) {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
 } 

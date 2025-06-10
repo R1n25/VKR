@@ -75,8 +75,6 @@ class CreateTestOrder extends Command
             $order = new Order();
             $order->user_id = $userId;
             $order->status = 'pending';
-            $order->payment_status = 'pending';
-            $order->payment_method = 'cash';
             $order->customer_name = $user->name;
             $order->email = $user->email;
             $order->phone = '7' . rand(9000000000, 9999999999);

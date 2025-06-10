@@ -34,6 +34,10 @@ class VinRequestController extends Controller
             'parts_description' => 'required|string|min:10',
         ]);
 
+        // Переименовываем поле vin_code в vin для соответствия структуре таблицы
+        $validated['vin'] = $validated['vin_code'];
+        unset($validated['vin_code']);
+
         // Если пользователь авторизован, добавляем его ID к запросу
         if (Auth::check()) {
             $validated['user_id'] = Auth::id();
@@ -71,6 +75,27 @@ class VinRequestController extends Controller
                 'user' => Auth::user(),
             ],
             'requests' => $requests,
+        ]);
+    }
+    
+    /**
+     * Отображает детальную информацию о VIN-запросе
+     */
+    public function show($id)
+    {
+        // Получаем запрос и проверяем, что он принадлежит текущему пользователю
+        $request = VinRequest::where('id', $id)
+            ->where(function($query) {
+                $query->where('user_id', Auth::id())
+                    ->orWhere('email', Auth::user()->email);
+            })
+            ->firstOrFail();
+            
+        return Inertia::render('VinRequest/Show', [
+            'auth' => [
+                'user' => Auth::user(),
+            ],
+            'request' => $request,
         ]);
     }
 } 

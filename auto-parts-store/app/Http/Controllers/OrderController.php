@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
-use App\Services\UserBalanceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -28,18 +27,14 @@ class OrderController extends Controller
                 'orderItems.sparePart', 
                 'orderItems.sparePart.category',
                 'orderItems.sparePart.brand',
-                'payments', 
                 'user'
             ])
             ->where('user_id', $user->id)
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // Добавляем информацию о статусе оплаты и суммах платежей
+        // Форматируем числовые значения для корректного отображения
         foreach ($orders as $order) {
-            $order->payment_status = $order->getPaymentStatus();
-            $order->total_paid = $order->getTotalPaidAmount();
-            $order->remaining_amount = $order->getRemainingAmount();
             
             // Форматируем числовые значения для корректного отображения
             foreach ($order->orderItems as $item) {
@@ -72,16 +67,10 @@ class OrderController extends Controller
         $order = Order::with([
                 'orderItems.sparePart.category', 
                 'orderItems.sparePart.brand',
-                'payments.paymentMethod',
                 'user'
             ])
             ->where('user_id', $user->id)
             ->findOrFail($id);
-        
-        // Добавляем информацию о статусе оплаты и суммах платежей
-        $order->payment_status = $order->getPaymentStatus();
-        $order->total_paid = $order->getTotalPaidAmount();
-        $order->remaining_amount = $order->getRemainingAmount();
         
         // Получаем историю статусов заказа, если она есть
         $order->status_history = $order->getStatusHistory();
@@ -97,12 +86,7 @@ class OrderController extends Controller
             }
         }
         
-        // Если есть платежи, форматируем суммы
-        if ($order->payments) {
-            foreach ($order->payments as $payment) {
-                $payment->amount = floatval($payment->amount);
-            }
-        }
+
         
         return Inertia::render('Orders/Show', [
             'order' => $order,
@@ -144,31 +128,5 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Статус заказа успешно обновлен.');
     }
 
-    /**
-     * Оплата заказа с баланса пользователя
-     */
-    public function payFromBalance(Request $request, $id)
-    {
-        $user = Auth::user();
-        
-        // Находим заказ и проверяем права доступа
-        $order = Order::where('user_id', $user->id)->findOrFail($id);
-        
-        // Получаем сумму к оплате
-        $amount = $request->input('amount');
-        if (!$amount) {
-            $amount = $order->getRemainingAmount();
-        }
-        
-        try {
-            $userBalanceService = app(UserBalanceService::class);
-            $payment = $userBalanceService->payOrderFromBalance($order, $amount);
-            
-            return redirect()->route('orders.show', $order->id)
-                ->with('success', "Заказ успешно оплачен с баланса на сумму {$amount} руб.");
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Ошибка при оплате заказа: ' . $e->getMessage());
-        }
-    }
+
 } 

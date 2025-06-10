@@ -49,28 +49,6 @@ export default function Orders({ auth, orders }) {
         
         return statusClasses[status] || 'bg-gray-100 text-gray-800';
     };
-    
-    // Функция для получения текстового статуса платежа
-    const getPaymentStatusText = (status) => {
-        const statusMap = {
-            'paid': 'Оплачен',
-            'partially_paid': 'Частично оплачен',
-            'unpaid': 'Не оплачен'
-        };
-        
-        return statusMap[status] || status;
-    };
-    
-    // Функция для получения класса цвета статуса оплаты
-    const getPaymentStatusClass = (status) => {
-        const statusClasses = {
-            'paid': 'bg-green-100 text-green-800',
-            'partially_paid': 'bg-blue-100 text-blue-800',
-            'unpaid': 'bg-red-100 text-red-800'
-        };
-        
-        return statusClasses[status] || 'bg-gray-100 text-gray-800';
-    };
 
     return (
         <AuthenticatedLayout
@@ -123,9 +101,6 @@ export default function Orders({ auth, orders }) {
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
                                                     Сумма
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[10%]">
-                                                    Оплачено
-                                                </th>
                                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[12%]">
                                                     Статус заказа
                                                 </th>
@@ -159,9 +134,6 @@ export default function Orders({ auth, orders }) {
                                                         </td>
                                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">
                                                             {Number(order.total || 0).toFixed(2)} руб.
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-500">
-                                                            {Number(order.total_paid || 0).toFixed(2)} руб.
                                                         </td>
                                                         <td className="px-6 py-4">
                                                             <span className={`badge ${getStatusClass(order.status)}`}>
@@ -253,15 +225,11 @@ export default function Orders({ auth, orders }) {
                                                                                     <svg className="w-4 h-4 mr-2 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                                                                                     </svg>
-                                                                                    Информация об оплате
+                                                                                    Итоговая сумма
                                                                                 </h5>
                                                                                 <div className="grid grid-cols-2 gap-2 text-sm">
-                                                                                    <div className="text-gray-500">Метод оплаты:</div>
-                                                                                    <div className="text-gray-900">{order.payment_method || 'Н/Д'}</div>
                                                                                     <div className="text-gray-500">Всего к оплате:</div>
                                                                                     <div className="text-gray-900 font-medium">{Number(order.total || 0).toFixed(2)} руб.</div>
-                                                                                    <div className="text-gray-500">Оплачено:</div>
-                                                                                    <div className="text-gray-900 font-medium">{Number(order.total_paid || 0).toFixed(2)} руб.</div>
                                                                                 </div>
                                                                             </div>
                                                                         </div>

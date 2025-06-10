@@ -2,18 +2,18 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\API\CarBrandController;
 use App\Http\Controllers\API\CarModelController;
 use App\Http\Controllers\API\CategoryController;
-use App\Http\Controllers\API\PartController;
+// use App\Http\Controllers\API\PartController; // Устаревший контроллер
 use App\Http\Controllers\API\OrderController;
 use App\Http\Controllers\API\CartController;
 use App\Http\Controllers\API\SparePartController;
 use App\Http\Controllers\SpareParts\SparePartController as SparePartsSparePartController;
 use App\Http\Controllers\API\BrandController;
-use App\Http\Controllers\VinSearchController;
+use App\Http\Controllers\API\VinRequestController;
 use App\Http\Controllers\API\CarEngineController;
 use App\Http\Controllers\API\EnginePartController;
+use App\Http\Controllers\API\PartCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,9 +31,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 
-// Маршруты для работы с VIN-кодами
-Route::post('/vin/decode', [VinSearchController::class, 'decode']);
-Route::get('/vin/{vin}/schemes', [VinSearchController::class, 'getSchemes']);
+// Маршруты для работы с VIN-запросами (VinRequestController для запросов пользователей)
+Route::prefix('vin-requests')->group(function () {
+    Route::post('/', [VinRequestController::class, 'decode']);
+    Route::get('/{vin}/info', [VinRequestController::class, 'getVinInfo']);
+});
 
 // Перенаправляем запросы с /api/brands на /brands
 Route::get('/brands', function () {
@@ -47,8 +49,9 @@ Route::get('/brands/{id}', function ($id) {
 // Добавляем маршрут для получения моделей по ID бренда
 Route::get('/brands/{id}/models', [BrandController::class, 'getModels']);
 
-// Закомментировали оригинальный маршрут для брендов
-// Route::apiResource('brands', CarBrandController::class);
+// Маршруты для брендов
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/brands/{id}', [BrandController::class, 'show']);
 
 // Маршруты для моделей автомобилей
 Route::get('models', [CarModelController::class, 'index']);
@@ -67,33 +70,22 @@ Route::get('categories/{id}', [CategoryController::class, 'show']);
 Route::get('categories/{id}/subcategories', [CategoryController::class, 'getSubcategories']);
 Route::get('categories/{id}/parts', [CategoryController::class, 'getParts']);
 
+// Маршруты для категорий запчастей (новый API)
+Route::get('part-categories', [PartCategoryController::class, 'index']);
+Route::get('part-categories/{id}', [PartCategoryController::class, 'show']);
+Route::get('part-categories/{id}/filtered-parts', [PartCategoryController::class, 'filteredParts']);
+
 // Маршруты для запчастей
-Route::get('parts', [PartController::class, 'index']);
-Route::get('parts/{id}', [PartController::class, 'show']);
+// Оставляем устаревшие маршруты для обратной совместимости
+Route::get('parts', [SparePartController::class, 'index']);
+Route::get('parts/{id}', [SparePartController::class, 'show']);
+
+// Основные маршруты для запчастей
 Route::get('/spare-parts', [SparePartController::class, 'index']);
 Route::get('/spare-parts/{id}', [SparePartController::class, 'show']);
+Route::get('/spare-parts/{id}/full', [SparePartController::class, 'getFullInfo']);
 Route::get('/spare-parts/{id}/quantity', [SparePartsSparePartController::class, 'getQuantity']);
 Route::get('/spare-parts/{id}/info', [SparePartsSparePartController::class, 'getInfo']);
-
-// Маршрут для получения полной информации о запчасти по ID
-Route::get('/spare-parts/{id}/full', function ($id) {
-    $sparePart = \App\Models\SparePart::find($id);
-    if (!$sparePart) {
-        return response()->json(['error' => 'Запчасть не найдена'], 404);
-    }
-    
-    return response()->json([
-        'id' => $sparePart->id,
-        'name' => $sparePart->name,
-        'part_number' => $sparePart->part_number,
-        'manufacturer' => $sparePart->manufacturer,
-        'description' => $sparePart->description,
-        'price' => $sparePart->price,
-        'stock_quantity' => $sparePart->stock_quantity,
-        'category_id' => $sparePart->category_id,
-        'is_available' => $sparePart->is_available,
-    ]);
-});
 
 // Маршрут для проверки существования запчасти
 Route::get('/spare-parts/{id}/exists', function ($id) {

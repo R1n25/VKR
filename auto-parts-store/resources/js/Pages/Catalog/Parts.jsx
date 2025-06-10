@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
-import { ChevronRightIcon, FilterIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import MainLayout from '@/Layouts/MainLayout';
+import { ChevronRightIcon, FunnelIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
 
 export default function Parts({ auth, brand, model, spareParts, categories, filters }) {
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -40,7 +40,7 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
         : spareParts.data;
     
     return (
-        <Layout user={auth?.user}>
+        <MainLayout user={auth?.user}>
             <Head title={`${brand.name} ${model.name} - Запчасти`} />
 
             <div className="py-6">
@@ -74,7 +74,7 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
                                 </h1>
                                 {displayFilters() && (
                                     <div className="mt-2 flex items-center text-sm text-gray-700">
-                                        <FilterIcon className="h-4 w-4 mr-1 text-gray-500" />
+                                        <FunnelIcon className="h-4 w-4 mr-1 text-gray-500" />
                                         <span>{displayFilters()}</span>
                                     </div>
                                 )}
@@ -225,6 +225,6 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
 }

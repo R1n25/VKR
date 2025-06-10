@@ -10,7 +10,7 @@ class VinRequest extends Model
     use HasFactory;
 
     protected $fillable = [
-        'vin_code',
+        'vin',
         'user_id',
         'name',
         'email',

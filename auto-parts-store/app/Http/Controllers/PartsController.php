@@ -62,23 +62,10 @@ class PartsController extends Controller
             ->with(['carModel.brand', 'carEngine'])
             ->get()
             ->map(function ($compatibility) {
-                // Формируем годы в виде диапазона, если указаны
-                $years = null;
-                if ($compatibility->start_year || $compatibility->end_year) {
-                    if ($compatibility->start_year && $compatibility->end_year) {
-                        $years = $compatibility->start_year . '-' . $compatibility->end_year;
-                    } elseif ($compatibility->start_year) {
-                        $years = 'с ' . $compatibility->start_year;
-                    } else {
-                        $years = 'до ' . $compatibility->end_year;
-                    }
-                }
-                
                 return [
                     'id' => $compatibility->id,
                     'brand' => $compatibility->carModel->brand->name,
                     'model' => $compatibility->carModel->name,
-                    'years' => $years,
                     'engine' => $compatibility->carEngine,
                     'notes' => $compatibility->notes
                 ];

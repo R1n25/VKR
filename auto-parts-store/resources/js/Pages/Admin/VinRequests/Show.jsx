@@ -131,7 +131,7 @@ export default function VinRequestShow({ auth, request, success }) {
                         <div className="bg-gray-50 p-4 rounded-lg">
                             <div>
                                 <p className="text-sm text-gray-500 mb-1">VIN-код</p>
-                                <p className="text-gray-900 font-mono font-semibold">{request.vin_code}</p>
+                                <p className="text-gray-900 font-mono font-semibold">{request.vin}</p>
                             </div>
                         </div>
                     </div>

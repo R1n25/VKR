@@ -11,7 +11,6 @@ export default function Index({ auth, cart, cartItems, user }) {
         shipping_address: '',
         shipping_city: '',
         shipping_zip: '',
-        payment_method: 'cash',
         notes: '',
     });
 
@@ -170,26 +169,6 @@ export default function Index({ auth, cart, cartItems, user }) {
                                                 ></textarea>
                                                 {errors.shipping_address && (
                                                     <p className="mt-1 text-sm text-red-600">{errors.shipping_address}</p>
-                                                )}
-                                            </div>
-                                            
-                                            <div className="sm:col-span-2">
-                                                <label htmlFor="payment_method" className="block text-sm font-medium text-gray-700">
-                                                    Способ оплаты
-                                                </label>
-                                                <select
-                                                    id="payment_method"
-                                                    name="payment_method"
-                                                    value={formData.payment_method}
-                                                    onChange={handleInputChange}
-                                                    className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${errors.payment_method ? 'border-red-500' : ''}`}
-                                                >
-                                                    <option value="cash">Наличными при получении</option>
-                                                    <option value="card">Картой при получении</option>
-                                                    <option value="online">Онлайн-оплата</option>
-                                                </select>
-                                                {errors.payment_method && (
-                                                    <p className="mt-1 text-sm text-red-600">{errors.payment_method}</p>
                                                 )}
                                             </div>
                                             

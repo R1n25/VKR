@@ -134,8 +134,6 @@ export default function AdminLayout({ user, header, children }) {
                             {user && (
                                 <Link
                                     href={route('logout')}
-                                    method="post"
-                                    as="button"
                                     className="w-full block py-3 px-4 rounded-lg flex items-center transition-colors bg-red-600 hover:bg-red-700 mt-2"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

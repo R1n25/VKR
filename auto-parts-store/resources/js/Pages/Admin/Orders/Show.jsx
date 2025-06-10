@@ -103,17 +103,6 @@ export default function Show({ auth, order }) {
         }
     };
 
-    // Функция для получения текста способа оплаты
-    const getPaymentMethodText = (method) => {
-        const methods = {
-            'cash': 'Наличными',
-            'card': 'Банковской картой',
-            'online': 'Онлайн-оплата',
-        };
-        
-        return methods[method] || method;
-    };
-
     // Обработчик изменения статуса заказа
     const handleStatusUpdate = async () => {
         try {
@@ -445,20 +434,6 @@ export default function Show({ auth, order }) {
                                             <dt className="text-sm font-medium text-gray-500">Адрес доставки:</dt>
                                             <dd className="text-sm font-medium">
                                                 {order.shipping_address || 'Не указано'}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Способ оплаты:</dt>
-                                            <dd className="text-sm font-medium">
-                                                {getPaymentMethodText(order.payment_method) || 'Не указано'}
-                                            </dd>
-                                        </div>
-                                        <div>
-                                            <dt className="text-sm font-medium text-gray-500">Статус оплаты:</dt>
-                                            <dd className="text-sm font-medium">
-                                                <span className={`px-2 py-1 text-xs rounded-full ${order.is_paid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                                                    {order.is_paid ? 'Оплачено' : 'Не оплачено'}
-                                                </span>
                                             </dd>
                                         </div>
                                     </dl>

@@ -4,7 +4,7 @@ import axios from 'axios';
 import GuestLayout from '@/Layouts/GuestLayout';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
-export default function Checkout({ auth, balance }) {
+export default function Checkout({ auth }) {
     const [cart, setCart] = useState([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -88,11 +88,6 @@ export default function Checkout({ auth, balance }) {
             setSuccess(true);
             setOrderResult(response.data);
             
-            // Обновляем баланс в локальном хранилище, если пользователь авторизован
-            if (auth.user && response.data.new_balance !== undefined) {
-                localStorage.setItem('user_balance', response.data.new_balance);
-            }
-            
         } catch (err) {
             console.error('Ошибка при оформлении заказа:', err);
             
@@ -128,13 +123,6 @@ export default function Checkout({ auth, balance }) {
                                     <h3 className="text-xl font-semibold mb-2">Заказ успешно оформлен!</h3>
                                     <p>Номер заказа: {orderResult?.order_number || 'N/A'}</p>
                                     <p>Сумма заказа: {orderResult?.total || totalAmount} руб.</p>
-                                    {auth.user && (
-                                        <p className="mt-2">
-                                            Ваш текущий баланс: <span className={orderResult?.new_balance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                                                {orderResult?.new_balance || balance} руб.
-                                            </span>
-                                        </p>
-                                    )}
                                 </div>
                                 
                                 <div className="flex justify-center space-x-4">
@@ -287,28 +275,6 @@ export default function Checkout({ auth, balance }) {
                                             <span>Итого:</span>
                                             <span>{totalAmount.toFixed(2)} руб.</span>
                                         </div>
-                                        
-                                        {auth.user && (
-                                            <div className="mt-4 pt-2 border-t border-gray-200">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm">Ваш баланс:</span>
-                                                    <span className={balance < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                                                        {balance} руб.
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between items-center mt-2">
-                                                    <span className="text-sm">После оплаты:</span>
-                                                    <span className={(balance - totalAmount) < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
-                                                        {(balance - totalAmount).toFixed(2)} руб.
-                                                    </span>
-                                                </div>
-                                                {(balance - totalAmount) < 0 && (
-                                                    <p className="text-xs text-gray-600 mt-2">
-                                                        Сумма заказа превышает ваш баланс. Заказ будет оформлен с отрицательным балансом (в долг).
-                                                    </p>
-                                                )}
-                                            </div>
-                                        )}
                                     </div>
                                 </div>
                             </div>

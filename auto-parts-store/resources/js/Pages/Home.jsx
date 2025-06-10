@@ -148,7 +148,7 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                 {categories.slice(0, 8).map((category, index) => (
                                     <Link
                                         key={category.id}
-                                        href={route('categories.show', category.id)}
+                                        href={route('category.show', category.id)}
                                         className="group block p-6 bg-white rounded-xl border border-gray-200 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
                                         style={{ 
                                             transitionDelay: `${index * 50 + 300}ms`,

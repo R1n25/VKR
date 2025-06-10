@@ -55,7 +55,16 @@ class CarModel extends Model
      */
     public function spareParts(): BelongsToMany
     {
-        return $this->belongsToMany(SparePart::class, 'car_model_spare_part')
+        return $this->belongsToMany(SparePart::class, 'spare_part_compatibilities')
+            ->withPivot(['notes'])
             ->withTimestamps();
+    }
+    
+    /**
+     * Get the engines for this car model.
+     */
+    public function engines(): HasMany
+    {
+        return $this->hasMany(CarEngine::class, 'model_id');
     }
 }

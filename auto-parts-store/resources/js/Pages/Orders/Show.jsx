@@ -7,7 +7,6 @@ export default function OrderShow({ auth, order }) {
     const [addingToCart, setAddingToCart] = useState(false);
     const [cartSuccess, setCartSuccess] = useState(false);
     const [error, setError] = useState('');
-    const [payingFromBalance, setPayingFromBalance] = useState(false);
     
     const { data, setData, post, processing, reset } = useForm({
         status: order.status,
@@ -49,28 +48,6 @@ export default function OrderShow({ auth, order }) {
         
         return statusClasses[status] || 'bg-gray-100 text-gray-800';
     };
-    
-    // Функция для получения текстового статуса платежа
-    const getPaymentStatusText = (status) => {
-        const statusMap = {
-            'paid': 'Оплачен',
-            'partially_paid': 'Частично оплачен',
-            'unpaid': 'Не оплачен'
-        };
-        
-        return statusMap[status] || status;
-    };
-    
-    // Функция для получения класса цвета статуса оплаты
-    const getPaymentStatusClass = (status) => {
-        const statusClasses = {
-            'paid': 'bg-green-100 text-green-800',
-            'partially_paid': 'bg-blue-100 text-blue-800',
-            'unpaid': 'bg-red-100 text-red-800'
-        };
-        
-        return statusClasses[status] || 'bg-gray-100 text-gray-800';
-    };
 
     // Функция для добавления заказа в корзину
     const addOrderToCart = async () => {
@@ -103,24 +80,6 @@ export default function OrderShow({ auth, order }) {
         }
     };
 
-    // Функция для оплаты заказа с баланса
-    const payFromBalance = () => {
-        if (payingFromBalance) return;
-        
-        setPayingFromBalance(true);
-        setError('');
-        
-        post(route('orders.pay-from-balance', order.id), {
-            onSuccess: () => {
-                setPayingFromBalance(false);
-            },
-            onError: (errors) => {
-                setError(errors.message || 'Произошла ошибка при оплате с баланса');
-                setPayingFromBalance(false);
-            }
-        });
-    };
-
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -144,10 +103,6 @@ export default function OrderShow({ auth, order }) {
                                     <div className="flex items-center space-x-3">
                                         <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusClass(order.status)}`}>
                                             {getStatusText(order.status)}
-                                        </span>
-                                        
-                                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPaymentStatusClass(order.payment_status || 'unpaid')}`}>
-                                            {getPaymentStatusText(order.payment_status || 'unpaid')}
                                         </span>
                                     </div>
                                 </div>
@@ -258,16 +213,6 @@ export default function OrderShow({ auth, order }) {
                                                     <p className="font-medium">{order.address}</p>
                                                 </div>
                                                 
-                                                <div>
-                                                    <p className="text-sm text-gray-500">Способ оплаты</p>
-                                                    <p className="font-medium">
-                                                        {order.payment_method === 'cash' ? 'Наличными при получении' : 
-                                                         order.payment_method === 'card' ? 'Картой при получении' : 
-                                                         order.payment_method === 'online' ? 'Онлайн оплата' : 
-                                                         'Не указан'}
-                                                    </p>
-                                                </div>
-                                                
                                                 {order.shipping_method && (
                                                     <div>
                                                         <p className="text-sm text-gray-500">Способ доставки</p>
@@ -357,71 +302,6 @@ export default function OrderShow({ auth, order }) {
                                                 </table>
                                             </div>
                                         </div>
-                                        
-                                        {/* Платежи */}
-                                        {order.payments && order.payments.length > 0 && (
-                                            <div className="bg-white p-6 rounded-lg shadow-sm mt-6">
-                                                <h3 className="text-lg font-semibold mb-4">Платежи</h3>
-                                                
-                                                <div className="overflow-x-auto">
-                                                    <table className="min-w-full divide-y divide-gray-200">
-                                                        <thead className="bg-gray-50">
-                                                            <tr>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    ID
-                                                                </th>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    Дата
-                                                                </th>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    Метод оплаты
-                                                                </th>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    Сумма
-                                                                </th>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    Статус
-                                                                </th>
-                                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                                    Действия
-                                                                </th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody className="bg-white divide-y divide-gray-200">
-                                                            {order.payments.map((payment) => (
-                                                                <tr key={payment.id}>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                        {payment.id}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                        {formatDate(payment.created_at)}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                        {payment.payment_method ? payment.payment_method.name : 'Н/Д'}
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                                        {Number(payment.amount || 0).toFixed(2)} руб.
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(payment.status)}`}>
-                                                                            {getStatusText(payment.status)}
-                                                                        </span>
-                                                                    </td>
-                                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-indigo-600">
-                                                                        <Link
-                                                                            href={route('finances.show', payment.id)}
-                                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                                        >
-                                                                            Подробнее
-                                                                        </Link>
-                                                                    </td>
-                                                                </tr>
-                                                            ))}
-                                                        </tbody>
-                                                    </table>
-                                                </div>
-                                            </div>
-                                        )}
                                     </div>
                                     
                                     {/* Сводка заказа */}
@@ -448,53 +328,6 @@ export default function OrderShow({ auth, order }) {
                                                 </div>
                                             </div>
                                             
-                                            {/* Информация об оплате */}
-                                            <div className="border-t border-gray-200 pt-4 mt-4">
-                                                <h4 className="font-medium mb-3">Статус оплаты</h4>
-                                                <div className="flex justify-between items-center mb-2">
-                                                    <span className="text-gray-600">Оплачено:</span>
-                                                    <span className="font-medium text-green-600">{Number(order.total_paid || 0).toFixed(2)} руб.</span>
-                                                </div>
-                                                <div className="flex justify-between items-center mb-3">
-                                                    <span className="text-gray-600">Осталось оплатить:</span>
-                                                    <span className="font-medium text-red-600">{Number(order.remaining_amount || order.total || 0).toFixed(2)} руб.</span>
-                                                </div>
-                                                
-                                                {/* Баланс пользователя */}
-                                                {auth.user && auth.user.balance !== undefined && (
-                                                    <div className="flex justify-between items-center mb-3">
-                                                        <span className="text-gray-600">Ваш баланс:</span>
-                                                        <span className="font-medium text-blue-600">{Number(auth.user.balance).toFixed(2)} руб.</span>
-                                                    </div>
-                                                )}
-                                                
-                                                {/* Кнопки оплаты */}
-                                                <div className="space-y-2">
-                                                    {/* Кнопка оплаты с баланса */}
-                                                    {auth.user && auth.user.balance !== undefined && 
-                                                     order.payment_status !== 'paid' && 
-                                                     order.remaining_amount > 0 && 
-                                                     auth.user.balance > 0 && (
-                                                        <button
-                                                            onClick={payFromBalance}
-                                                            disabled={payingFromBalance || auth.user.balance < order.remaining_amount}
-                                                            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-                                                        >
-                                                            {payingFromBalance ? 'Выполняется...' : 
-                                                             auth.user.balance < order.remaining_amount ? 
-                                                             `Оплатить с баланса ${auth.user.balance} руб.` : 
-                                                             `Оплатить с баланса ${order.remaining_amount} руб.`}
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                
-                                                {error && (
-                                                    <div className="mt-3 text-sm text-red-600">
-                                                        {error}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            
                                             {/* Комментарии */}
                                             {order.notes_json && order.notes_json.length > 0 && (
                                                 <div className="mt-6 border-t border-gray-200 pt-4">
@@ -512,20 +345,15 @@ export default function OrderShow({ auth, order }) {
                                                 </div>
                                             )}
                                             
-                                            <div className="mt-6">
+                                            {/* Кнопки действий */}
+                                            <div className="flex flex-wrap justify-between mt-8 gap-4">
                                                 <button
                                                     onClick={addOrderToCart}
                                                     disabled={addingToCart}
-                                                    className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                                    className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150 disabled:opacity-50"
                                                 >
                                                     {addingToCart ? 'Добавление...' : 'Повторить заказ'}
                                                 </button>
-                                                
-                                                {cartSuccess && (
-                                                    <div className="mt-3 text-sm text-green-600">
-                                                        Товары добавлены в корзину
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     </div>

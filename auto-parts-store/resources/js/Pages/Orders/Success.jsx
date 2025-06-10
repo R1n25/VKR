@@ -23,6 +23,31 @@ export default function Success({ auth, order }) {
                                 <p className="mt-1 text-gray-600">Сумма заказа: <span className="font-semibold">{order.total_price} руб.</span></p>
                             </div>
 
+                            <div className="mt-6 border-t border-b py-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h4 className="font-medium text-sm text-gray-600 mb-1">Информация о заказе</h4>
+                                </div>
+
+                                <div className="flex flex-col space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Номер заказа:</span>
+                                        <span className="font-semibold">#{order.order_number}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Статус:</span>
+                                        <span className="font-semibold">{getStatusText(order.status)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Дата заказа:</span>
+                                        <span className="font-semibold">{formatDate(order.created_at)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-600">Итоговая сумма:</span>
+                                        <span className="font-semibold">{formatPrice(order.total)} руб.</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="bg-gray-50 p-6 rounded-lg mb-6">
                                 <h3 className="text-lg font-semibold mb-4">Информация о заказе</h3>
                                 
@@ -39,15 +64,6 @@ export default function Success({ auth, order }) {
                                         <p className="text-gray-900">
                                             {order.shipping_city}
                                             {order.shipping_zip && `, ${order.shipping_zip}`}
-                                        </p>
-                                    </div>
-                                    
-                                    <div>
-                                        <h4 className="font-medium text-sm text-gray-600 mb-1">Способ оплаты</h4>
-                                        <p className="text-gray-900">
-                                            {order.payment_method === 'cash' && 'Наличными при получении'}
-                                            {order.payment_method === 'card' && 'Картой при получении'}
-                                            {order.payment_method === 'online' && 'Онлайн-оплата'}
                                         </p>
                                     </div>
                                     

@@ -5,7 +5,12 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * @deprecated Этот контроллер устарел. Используйте SparePartController вместо него.
+ * Функциональность перенесена в SparePartController::indexWithQueryBuilder()
+ */
 class PartController extends Controller
 {
     /**
@@ -16,6 +21,9 @@ class PartController extends Controller
      */
     public function index(Request $request)
     {
+        // Логируем использование устаревшего контроллера
+        Log::warning('Использован устаревший контроллер PartController::index. Используйте SparePartController вместо него.');
+        
         $query = DB::table('spare_parts')
             ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
             ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')
@@ -140,6 +148,9 @@ class PartController extends Controller
      */
     public function show($id)
     {
+        // Логируем использование устаревшего контроллера
+        Log::warning('Использован устаревший контроллер PartController::show. Используйте SparePartController вместо него.');
+        
         $part = DB::table('spare_parts')
             ->join('car_brands', 'spare_parts.brand_id', '=', 'car_brands.id')
             ->join('car_models', 'spare_parts.model_id', '=', 'car_models.id')

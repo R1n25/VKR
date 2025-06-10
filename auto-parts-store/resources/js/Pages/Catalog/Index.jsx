@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Head, Link } from '@inertiajs/react';
-import Layout from '@/Layouts/Layout';
+import MainLayout from '@/Layouts/MainLayout';
 import { ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function Index({ auth, popularBrands, allBrands }) {
@@ -29,7 +29,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
     };
 
     return (
-        <Layout user={auth?.user}>
+        <MainLayout user={auth?.user}>
             <Head title="Каталог автомобилей" />
 
             <div className="py-6">
@@ -176,6 +176,6 @@ export default function Index({ auth, popularBrands, allBrands }) {
                     </div>
                 </div>
             </div>
-        </Layout>
+        </MainLayout>
     );
 } 

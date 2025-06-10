@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import { router } from '@inertiajs/react';
 
 export default function CategoriesIndex({ auth }) {
     const [categories, setCategories] = useState([]);
@@ -82,7 +83,7 @@ export default function CategoriesIndex({ auth }) {
         return (
             <div key={category.id} className="mb-4">
                 <Link 
-                    href={`/categories/${category.id}`}
+                    href={`/category/${category.id}`}
                     className={`block p-4 border border-gray-200 rounded-lg hover:shadow-md transition ${
                         level === 0 ? 'bg-gray-50' : ''
                     }`}
@@ -170,7 +171,7 @@ export default function CategoriesIndex({ auth }) {
                                             {filteredCategories.map(category => (
                                                 <Link
                                                     key={category.id}
-                                                    href={`/categories/${category.id}`}
+                                                    href={`/category/${category.id}`}
                                                     className="block p-4 border border-gray-200 rounded-lg hover:shadow-md transition group"
                                                 >
                                                     <h4 className="text-lg font-medium text-gray-900 group-hover:text-green-600 mb-1">
