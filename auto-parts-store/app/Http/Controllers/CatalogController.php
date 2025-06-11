@@ -183,8 +183,9 @@ class CatalogController extends Controller
                            ->limit(8)
                            ->get();
         
-        // Получаем аналоги запчасти
-        $analogParts = $sparePart->analogs()->get();
+        // Получаем аналоги запчасти через сервис AnalogService
+        $analogService = app(\App\Services\AnalogService::class);
+        $analogParts = $analogService->getAnalogs($sparePart->id);
         
         return Inertia::render('Catalog/Part', [
             'sparePart' => $sparePart,

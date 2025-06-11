@@ -74,24 +74,6 @@ export default function SuggestCompatibilityForm({ auth, sparePart, carModels, c
         setSubmitting(true);
         
         try {
-            // Получаем актуальный CSRF токен из мета-тега
-            let csrfToken = '';
-            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-            
-            if (csrfMeta) {
-                csrfToken = csrfMeta.getAttribute('content');
-            } else {
-                // Если мета-тег не найден, попробуем получить токен из cookie
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.startsWith('XSRF-TOKEN=')) {
-                        csrfToken = decodeURIComponent(cookie.substring('XSRF-TOKEN='.length));
-                        break;
-                    }
-                }
-            }
-            
             // Проверяем обязательные поля
             if (!data.car_brand_id || !data.car_model_id) {
                 setMessage({
@@ -102,13 +84,20 @@ export default function SuggestCompatibilityForm({ auth, sparePart, carModels, c
                 return;
             }
             
+            // Определяем URL для отправки данных
+            const currentUrl = window.location.pathname;
+            let url = `/spare-parts/${sparePart.id}/suggest-compatibility`;
+            
+            if (currentUrl.includes('/parts/')) {
+                url = `/parts/${sparePart.id}/suggest-compatibility`;
+            }
+            
             // Используем axios для отправки запроса
             const response = await axios({
                 method: 'POST',
-                url: `/spare-parts/${sparePart.id}/suggest-compatibility`,
+                url: url,
                 data: data,
                 headers: {
-                    'X-CSRF-TOKEN': csrfToken,
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'

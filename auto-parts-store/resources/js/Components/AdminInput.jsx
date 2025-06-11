@@ -1,7 +1,7 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 
 const AdminInput = forwardRef(function AdminInput(
-    { type = 'text', name, id, value, className = '', autoComplete, required, isFocused, handleChange, placeholder, disabled = false },
+    { type = 'text', name, id, value, className = '', autoComplete, required, isFocused, onChange, handleChange, placeholder, disabled = false },
     ref
 ) {
     const input = ref ? ref : useRef();
@@ -11,6 +11,9 @@ const AdminInput = forwardRef(function AdminInput(
             input.current.focus();
         }
     }, [isFocused]);
+
+    // Используем handleChange, если он предоставлен, иначе используем onChange
+    const changeHandler = handleChange || onChange;
 
     return (
         <input
@@ -22,7 +25,7 @@ const AdminInput = forwardRef(function AdminInput(
             ref={input}
             autoComplete={autoComplete}
             required={required}
-            onChange={(e) => handleChange(e)}
+            onChange={changeHandler}
             placeholder={placeholder}
             disabled={disabled}
         />

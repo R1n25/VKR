@@ -19,7 +19,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const handleSearchSubmit = (e) => {
         e.preventDefault();
         if (searchQuery.trim()) {
-            window.location = route('search') + '?q=' + encodeURIComponent(searchQuery);
+            window.location = url('search') + '?q=' + encodeURIComponent(searchQuery);
         }
     };
 
@@ -43,22 +43,22 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="flex h-20 justify-between">
                         <div className="flex">
                             <div className="flex shrink-0 items-center">
-                                <Link href={route('home')}>
+                                <Link href={url('/')}>
                                     <ApplicationLogo className="block h-16 w-auto sm:h-16 xs:h-12" variant="white" />
                                 </Link>
                             </div>
 
                             <div className="hidden space-x-4 sm:-my-px sm:ml-10 sm:flex">
-                                <NavLink href={route('home')} active={route().current('home')}>
+                                <NavLink href={url('/')} active={window.location.pathname === '/' || window.location.pathname === '/home'}>
                                     Главная
                                 </NavLink>
-                                <NavLink href={route('brands.index')} active={route().current('brands.index')}>
+                                <NavLink href={url('/brands')} active={window.location.pathname.startsWith('/brands')}>
                                     Бренды
                                 </NavLink>
-                                <NavLink href={route('news')} active={route().current('news')}>
+                                <NavLink href={url('/news')} active={window.location.pathname === '/news'}>
                                     Новости
                                 </NavLink>
-                                <NavLink href={route('contacts')} active={route().current('contacts')}>
+                                <NavLink href={url('/contacts')} active={window.location.pathname === '/contacts'}>
                                     Контакты
                                 </NavLink>
                                 <div className="relative flex items-center ml-4">
@@ -87,7 +87,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             <div className="hidden sm:flex sm:items-center sm:ml-auto space-x-4">
                                 {user.role === 'admin' ? (
                                     <div className="flex items-center space-x-4">
-                                        <NavLink href={route('admin.dashboard')} active={route().current('admin.dashboard')}>
+                                        <NavLink href={url('admin/dashboard')} active={window.location.pathname.startsWith('/admin/dashboard')}>
                                             <div className="flex items-center bg-blue-600 hover:bg-blue-700 transition-colors px-4 py-2 rounded-lg text-white">
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -102,7 +102,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </div>
                                         
                                         <Link
-                                            href={route('logout')}
+                                            href={url('logout')}
                                             className="flex items-center bg-red-600 hover:bg-red-700 transition-colors px-4 py-2 rounded-lg text-white"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -121,7 +121,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         
                                         <div className="flex items-center space-x-2">
                                             <Link
-                                                href={route('dashboard')}
+                                                href={url('/dashboard')}
                                                 className="inline-flex items-center px-3 py-2 border border-indigo-500 text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition ease-in-out duration-150"
                                             >
                                                 <svg 
@@ -141,7 +141,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 Личный кабинет
                                             </Link>
                                             <Link
-                                                href={route('logout')}
+                                                href={url('logout')}
                                                 className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-100 bg-red-600 hover:bg-red-700 transition ease-in-out duration-150"
                                             >
                                                 <svg 
@@ -168,22 +168,18 @@ export default function AuthenticatedLayout({ header, children }) {
 
                         {!user && (
                             <div className="hidden sm:flex sm:items-center sm:ml-auto">
-                                {route().has('login') && (
-                                    <Link 
-                                        href={route('login')} 
-                                        className="px-4 py-2 text-sm font-medium text-white hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 mr-2"
-                                    >
-                                        Вход
-                                    </Link>
-                                )}
-                                {route().has('register') && (
-                                    <Link 
-                                        href={route('register')} 
-                                        className="px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-300"
-                                    >
-                                        Регистрация
-                                    </Link>
-                                )}
+                                <Link 
+                                    href={url('/login')} 
+                                    className="px-4 py-2 text-sm font-medium text-white hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-300 mr-2"
+                                >
+                                    Вход
+                                </Link>
+                                <Link 
+                                    href={url('register')} 
+                                    className="px-4 py-2 text-sm font-medium bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-300"
+                                >
+                                    Регистрация
+                                </Link>
                             </div>
                         )}
 
@@ -226,10 +222,10 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <div className="space-y-2 px-4 pb-3 pt-2">
                         <ResponsiveNavLink
-                            href={route('home')}
-                            active={route().current('home')}
+                            href={url('/')}
+                            active={window.location.pathname === '/' || window.location.pathname === '/home'}
                             className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('home')
+                                window.location.pathname === '/' || window.location.pathname === '/home'
                                     ? 'bg-[#2a4075] text-white font-semibold'
                                     : 'text-white hover:bg-indigo-900'
                             }`}
@@ -240,10 +236,10 @@ export default function AuthenticatedLayout({ header, children }) {
                             Главная
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            href={route('brands.index')}
-                            active={route().current('brands.index')}
+                            href={url('/brands')}
+                            active={window.location.pathname.startsWith('/brands')}
                             className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('brands.index')
+                                window.location.pathname.startsWith('/brands')
                                     ? 'bg-[#2a4075] text-white font-semibold'
                                     : 'text-white hover:bg-indigo-900'
                             }`}
@@ -254,10 +250,10 @@ export default function AuthenticatedLayout({ header, children }) {
                             Бренды
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            href={route('news')}
-                            active={route().current('news')}
+                            href={url('/news')}
+                            active={window.location.pathname === '/news'}
                             className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('news')
+                                window.location.pathname === '/news'
                                     ? 'bg-[#2a4075] text-white font-semibold'
                                     : 'text-white hover:bg-indigo-900'
                             }`}
@@ -268,10 +264,10 @@ export default function AuthenticatedLayout({ header, children }) {
                             Новости
                         </ResponsiveNavLink>
                         <ResponsiveNavLink
-                            href={route('contacts')}
-                            active={route().current('contacts')}
+                            href={url('/contacts')}
+                            active={window.location.pathname === '/contacts'}
                             className={`flex items-center px-3 py-2 rounded-lg transition-all duration-300 ${
-                                route().current('contacts')
+                                window.location.pathname === '/contacts'
                                     ? 'bg-[#2a4075] text-white font-semibold'
                                     : 'text-white hover:bg-indigo-900'
                             }`}
@@ -317,9 +313,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                 {user.role === 'admin' ? (
                                     <>
                                         <ResponsiveNavLink 
-                                            href={route('admin.dashboard')}
+                                            href={url('admin/dashboard')}
                                             className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                                route().current('admin.dashboard')
+                                                window.location.pathname.startsWith('/admin/dashboard')
                                                     ? 'bg-green-500'
                                                     : 'hover:bg-indigo-900'
                                             }`}
@@ -331,7 +327,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </ResponsiveNavLink>
                                         
                                         <ResponsiveNavLink
-                                            href={route('logout')}
+                                            href={url('logout')}
                                             className="w-full flex items-center bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-all duration-300"
                                         >
                                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -343,9 +339,9 @@ export default function AuthenticatedLayout({ header, children }) {
                                 ) : (
                                     <>
                                         <ResponsiveNavLink 
-                                            href={route('dashboard')}
+                                            href={url('/dashboard')}
                                             className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                                route().current('dashboard')
+                                                window.location.pathname === '/dashboard'
                                                     ? 'bg-green-500'
                                                     : 'hover:bg-indigo-900'
                                             }`}
@@ -357,7 +353,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                         </ResponsiveNavLink>
                                         
                                         <ResponsiveNavLink
-                                            href={route('logout')}
+                                            href={url('logout')}
                                             className={`w-full flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 bg-red-600 hover:bg-red-700`}
                                         >
                                             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -374,36 +370,28 @@ export default function AuthenticatedLayout({ header, children }) {
                     {!user && (
                         <div className="border-t border-indigo-900 px-4 py-4 space-y-2">
                             <div className="flex justify-between">
-                                {route().has('login') && (
-                                    <ResponsiveNavLink 
-                                        href={route('login')}
-                                        className={`flex items-center text-white px-3 py-2 rounded-lg transition-all duration-300 ${
-                                            route().current('login')
-                                                ? 'bg-green-500'
-                                                : 'hover:bg-indigo-900'
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                                        </svg>
-                                        Вход
-                                    </ResponsiveNavLink>
-                                )}
-                                {route().has('register') && (
-                                    <ResponsiveNavLink 
-                                        href={route('register')}
-                                        className={`flex items-center bg-green-500 text-white hover:bg-green-600 px-3 py-2 rounded-lg transition-all duration-300 ${
-                                            route().current('register')
-                                                ? 'bg-green-500'
-                                                : ''
-                                        }`}
-                                    >
-                                        <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                                        </svg>
-                                        Регистрация
-                                    </ResponsiveNavLink>
-                                )}
+                                <ResponsiveNavLink 
+                                    href={url('/login')}
+                                    className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-all duration-300"
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                    </svg>
+                                    Вход
+                                </ResponsiveNavLink>
+                                <ResponsiveNavLink 
+                                    href={url('register')}
+                                    className={`flex items-center bg-green-500 text-white hover:bg-green-600 px-3 py-2 rounded-lg transition-all duration-300 ${
+                                        window.location.pathname === '/register'
+                                            ? 'bg-green-500'
+                                            : ''
+                                    }`}
+                                >
+                                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                                    </svg>
+                                    Регистрация
+                                </ResponsiveNavLink>
                             </div>
                         </div>
                     )}

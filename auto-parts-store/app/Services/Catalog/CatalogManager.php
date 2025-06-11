@@ -5,6 +5,7 @@ namespace App\Services\Catalog;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Http\UploadedFile;
 
 class CatalogManager
 {
@@ -40,18 +41,18 @@ class CatalogManager
     /**
      * Импортировать запчасти из CSV файла
      *
-     * @param string $filePath Путь к CSV файлу
+     * @param \Illuminate\Http\UploadedFile|string $file Загруженный CSV файл или путь к файлу
      * @param bool $updateExisting Обновлять существующие записи
      * @param bool $saveBackup Создать резервную копию перед импортом
      * @return array Статистика импорта
      */
-    public function importSpareParts(string $filePath, bool $updateExisting = true, bool $saveBackup = true): array
+    public function importSpareParts($file, bool $updateExisting = false, bool $saveBackup = true): array
     {
         if ($saveBackup) {
             $this->backupSpareParts();
         }
         
-        return $this->importService->importSpareParts($filePath, $updateExisting);
+        return $this->importService->importSpareParts($file, $updateExisting, $saveBackup);
     }
     
     /**

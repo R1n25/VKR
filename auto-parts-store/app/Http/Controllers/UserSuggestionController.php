@@ -291,4 +291,40 @@ class UserSuggestionController extends Controller
         return redirect()->route('admin.suggestions.index')
             ->with('success', 'Предложение отклонено.');
     }
+
+    /**
+     * Отображение формы для создания предложения аналога по ID запчасти
+     */
+    public function createAnalogById($id)
+    {
+        $sparePart = \App\Models\SparePart::findOrFail($id);
+        return $this->createAnalog($sparePart);
+    }
+    
+    /**
+     * Отображение формы для создания предложения совместимости по ID запчасти
+     */
+    public function createCompatibilityById($id)
+    {
+        $sparePart = \App\Models\SparePart::findOrFail($id);
+        return $this->createCompatibility($sparePart);
+    }
+
+    /**
+     * Сохранение предложения аналога запчасти по ID
+     */
+    public function storeAnalogById(Request $request, $id)
+    {
+        $sparePart = \App\Models\SparePart::findOrFail($id);
+        return $this->storeAnalog($request, $sparePart);
+    }
+    
+    /**
+     * Сохранение предложения совместимости по ID
+     */
+    public function storeCompatibilityById(Request $request, $id)
+    {
+        $sparePart = \App\Models\SparePart::findOrFail($id);
+        return $this->storeCompatibility($request, $sparePart);
+    }
 } 

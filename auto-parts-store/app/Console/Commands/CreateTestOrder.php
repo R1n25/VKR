@@ -79,11 +79,6 @@ class CreateTestOrder extends Command
             $order->email = $user->email;
             $order->phone = '7' . rand(9000000000, 9999999999);
             $order->address = 'ул. Тестовая, д. ' . rand(1, 100) . ', Москва, 145892';
-            $order->shipping_name = $user->name;
-            $order->shipping_phone = '7' . rand(9000000000, 9999999999);
-            $order->shipping_address = 'ул. Тестовая, д. ' . rand(1, 100);
-            $order->shipping_city = 'Москва';
-            $order->shipping_zip = '145892';
             $order->notes = 'Тестовый заказ, создан через команду artisan';
             $order->save();
             

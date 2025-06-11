@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -16,6 +17,11 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import SuccessButton from '@/Components/SuccessButton';
 import InfoButton from '@/Components/InfoButton';
+
+// Добавляем импорт функции url
+const url = (path) => {
+    return `/${path}`;
+};
 
 export default function Index({ auth, spareParts, categories, filters }) {
     const page = usePage();
@@ -70,12 +76,12 @@ export default function Index({ auth, spareParts, categories, filters }) {
     const handleSort = (field) => {
         const direction = data.sort === field && data.direction === 'asc' ? 'desc' : 'asc';
         setData({ ...data, sort: field, direction });
-        get(route('admin.spare-parts.inertia'), { preserveState: true });
+        get(url('admin/spare-parts'), { preserveState: true });
     };
 
     const handleSearch = (e) => {
         e.preventDefault();
-        get(route('admin.spare-parts.inertia'), { preserveState: true });
+        get(url('admin/spare-parts'), { preserveState: true });
     };
 
     const handleReset = () => {
@@ -87,13 +93,13 @@ export default function Index({ auth, spareParts, categories, filters }) {
             direction: 'asc',
             per_page: 30,
         });
-        get(route('admin.spare-parts.inertia'), { preserveState: true });
+        get(url('admin/spare-parts'), { preserveState: true });
     };
 
     const handlePerPageChange = (e) => {
         const value = e.target.value;
         setData({ ...data, per_page: value });
-        get(route('admin.spare-parts.inertia'), { preserveState: true });
+        get(url('admin/spare-parts'), { preserveState: true });
     };
 
     const getSortIcon = (field) => {
@@ -111,7 +117,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
 
     const handleDelete = (id) => {
         if (confirm('Вы действительно хотите удалить эту запчасть? Это действие нельзя будет отменить.')) {
-            router.delete(route('admin.spare-parts.destroy', { spare_part: id }), {
+            router.delete(url(`admin/spare-parts/${id}`), {
                 onSuccess: () => {
                     // Показываем уведомление об успешном удалении
                     setNotification({ type: 'success', message: 'Запчасть успешно удалена' });
@@ -124,7 +130,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
     };
 
     const handleUpdateCategory = (partId, categoryId) => {
-        router.put(route('admin.spare-parts.update-category', { spare_part: partId }), {
+        router.put(url(`admin/spare-parts-update-category/${partId}`), {
             category_id: categoryId
         }, {
             preserveScroll: true,
@@ -139,28 +145,8 @@ export default function Index({ auth, spareParts, categories, filters }) {
 
     const handleActivateAll = () => {
         if (confirm('Вы действительно хотите активировать все запчасти?')) {
-            router.post(route('admin.spare-parts.set-all-active'), {}, {
-                onSuccess: () => {
-                    // Показываем уведомление об успешной активации
-                    setNotification({ type: 'success', message: 'Все запчасти успешно активированы' });
-                    
-                    // Создаем таймер для автоматического скрытия уведомления
-                    const timer = setTimeout(() => {
-                        setNotification(null);
-                    }, 3000);
-                    
-                    // Перезагружаем страницу для обновления данных
-                    router.reload({ only: ['spareParts'] });
-                },
-                onError: (errors) => {
-                    setNotification({ type: 'error', message: 'Ошибка при активации запчастей: ' + (errors.message || 'Неизвестная ошибка') });
-                    
-                    // Создаем таймер для автоматического скрытия уведомления об ошибке
-                    setTimeout(() => {
-                        setNotification(null);
-                    }, 3000);
-                }
-            });
+            // Перенаправляем на GET-маршрут для активации всех запчастей
+            window.location.href = url('admin/spare-parts-activate-all');
         }
     };
 
@@ -174,8 +160,8 @@ export default function Index({ auth, spareParts, categories, filters }) {
             {/* Отображение уведомления */}
             {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6">
+                <div className="max-w-full mx-auto px-2 sm:px-4 lg:px-4">
                     <AdminCard>
                         <AdminPageHeader 
                             title="Управление запчастями" 
@@ -183,24 +169,24 @@ export default function Index({ auth, spareParts, categories, filters }) {
                         />
                         
                         {/* Фильтры */}
-                        <div className="mb-6">
-                            <h3 className="text-lg font-semibold mb-4 flex items-center text-[#2a4075]">
+                        <div className="mb-4">
+                            <h3 className="text-lg font-semibold mb-3 flex items-center text-[#2a4075]">
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                                 </svg>
                                 Фильтры поиска
                             </h3>
                             
-                            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                 <form onSubmit={handleSearch}>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                                         <AdminFormGroup label="Поиск" name="search">
                                             <AdminInput
                                                 type="text"
                                                 name="search"
                                                 value={data.search}
-                                                handleChange={(e) => setData('search', e.target.value)}
-                                                placeholder="Название или артикул"
+                                                onChange={(e) => setData('search', e.target.value)}
+                                                placeholder="Артикул, название или описание"
                                             />
                                         </AdminFormGroup>
                                         
@@ -208,13 +194,11 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             <AdminSelect
                                                 name="category_id"
                                                 value={data.category_id}
-                                                handleChange={(e) => setData('category_id', e.target.value)}
+                                                onChange={(e) => setData('category_id', e.target.value)}
                                             >
                                                 <option value="">Все категории</option>
                                                 {categories.map((category) => (
-                                                    <option key={category.id} value={category.id}>
-                                                        {category.name}
-                                                    </option>
+                                                    <option key={category.id} value={category.id}>{category.name}</option>
                                                 ))}
                                             </AdminSelect>
                                         </AdminFormGroup>
@@ -223,157 +207,156 @@ export default function Index({ auth, spareParts, categories, filters }) {
                                             <AdminSelect
                                                 name="manufacturer"
                                                 value={data.manufacturer}
-                                                handleChange={(e) => setData('manufacturer', e.target.value)}
+                                                onChange={(e) => setData('manufacturer', e.target.value)}
                                             >
                                                 <option value="">Все производители</option>
                                                 {manufacturers.map((manufacturer) => (
-                                                    <option key={manufacturer} value={manufacturer}>
-                                                        {manufacturer}
-                                                    </option>
+                                                    <option key={manufacturer} value={manufacturer}>{manufacturer}</option>
                                                 ))}
                                             </AdminSelect>
                                         </AdminFormGroup>
-                                    </div>
-                                    
-                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                                        <div className="flex flex-wrap gap-2">
-                                            <PrimaryButton 
-                                                type="submit" 
-                                                disabled={processing}
-                                                className="flex items-center"
-                                            >
-                                                {processing ? (
-                                                    <>
-                                                        <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                        </svg>
-                                                        Применение...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                                                        </svg>
-                                                        Применить фильтры
-                                                    </>
-                                                )}
+                                        
+                                        <div className="flex items-end space-x-2">
+                                            <PrimaryButton type="submit" disabled={processing} className="h-10">
+                                                Применить фильтры
                                             </PrimaryButton>
-                                            <SecondaryButton
-                                                type="button"
-                                                onClick={handleReset}
-                                                className="flex items-center"
-                                            >
-                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
+                                            <SecondaryButton type="button" onClick={handleReset} disabled={processing} className="h-10">
                                                 Сбросить
                                             </SecondaryButton>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            <SuccessButton
-                                                href={route('admin.spare-parts.create-inertia')}
-                                                className="flex items-center"
-                                            >
-                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                                                </svg>
-                                                Добавить запчасть
-                                            </SuccessButton>
-                                            <InfoButton
-                                                type="button"
-                                                onClick={() => handleActivateAll()}
-                                                className="flex items-center"
-                                            >
-                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Активировать все
-                                            </InfoButton>
                                         </div>
                                     </div>
                                 </form>
                             </div>
                         </div>
-
+                        
+                        {/* Кнопки действий */}
+                        <div className="mb-4 flex flex-wrap gap-2">
+                            <div className="flex space-x-2">
+                                <PrimaryButton
+                                    href={url('admin/spare-parts/create')}
+                                    className="flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                    </svg>
+                                    Добавить запчасть
+                                </PrimaryButton>
+                                
+                                <SecondaryButton
+                                    href={url('admin/spare-parts-activate-all')}
+                                    className="flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Активировать все
+                                </SecondaryButton>
+                                
+                                <InfoButton
+                                    href={url('admin/spare-parts/sync-all-analogs')}
+                                    className="flex items-center"
+                                >
+                                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    Синхронизировать аналоги
+                                </InfoButton>
+                            </div>
+                            
+                            <div className="flex items-center ml-auto">
+                                <span className="text-sm text-gray-600 mr-2">Записей на странице:</span>
+                                <select
+                                    className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                                    value={data.per_page}
+                                    onChange={handlePerPageChange}
+                                >
+                                    <option value="10">10</option>
+                                    <option value="30">30</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+                        
                         {/* Таблица запчастей */}
                         <AdminTable
                             headers={[
-                                'ID',
-                                'Название',
-                                'Артикул',
-                                'Категория',
-                                'Производитель',
-                                { content: 'Цена', props: { className: 'text-right' } },
-                                { content: 'Кол-во', props: { className: 'text-center' } },
-                                { content: 'Статус', props: { className: 'text-center' } },
-                                { content: 'Действия', props: { className: 'text-center' } }
+                                { content: <button onClick={() => handleSort('id')} className="flex items-center">ID {getSortIcon('id')}</button> },
+                                { content: <button onClick={() => handleSort('part_number')} className="flex items-center">Артикул {getSortIcon('part_number')}</button> },
+                                { content: <button onClick={() => handleSort('name')} className="flex items-center">Название {getSortIcon('name')}</button> },
+                                { content: <button onClick={() => handleSort('manufacturer')} className="flex items-center">Производитель {getSortIcon('manufacturer')}</button> },
+                                { content: <button onClick={() => handleSort('price')} className="flex items-center">Цена {getSortIcon('price')}</button> },
+                                { content: <button onClick={() => handleSort('category_id')} className="flex items-center">Категория {getSortIcon('category_id')}</button> },
+                                { content: <button onClick={() => handleSort('is_active')} className="flex items-center">Статус {getSortIcon('is_active')}</button> },
+                                { content: 'Действия' }
                             ]}
                             data={spareParts.data}
-                            onSort={handleSort}
-                            currentSort={data.sort}
-                            currentDirection={data.direction}
                             renderRow={(part) => (
                                 <>
-                                    <td className="px-2 py-3 whitespace-nowrap text-sm text-gray-900">{part.id}</td>
-                                    <td className="px-2 py-3 text-sm text-gray-900 break-words">{part.name}</td>
-                                    <td className="px-2 py-3 text-sm text-gray-500">{part.part_number}</td>
-                                    <td className="px-2 py-3 text-sm text-gray-500">
-                                        {part.category_id ? (
-                                            categories.find(cat => cat.id === part.category_id)?.name || '-'
-                                        ) : '-'}
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                        {part.id}
                                     </td>
-                                    <td className="px-2 py-3 text-sm text-gray-500 break-words">{part.manufacturer}</td>
-                                    <td className="px-2 py-3 text-sm text-gray-500 text-right">{part.price} ₽</td>
-                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">{part.stock_quantity}</td>
-                                    <td className="px-2 py-3 text-sm text-gray-500 text-center">
-                                        {part.is_available ? (
-                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Активна</span>
-                                        ) : (
-                                            <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Неактивна</span>
-                                        )}
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm font-mono font-medium text-gray-900">
+                                        {part.part_number}
                                     </td>
-                                    <td className="px-2 py-3 text-sm font-medium">
-                                        <div className="flex flex-col space-y-1 items-center">
-                                            <SecondaryButton
-                                                href={route('admin.spare-parts.edit-inertia', part.id)}
-                                                className="text-xs px-2 py-1 w-full"
-                                            >
+                                    <td className="px-3 py-2 text-sm text-gray-900">
+                                        {part.name}
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        {part.manufacturer || '-'}
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
+                                        {part.price ? `${part.price} ₽` : '-'}
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <select
+                                            className="rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 text-xs"
+                                            value={part.category_id || ''}
+                                            onChange={(e) => handleUpdateCategory(part.id, e.target.value)}
+                                        >
+                                            <option value="">Без категории</option>
+                                            {categories.map((category) => (
+                                                <option key={category.id} value={category.id}>
+                                                    {category.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
+                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${part.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                            {part.is_active ? 'Активна' : 'Неактивна'}
+                                        </span>
+                                    </td>
+                                    <td className="px-3 py-2 whitespace-nowrap text-sm font-medium">
+                                        <div className="flex space-x-1">
+                                            <Link href={url(`admin/spare-parts/${part.id}/edit`)} className="btn-info text-xs py-1 px-2">
                                                 Изменить
-                                            </SecondaryButton>
-                                            <InfoButton
-                                                href={route('admin.spare-parts.show-inertia', part.id)}
-                                                className="text-xs px-2 py-1 w-full"
-                                            >
+                                            </Link>
+                                            
+                                            <Link href={url(`admin/spare-parts/${part.id}`)} className="btn-primary text-xs py-1 px-2">
                                                 Просмотр
-                                            </InfoButton>
-                                            <PrimaryButton
-                                                href={route('admin.spare-parts.analogs', part.id)}
-                                                className="text-xs px-2 py-1 w-full"
-                                            >
+                                            </Link>
+                                            
+                                            <Link href={url(`admin/spare-parts/${part.id}/analogs`)} className="btn-secondary text-xs py-1 px-2">
                                                 Аналоги
-                                            </PrimaryButton>
-                                            <DangerButton
+                                            </Link>
+                                            
+                                            <button
                                                 onClick={() => handleDelete(part.id)}
-                                                className="text-xs px-2 py-1 w-full"
+                                                className="btn-danger text-xs py-1 px-2"
                                             >
                                                 Удалить
-                                            </DangerButton>
+                                            </button>
                                         </div>
                                     </td>
                                 </>
                             )}
-                            emptyMessage="Запчасти не найдены"
+                            compact={true}
                         />
-
+                        
                         {/* Пагинация */}
                         <div className="mt-4">
-                            <div className="flex flex-col sm:flex-row justify-between items-center">
-                                <div className="mb-2 sm:mb-0 text-sm text-gray-700">
-                                    Показано с {spareParts.from || 0} по {spareParts.to || 0} из {spareParts.total} записей
-                                </div>
-                                <AdminPagination links={spareParts.links} />
-                            </div>
+                            <AdminPagination links={spareParts.links} />
                         </div>
                     </AdminCard>
                 </div>

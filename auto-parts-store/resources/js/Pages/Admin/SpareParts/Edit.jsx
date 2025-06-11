@@ -11,13 +11,15 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import AdminAlert from '@/Components/AdminAlert';
 
-export default function Edit({ auth, sparePart, categories, manufacturers, carModels, compatibleCarIds }) {
+export default function Edit({ auth, sparePart, categories, manufacturers, carModels, compatibleCarIds, carEngines, compatibleEngineIds }) {
     const [previewUrl, setPreviewUrl] = useState(sparePart.image_url ? `/storage/${sparePart.image_url}` : null);
     const [uploadFileName, setUploadFileName] = useState('');
     const [selectedBrand, setSelectedBrand] = useState('');
     const [groupedCarModels, setGroupedCarModels] = useState({});
     const [filteredCarModels, setFilteredCarModels] = useState([]);
     const [selectedModels, setSelectedModels] = useState(compatibleCarIds || []);
+    const [availableEngines, setAvailableEngines] = useState([]);
+    const [selectedEngines, setSelectedEngines] = useState(compatibleEngineIds || []);
     const [notification, setNotification] = useState(null);
 
     // Группировка моделей автомобилей по брендам
@@ -33,7 +35,10 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
             }
         });
         setGroupedCarModels(grouped);
-    }, [carModels]);
+        
+        // Инициализируем доступные двигатели при загрузке страницы
+        updateAvailableEngines(compatibleCarIds || []);
+    }, [carModels, compatibleCarIds]);
 
     // Обработка выбора бренда
     const handleBrandSelect = (brand) => {
@@ -51,6 +56,36 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
         }
         setSelectedModels(newSelectedModels);
         setData('compatible_car_models', newSelectedModels);
+        
+        // Обновляем список доступных двигателей при изменении выбранных моделей
+        updateAvailableEngines(newSelectedModels);
+    };
+    
+    // Обновление списка доступных двигателей для выбранных моделей
+    const updateAvailableEngines = (selectedModelIds) => {
+        if (selectedModelIds.length === 0) {
+            setAvailableEngines([]);
+            return;
+        }
+        
+        // Фильтруем двигатели, которые соответствуют выбранным моделям
+        const engines = carEngines.filter(engine => 
+            selectedModelIds.includes(engine.model_id)
+        );
+        
+        setAvailableEngines(engines);
+    };
+    
+    // Обработка выбора/отмены выбора двигателя
+    const handleEngineToggle = (engineId) => {
+        let newSelectedEngines;
+        if (selectedEngines.includes(engineId)) {
+            newSelectedEngines = selectedEngines.filter(id => id !== engineId);
+        } else {
+            newSelectedEngines = [...selectedEngines, engineId];
+        }
+        setSelectedEngines(newSelectedEngines);
+        setData('compatible_car_engines', newSelectedEngines);
     };
 
     const { data, setData, put, processing, errors, transform } = useForm({
@@ -63,6 +98,7 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
         manufacturer: sparePart.manufacturer || '',
         image: null,
         compatible_car_models: compatibleCarIds || [],
+        compatible_car_engines: compatibleEngineIds || [],
     });
 
     const handleChange = (e) => {
@@ -87,7 +123,7 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        put(route('admin.spare-parts.update-inertia', sparePart.id), data, {
+        put(url(`admin/spare-parts/${sparePart.id}`), data, {
             forceFormData: true,
             preserveState: false,
             preserveScroll: true,
@@ -127,7 +163,7 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
                             />
                             <div className="mt-4 sm:mt-0">
                                 <SecondaryButton
-                                    href={route('admin.spare-parts.show-inertia', sparePart.id)}
+                                    href={url(`admin/spare-parts/${sparePart.id}`)}
                                     className="flex items-center"
                                 >
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,9 +404,66 @@ export default function Edit({ auth, sparePart, categories, manufacturers, carMo
                                 </div>
                             </div>
 
+                            {/* Совместимые двигатели */}
+                            {selectedModels.length > 0 && (
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимые двигатели</h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        {availableEngines.length > 0 ? (
+                                            <>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    Выберите двигатели, совместимые с данной запчастью:
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {availableEngines.map((engine) => {
+                                                        const carModel = carModels.find(m => m.id === engine.model_id);
+                                                        const brandName = carModel && carModel.brand ? carModel.brand.name : '';
+                                                        const modelName = carModel ? carModel.name : '';
+                                                        
+                                                        return (
+                                                            <div 
+                                                                key={engine.id} 
+                                                                className={`p-2 rounded border cursor-pointer transition-colors ${
+                                                                    selectedEngines.includes(engine.id) 
+                                                                        ? 'bg-[#2a4075] text-white border-[#2a4075]' 
+                                                                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'
+                                                                }`}
+                                                                onClick={() => handleEngineToggle(engine.id)}
+                                                            >
+                                                                <div className="font-medium">{brandName} {modelName}</div>
+                                                                <div className="text-sm">
+                                                                    {engine.name} {engine.volume && `${engine.volume}л`} {engine.power && `${engine.power}л.с.`}
+                                                                </div>
+                                                                {engine.type && (
+                                                                    <div className="text-xs mt-1">
+                                                                        Тип: {engine.type}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                {selectedEngines.length > 0 && (
+                                                    <div className="mt-4 p-3 bg-green-50 rounded-md">
+                                                        <p className="font-medium text-green-700 mb-2">
+                                                            Выбрано двигателей: {selectedEngines.length}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="text-gray-500 text-center py-4">
+                                                Для выбранных моделей автомобилей не найдено доступных двигателей
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="mt-8 flex justify-end space-x-3">
                                 <SecondaryButton
-                                    href={route('admin.spare-parts.show-inertia', sparePart.id)}
+                                    href={url(`admin/spare-parts/${sparePart.id}`)}
                                     className="flex items-center"
                                 >
                                     Отмена

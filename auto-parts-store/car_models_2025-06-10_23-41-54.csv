@@ -1,0 +1,1407 @@
+﻿brand;model;year_from;year_to;description;is_popular;country
+Acura;CL;;;;1;Japan
+Acura;EL;;;;1;Japan
+Acura;ILX;;;;1;Japan
+Acura;Integra;;;;1;Japan
+Acura;MDX;;;;1;Japan
+Acura;NSX;;;;1;Japan
+Acura;RDX;;;;1;Japan
+Acura;RL;;;;1;Japan
+Acura;RLX;;;;1;Japan
+Acura;RSX;;;;1;Japan
+Acura;TL;;;;1;Japan
+Acura;TLX;;;;1;Japan
+Acura;TLX-L;;;;1;Japan
+Acura;TSX;;;;1;Japan
+Acura;ZDX;;;;1;Japan
+"Alfa Romeo";146;;;;1;Italy
+"Alfa Romeo";147;;;;1;Italy
+"Alfa Romeo";"147 GTA";;;;1;Italy
+"Alfa Romeo";156;;;;1;Italy
+"Alfa Romeo";"156 GTA";;;;1;Italy
+"Alfa Romeo";159;;;;1;Italy
+"Alfa Romeo";166;;;;1;Italy
+"Alfa Romeo";4C;;;;1;Italy
+"Alfa Romeo";"8C Competizione";;;;1;Italy
+"Alfa Romeo";Brera;;;;1;Italy
+"Alfa Romeo";Giulia;;;;1;Italy
+"Alfa Romeo";Giulietta;;;;1;Italy
+"Alfa Romeo";GT;;;;1;Italy
+"Alfa Romeo";GTV;;;;1;Italy
+"Alfa Romeo";MiTo;;;;1;Italy
+"Alfa Romeo";Spider;;;;1;Italy
+"Alfa Romeo";Stelvio;;;;1;Italy
+"Alfa Romeo";Tonale;;;;1;Italy
+"Aston Martin";Cygnet;;;;1;UK
+"Aston Martin";DB11;;;;1;UK
+"Aston Martin";DB12;;;;1;UK
+"Aston Martin";DB9;;;;1;UK
+"Aston Martin";DBS;;;;1;UK
+"Aston Martin";"DBS 770 Ultimate";;;;1;UK
+"Aston Martin";"DBS Superleggera";;;;1;UK
+"Aston Martin";"DBS Violante";;;;1;UK
+"Aston Martin";DBX;;;;1;UK
+"Aston Martin";Rapide;;;;1;UK
+"Aston Martin";"V12 Vanquish";;;;1;UK
+"Aston Martin";"V12 Vantage";;;;1;UK
+"Aston Martin";"V8 Vantage";;;;1;UK
+"Aston Martin";Valkyrie;;;;1;UK
+"Aston Martin";Valour;;;;1;UK
+"Aston Martin";Vanquish;;;;1;UK
+"Aston Martin";Vantage;;;;1;UK
+"Aston Martin";Virage;;;;1;UK
+"Aston Martin";"Zagato Coupe";;;;1;UK
+Audi;A1;;;;1;Germany
+Audi;"A1 Allstreet";;;;1;Germany
+Audi;"A1 Citycarver";;;;1;Germany
+Audi;A2;;;;1;Germany
+Audi;A3;;;;1;Germany
+Audi;"A3 Allstreet";;;;1;Germany
+Audi;A4;;;;1;Germany
+Audi;"A4 Allroad Quattro";;;;1;Germany
+Audi;A5;;;;1;Germany
+Audi;A6;;;;1;Germany
+Audi;A7;;;;1;Germany
+Audi;A8;;;;1;Germany
+Audi;Allroad;;;;1;Germany
+Audi;e-tron;;;;1;Germany
+Audi;"e-tron GT";;;;1;Germany
+Audi;"e-tron S";;;;1;Germany
+Audi;"e-tron S Sportback";;;;1;Germany
+Audi;"e-tron Sportback";;;;1;Germany
+Audi;Q2;;;;1;Germany
+Audi;Q2L;;;;1;Germany
+Audi;Q3;;;;1;Germany
+Audi;"Q3 Sportback";;;;1;Germany
+Audi;Q4;;;;1;Germany
+Audi;"Q4 Sportback";;;;1;Germany
+Audi;Q5;;;;1;Germany
+Audi;"Q5 Sportback";;;;1;Germany
+Audi;Q6;;;;1;Germany
+Audi;"Q6 e-tron";;;;1;Germany
+Audi;Q7;;;;1;Germany
+Audi;Q8;;;;1;Germany
+Audi;"Q8 e-tron";;;;1;Germany
+Audi;"Q8 Sportback e-tron";;;;1;Germany
+Audi;R8;;;;1;Germany
+Audi;"RS e-tron GT";;;;1;Germany
+Audi;"RS Q3";;;;1;Germany
+Audi;"RS Q3 Sportback";;;;1;Germany
+Audi;"RS Q7";;;;1;Germany
+Audi;"RS Q8";;;;1;Germany
+Audi;RS3;;;;1;Germany
+Audi;RS4;;;;1;Germany
+Audi;RS5;;;;1;Germany
+Audi;RS6;;;;1;Germany
+Audi;RS7;;;;1;Germany
+Audi;"S e-tron GT";;;;1;Germany
+Audi;S1;;;;1;Germany
+Audi;S3;;;;1;Germany
+Audi;S4;;;;1;Germany
+Audi;S5;;;;1;Germany
+Audi;S6;;;;1;Germany
+Audi;S7;;;;1;Germany
+Audi;S8;;;;1;Germany
+Audi;SQ2;;;;1;Germany
+Audi;SQ5;;;;1;Germany
+Audi;"SQ5 Sportback";;;;1;Germany
+Audi;"SQ6 e-tron";;;;1;Germany
+Audi;SQ7;;;;1;Germany
+Audi;SQ8;;;;1;Germany
+Audi;"SQ8 e-tron";;;;1;Germany
+Audi;"SQ8 Sportback e-tron";;;;1;Germany
+Audi;TT;;;;1;Germany
+Audi;"TT RS";;;;1;Germany
+Audi;TTS;;;;1;Germany
+Aurus;Senat;;;;1;Russia
+Avatr;11;;;;1;China
+Avatr;12;;;;1;China
+BAIC;BJ40;;;;1;China
+BAIC;"BJ40 Plus";;;;1;China
+BAIC;"U5 Plus";;;;1;China
+BAIC;X35;;;;1;China
+BAIC;X55;;;;1;China
+Bentley;Arnage;;;;1;UK
+Bentley;Azure;;;;1;UK
+Bentley;Bentayga;;;;1;UK
+Bentley;Brooklands;;;;1;UK
+Bentley;Continental;;;;1;UK
+Bentley;"Continental Flying Spur";;;;1;UK
+Bentley;"Continental GT";;;;1;UK
+Bentley;"Continental GTC";;;;1;UK
+Bentley;"Flying Spur";;;;1;UK
+Bentley;Mulsanne;;;;1;UK
+BMW;"1 series";;;;1;Germany
+BMW;"2 series";;;;1;Germany
+BMW;"3 series";;;;1;Germany
+BMW;"4 series";;;;1;Germany
+BMW;"5 series";;;;1;Germany
+BMW;"6 series";;;;1;Germany
+BMW;"7 series";;;;1;Germany
+BMW;"8 series";;;;1;Germany
+BMW;i3;;;;1;Germany
+BMW;i4;;;;1;Germany
+BMW;i5;;;;1;Germany
+BMW;i7;;;;1;Germany
+BMW;i8;;;;1;Germany
+BMW;iX;;;;1;Germany
+BMW;iX1;;;;1;Germany
+BMW;iX2;;;;1;Germany
+BMW;iX3;;;;1;Germany
+BMW;M2;;;;1;Germany
+BMW;M3;;;;1;Germany
+BMW;M4;;;;1;Germany
+BMW;M5;;;;1;Germany
+BMW;M6;;;;1;Germany
+BMW;M8;;;;1;Germany
+BMW;X1;;;;1;Germany
+BMW;X2;;;;1;Germany
+BMW;X3;;;;1;Germany
+BMW;"X3 M";;;;1;Germany
+BMW;X4;;;;1;Germany
+BMW;"X4 M";;;;1;Germany
+BMW;X5;;;;1;Germany
+BMW;"X5 M";;;;1;Germany
+BMW;X6;;;;1;Germany
+BMW;"X6 M";;;;1;Germany
+BMW;X7;;;;1;Germany
+BMW;XM;;;;1;Germany
+BMW;Z3;;;;1;Germany
+BMW;Z4;;;;1;Germany
+BMW;Z8;;;;1;Germany
+Brilliance;H230;;;;1;Other
+Brilliance;V3;;;;1;Other
+Brilliance;V5;;;;1;Other
+Bugatti;Chiron;;;;1;France
+Bugatti;Divo;;;;1;France
+Bugatti;Veyron;;;;1;France
+Bugatti;"W16 Mistral";;;;1;France
+Buick;Century;;;;1;USA
+Buick;Enclave;;;;1;USA
+Buick;Encore;;;;1;USA
+Buick;Envision;;;;1;USA
+Buick;"GL8 ES";;;;1;USA
+Buick;"La Crosse";;;;1;USA
+Buick;LaCrosse;;;;1;USA
+Buick;"Le Sabre";;;;1;USA
+Buick;Lucerne;;;;1;USA
+Buick;"Park Avenue";;;;1;USA
+Buick;Rainier;;;;1;USA
+Buick;Regal;;;;1;USA
+Buick;Rendezvouz;;;;1;USA
+Buick;Terraza;;;;1;USA
+Buick;Verano;;;;1;USA
+BYD;Dolphin;;;;1;China
+BYD;"Dolphin Plus";;;;1;China
+BYD;Han;;;;1;China
+BYD;Qin;;;;1;China
+BYD;Seal;;;;1;China
+Cadillac;ATS;;;;1;USA
+Cadillac;ATS-V;;;;1;USA
+Cadillac;BLS;;;;1;USA
+Cadillac;CT4;;;;1;USA
+Cadillac;CT4-V;;;;1;USA
+Cadillac;CT5;;;;1;USA
+Cadillac;CT5-V;;;;1;USA
+Cadillac;CT6;;;;1;USA
+Cadillac;CTS;;;;1;USA
+Cadillac;"De Ville";;;;1;USA
+Cadillac;DTS;;;;1;USA
+Cadillac;Eldorado;;;;1;USA
+Cadillac;ELR;;;;1;USA
+Cadillac;Escalade;;;;1;USA
+Cadillac;Lyriq;;;;1;USA
+Cadillac;Seville;;;;1;USA
+Cadillac;SRX;;;;1;USA
+Cadillac;STS;;;;1;USA
+Cadillac;XLR;;;;1;USA
+Cadillac;XT4;;;;1;USA
+Cadillac;XT5;;;;1;USA
+Cadillac;XT6;;;;1;USA
+Cadillac;XTS;;;;1;USA
+Changan;Alsvin;;;;1;China
+Changan;CS35;;;;1;China
+Changan;"CS35 Plus";;;;1;China
+Changan;CS55;;;;1;China
+Changan;"CS55 Plus";;;;1;China
+Changan;CS75;;;;1;China
+Changan;"CS75 Plus";;;;1;China
+Changan;"CS85 Coupe";;;;1;China
+Changan;CS95;;;;1;China
+Changan;Eado;;;;1;China
+Changan;"Eado Plus";;;;1;China
+Changan;"Hunter Plus";;;;1;China
+Changan;Lamore;;;;1;China
+Changan;Raeton;;;;1;China
+Changan;"Raeton CC";;;;1;China
+Changan;"Raeton Plus";;;;1;China
+Changan;Uni-K;;;;1;China
+Changan;Uni-T;;;;1;China
+Changan;Uni-V;;;;1;China
+Chery;Amulet;;;;1;China
+Chery;"Arrizo 5 Plus";;;;1;China
+Chery;"Arrizo 6";;;;1;China
+Chery;"Arrizo 6 Pro";;;;1;China
+Chery;"Arrizo 7";;;;1;China
+Chery;"Arrizo 8";;;;1;China
+Chery;Bonus;;;;1;China
+Chery;"Bonus 3";;;;1;China
+Chery;CrossEastar;;;;1;China
+Chery;Eastar;;;;1;China
+Chery;eQ;;;;1;China
+Chery;eQ1;;;;1;China
+Chery;eQ5;;;;1;China
+Chery;eQ7;;;;1;China
+Chery;Fora;;;;1;China
+Chery;iCar;;;;1;China
+Chery;IndiS;;;;1;China
+Chery;Kimo;;;;1;China
+Chery;M11;;;;1;China
+Chery;"Omoda 5";;;;1;China
+Chery;QQ;;;;1;China
+Chery;QQ3;;;;1;China
+Chery;QQ6;;;;1;China
+Chery;Tiggo;;;;1;China
+Chery;"Tiggo 2";;;;1;China
+Chery;"Tiggo 2 Pro";;;;1;China
+Chery;"Tiggo 3";;;;1;China
+Chery;"Tiggo 4";;;;1;China
+Chery;"Tiggo 4 Pro";;;;1;China
+Chery;"Tiggo 5";;;;1;China
+Chery;"Tiggo 7";;;;1;China
+Chery;"Tiggo 7 Pro";;;;1;China
+Chery;"Tiggo 7 Pro Max";;;;1;China
+Chery;"Tiggo 8";;;;1;China
+Chery;"Tiggo 8 Plus";;;;1;China
+Chery;"Tiggo 8 Pro";;;;1;China
+Chery;"Tiggo 8 Pro Max";;;;1;China
+Chery;"Tiggo 9";;;;1;China
+Chery;"Tiggo e";;;;1;China
+Chery;Very;;;;1;China
+Chevrolet;Astro;;;;1;USA
+Chevrolet;Avalanche;;;;1;USA
+Chevrolet;Aveo;;;;1;USA
+Chevrolet;Beat;;;;1;USA
+Chevrolet;Blazer;;;;1;USA
+Chevrolet;Bolt;;;;1;USA
+Chevrolet;"Bolt EUV";;;;1;USA
+Chevrolet;Camaro;;;;1;USA
+Chevrolet;Captiva;;;;1;USA
+Chevrolet;Cavalier;;;;1;USA
+Chevrolet;Cobalt;;;;1;USA
+Chevrolet;Colorado;;;;1;USA
+Chevrolet;Corvette;;;;1;USA
+Chevrolet;Cruze;;;;1;USA
+Chevrolet;Epica;;;;1;USA
+Chevrolet;Equinox;;;;1;USA
+Chevrolet;Express;;;;1;USA
+Chevrolet;HHR;;;;1;USA
+Chevrolet;Impala;;;;1;USA
+Chevrolet;Lacetti;;;;1;USA
+Chevrolet;Lanos;;;;1;USA
+Chevrolet;Malibu;;;;1;USA
+Chevrolet;"Monte Carlo";;;;1;USA
+Chevrolet;Niva;;;;1;USA
+Chevrolet;Orlando;;;;1;USA
+Chevrolet;Rezzo;;;;1;USA
+Chevrolet;Silverado;;;;1;USA
+Chevrolet;"Silverado 1500";;;;1;USA
+Chevrolet;"Silverado 2500 HD";;;;1;USA
+Chevrolet;Spark;;;;1;USA
+Chevrolet;SSR;;;;1;USA
+Chevrolet;Suburban;;;;1;USA
+Chevrolet;Tahoe;;;;1;USA
+Chevrolet;TrailBlazer;;;;1;USA
+Chevrolet;Traverse;;;;1;USA
+Chevrolet;Trax;;;;1;USA
+Chevrolet;Uplander;;;;1;USA
+Chevrolet;Venture;;;;1;USA
+Chrysler;200;;;;1;USA
+Chrysler;300;;;;1;USA
+Chrysler;300M;;;;1;USA
+Chrysler;Aspen;;;;1;USA
+Chrysler;Concorde;;;;1;USA
+Chrysler;Crossfire;;;;1;USA
+Chrysler;"Grand Caravan";;;;1;USA
+Chrysler;"Grand Voyager";;;;1;USA
+Chrysler;Pacifica;;;;1;USA
+Chrysler;"PT Cruiser";;;;1;USA
+Chrysler;Sebring;;;;1;USA
+Chrysler;"Town & Country";;;;1;USA
+Chrysler;Voyager;;;;1;USA
+Citroen;Berlingo;;;;1;France
+Citroen;C-Crosser;;;;1;France
+Citroen;C-Elysee;;;;1;France
+Citroen;C1;;;;1;France
+Citroen;C2;;;;1;France
+Citroen;C3;;;;1;France
+Citroen;"C3 Aircross";;;;1;France
+Citroen;"C3 Picasso";;;;1;France
+Citroen;"C3 Pluriel";;;;1;France
+Citroen;C4;;;;1;France
+Citroen;"C4 Aircross";;;;1;France
+Citroen;"C4 Cactus";;;;1;France
+Citroen;"C4 Picasso";;;;1;France
+Citroen;"C4 SpaceTourer";;;;1;France
+Citroen;"C4 X";;;;1;France
+Citroen;C5;;;;1;France
+Citroen;"C5 Aircross";;;;1;France
+Citroen;"C5 X";;;;1;France
+Citroen;C6;;;;1;France
+Citroen;C8;;;;1;France
+Citroen;"DS 7 Crossback";;;;1;France
+Citroen;"DS 9";;;;1;France
+Citroen;DS3;;;;1;France
+Citroen;DS4;;;;1;France
+Citroen;DS5;;;;1;France
+Citroen;"Grand C4 Picasso";;;;1;France
+Citroen;"Grand C4 SpaceTourer";;;;1;France
+Citroen;Jumper;;;;1;France
+Citroen;Jumpy;;;;1;France
+Citroen;Nemo;;;;1;France
+Citroen;Saxo;;;;1;France
+Citroen;Spacetourer;;;;1;France
+Citroen;Xsara;;;;1;France
+Citroen;"Xsara Picasso";;;;1;France
+Dacia;Dokker;;;;1;France
+Dacia;Jogger;;;;1;France
+Dacia;Lodgy;;;;1;France
+Dacia;Solenza;;;;1;France
+Dacia;Spring;;;;1;France
+Dacia;SupeRNova;;;;1;France
+Daewoo;Evanda;;;;1;"South Korea"
+Daewoo;Kalos;;;;1;"South Korea"
+Daewoo;Leganza;;;;1;"South Korea"
+Daewoo;Magnus;;;;1;"South Korea"
+Daewoo;Matiz;;;;1;"South Korea"
+Daewoo;Nexia;;;;1;"South Korea"
+Daewoo;Nubira;;;;1;"South Korea"
+Daihatsu;Applause;;;;1;Japan
+Daihatsu;Cast;;;;1;Japan
+Daihatsu;Copen;;;;1;Japan
+Daihatsu;Cuore;;;;1;Japan
+Daihatsu;"Gran Move";;;;1;Japan
+Daihatsu;Luxio;;;;1;Japan
+Daihatsu;Materia;;;;1;Japan
+Daihatsu;Mebius;;;;1;Japan
+Daihatsu;Move;;;;1;Japan
+Daihatsu;Rocky;;;;1;Japan
+Daihatsu;Sirion;;;;1;Japan
+Daihatsu;Terios;;;;1;Japan
+Daihatsu;Trevis;;;;1;Japan
+Daihatsu;YRV;;;;1;Japan
+Datsun;mi-DO;;;;1;Japan
+Datsun;on-DO;;;;1;Japan
+Dodge;Avenger;;;;1;USA
+Dodge;Caliber;;;;1;USA
+Dodge;"Caliber SRT4";;;;1;USA
+Dodge;Caravan;;;;1;USA
+Dodge;Challenger;;;;1;USA
+Dodge;Charger;;;;1;USA
+Dodge;Dakota;;;;1;USA
+Dodge;Dart;;;;1;USA
+Dodge;Durango;;;;1;USA
+Dodge;Hornet;;;;1;USA
+Dodge;Intrepid;;;;1;USA
+Dodge;Journey;;;;1;USA
+Dodge;Magnum;;;;1;USA
+Dodge;Neon;;;;1;USA
+Dodge;Nitro;;;;1;USA
+Dodge;"Ram 1500";;;;1;USA
+Dodge;"Ram 2500";;;;1;USA
+Dodge;"Ram 3500";;;;1;USA
+Dodge;"Ram SRT10";;;;1;USA
+Dodge;Stratus;;;;1;USA
+Dodge;Viper;;;;1;USA
+Dongfeng;580;;;;1;China
+Dongfeng;A30;;;;1;China
+Dongfeng;"Aeolus AX7";;;;1;China
+Dongfeng;"Aeolus Yixuan MAX";;;;1;China
+Dongfeng;AX7;;;;1;China
+Dongfeng;"Fengon 5";;;;1;China
+Dongfeng;"Fengon 7";;;;1;China
+Dongfeng;"H30 Cross";;;;1;China
+Dongfeng;"Rich 6";;;;1;China
+Exeed;TXL;;;;1;China
+Exeed;VX;;;;1;China
+FAW;"Bestune B70";;;;1;China
+FAW;"Bestune T55";;;;1;China
+FAW;"Bestune T77";;;;1;China
+FAW;"Bestune T99";;;;1;China
+FAW;"Besturn B30";;;;1;China
+FAW;"Besturn B50";;;;1;China
+FAW;"Besturn X40";;;;1;China
+FAW;"Besturn X80";;;;1;China
+FAW;Oley;;;;1;China
+FAW;Vita;;;;1;China
+Ferrari;296;;;;1;Italy
+Ferrari;348;;;;1;Italy
+Ferrari;360;;;;1;Italy
+Ferrari;456;;;;1;Italy
+Ferrari;458;;;;1;Italy
+Ferrari;488;;;;1;Italy
+Ferrari;512;;;;1;Italy
+Ferrari;550;;;;1;Italy
+Ferrari;"575 M";;;;1;Italy
+Ferrari;"599 GTB Fiorano";;;;1;Italy
+Ferrari;"599 GTO";;;;1;Italy
+Ferrari;612;;;;1;Italy
+Ferrari;812;;;;1;Italy
+Ferrari;California;;;;1;Italy
+Ferrari;"California T";;;;1;Italy
+Ferrari;"Challenge Stradale";;;;1;Italy
+Ferrari;Enzo;;;;1;Italy
+Ferrari;F12;;;;1;Italy
+Ferrari;F355;;;;1;Italy
+Ferrari;F430;;;;1;Italy
+Ferrari;F50;;;;1;Italy
+Ferrari;"F512 M";;;;1;Italy
+Ferrari;"F8 Spider";;;;1;Italy
+Ferrari;"F8 Tributo";;;;1;Italy
+Ferrari;FF;;;;1;Italy
+Ferrari;"GTC4 Lusso";;;;1;Italy
+Ferrari;LaFerrari;;;;1;Italy
+Ferrari;Portofino;;;;1;Italy
+Ferrari;"Portofino M";;;;1;Italy
+Ferrari;Roma;;;;1;Italy
+Ferrari;"SF90 Spider";;;;1;Italy
+Ferrari;"SF90 Stradale";;;;1;Italy
+Fiat;"124 Spider";;;;1;Italy
+Fiat;500;;;;1;Italy
+Fiat;500L;;;;1;Italy
+Fiat;500X;;;;1;Italy
+Fiat;600e;;;;1;Italy
+Fiat;695;;;;1;Italy
+Fiat;Albea;;;;1;Italy
+Fiat;Argo;;;;1;Italy
+Fiat;Brava;;;;1;Italy
+Fiat;Bravo;;;;1;Italy
+Fiat;Coupe;;;;1;Italy
+Fiat;Croma;;;;1;Italy
+Fiat;Doblo;;;;1;Italy
+Fiat;Ducato;;;;1;Italy
+Fiat;E-Doblo;;;;1;Italy
+Fiat;E-Ulysse;;;;1;Italy
+Fiat;Egea;;;;1;Italy
+Fiat;Freemont;;;;1;Italy
+Fiat;"Grande Punto";;;;1;Italy
+Fiat;Idea;;;;1;Italy
+Fiat;Linea;;;;1;Italy
+Fiat;Marea;;;;1;Italy
+Fiat;Multipla;;;;1;Italy
+Fiat;Palio;;;;1;Italy
+Fiat;Panda;;;;1;Italy
+Fiat;"Panda 4x4";;;;1;Italy
+Fiat;"Panda Cross";;;;1;Italy
+Fiat;Pulse;;;;1;Italy
+Fiat;Punto;;;;1;Italy
+Fiat;Qubo;;;;1;Italy
+Fiat;Sedici;;;;1;Italy
+Fiat;Siena;;;;1;Italy
+Fiat;Stilo;;;;1;Italy
+Fiat;Strada;;;;1;Italy
+Fiat;Tipo;;;;1;Italy
+Fiat;Ulysse;;;;1;Italy
+Fisker;Karma;;;;1;Other
+Ford;B-Max;;;;1;USA
+Ford;Bronco;;;;1;USA
+Ford;"Bronco Sport";;;;1;USA
+Ford;C-Max;;;;1;USA
+Ford;Cougar;;;;1;USA
+Ford;"Crown Victoria";;;;1;USA
+Ford;EcoSport;;;;1;USA
+Ford;Edge;;;;1;USA
+Ford;Endura;;;;1;USA
+Ford;Equator;;;;1;USA
+Ford;Escape;;;;1;USA
+Ford;Excursion;;;;1;USA
+Ford;Expedition;;;;1;USA
+Ford;Explorer;;;;1;USA
+Ford;"Explorer Sport Trac";;;;1;USA
+Ford;F-150;;;;1;USA
+Ford;"F-150 Lightning";;;;1;USA
+Ford;F-250;;;;1;USA
+Ford;F-350;;;;1;USA
+Ford;Falcon;;;;1;USA
+Ford;Fiesta;;;;1;USA
+Ford;"Fiesta Active";;;;1;USA
+Ford;"Five Hundred";;;;1;USA
+Ford;Flex;;;;1;USA
+Ford;Focus;;;;1;USA
+Ford;"Focus Active";;;;1;USA
+Ford;"Focus Electric";;;;1;USA
+Ford;Freestar;;;;1;USA
+Ford;Freestyle;;;;1;USA
+Ford;Fusion;;;;1;USA
+Ford;Galaxy;;;;1;USA
+Ford;Ka;;;;1;USA
+Ford;Kuga;;;;1;USA
+Ford;Maverick;;;;1;USA
+Ford;Mondeo;;;;1;USA
+Ford;Mustang;;;;1;USA
+Ford;"Mustang Mach-E";;;;1;USA
+Ford;"Mustang Shelby GT350";;;;1;USA
+Ford;"Mustang Shelby GT500";;;;1;USA
+Ford;Puma;;;;1;USA
+Ford;Ranger;;;;1;USA
+Ford;S-Max;;;;1;USA
+Ford;Taurus;;;;1;USA
+Ford;"Taurus X";;;;1;USA
+Ford;Thunderbird;;;;1;USA
+Ford;"Tourneo Connect";;;;1;USA
+Ford;Transit;;;;1;USA
+Ford;"Transit Connect";;;;1;USA
+Foton;Sauvana;;;;1;China
+Foton;"Tunland G7";;;;1;China
+GAC;GM8;;;;1;China
+GAC;GN8;;;;1;China
+GAC;GS5;;;;1;China
+GAC;GS8;;;;1;China
+GAZ;3102;;;;1;Russia
+GAZ;31105;;;;1;Russia
+GAZ;Gazelle;;;;1;Russia
+GAZ;"Gazelle Business";;;;1;Russia
+GAZ;"Gazelle Next";;;;1;Russia
+GAZ;"Gazelle NN";;;;1;Russia
+GAZ;"Gazelle Sity";;;;1;Russia
+GAZ;Siber;;;;1;Russia
+GAZ;Sobol;;;;1;Russia
+GAZ;"Sobol NN";;;;1;Russia
+Geely;Atlas;;;;1;China
+Geely;"Atlas Pro";;;;1;China
+Geely;Azkarra;;;;1;China
+Geely;"Belgee X50";;;;1;China
+Geely;Coolray;;;;1;China
+Geely;Emgrand;;;;1;China
+Geely;"Emgrand 7";;;;1;China
+Geely;"Emgrand EC7";;;;1;China
+Geely;"Emgrand GS";;;;1;China
+Geely;"Emgrand GSe";;;;1;China
+Geely;"Emgrand X7";;;;1;China
+Geely;GC9;;;;1;China
+Geely;"Geometry C";;;;1;China
+Geely;GС6;;;;1;China
+Geely;MK;;;;1;China
+Geely;Monjaro;;;;1;China
+Geely;Okavango;;;;1;China
+Geely;Otaka;;;;1;China
+Geely;Preface;;;;1;China
+Geely;Tugella;;;;1;China
+Geely;Vision;;;;1;China
+Genesis;G70;;;;1;"South Korea"
+Genesis;G80;;;;1;"South Korea"
+Genesis;G90;;;;1;"South Korea"
+Genesis;GV60;;;;1;"South Korea"
+Genesis;GV70;;;;1;"South Korea"
+Genesis;GV80;;;;1;"South Korea"
+GMC;Acadia;;;;1;USA
+GMC;Canyon;;;;1;USA
+GMC;Envoy;;;;1;USA
+GMC;"Hummer EV";;;;1;USA
+GMC;"Sierra 1500";;;;1;USA
+GMC;"Sierra 2500";;;;1;USA
+GMC;"Sierra 3500";;;;1;USA
+GMC;Terrain;;;;1;USA
+GMC;Yukon;;;;1;USA
+"Great Wall";Cowry;;;;1;China
+"Great Wall";Deer;;;;1;China
+"Great Wall";Hover;;;;1;China
+"Great Wall";"Hover M2";;;;1;China
+"Great Wall";Pegasus;;;;1;China
+"Great Wall";Peri;;;;1;China
+"Great Wall";Poer;;;;1;China
+"Great Wall";"Poer King Kong";;;;1;China
+"Great Wall";Safe;;;;1;China
+"Great Wall";Sailor;;;;1;China
+"Great Wall";Sing;;;;1;China
+"Great Wall";Socool;;;;1;China
+"Great Wall";Wingle;;;;1;China
+"Great Wall";"Wingle 7";;;;1;China
+Haval;"Cool Dog";;;;1;China
+Haval;Dargo;;;;1;China
+Haval;"Dargo X";;;;1;China
+Haval;F7;;;;1;China
+Haval;F7x;;;;1;China
+Haval;H4;;;;1;China
+Haval;H6;;;;1;China
+Haval;H9;;;;1;China
+Haval;Jolion;;;;1;China
+Haval;"M6 Plus";;;;1;China
+Holden;Commodore;;;;1;Other
+Holden;"Corvette C8";;;;1;Other
+Honda;Accord;;;;1;Japan
+Honda;Amaze;;;;1;Japan
+Honda;City;;;;1;Japan
+Honda;Civic;;;;1;Japan
+Honda;"Civic Type R";;;;1;Japan
+Honda;CR-V;;;;1;Japan
+Honda;CR-Z;;;;1;Japan
+Honda;Crosstour;;;;1;Japan
+Honda;e;;;;1;Japan
+Honda;Edix;;;;1;Japan
+Honda;Element;;;;1;Japan
+Honda;Fit;;;;1;Japan
+Honda;FR-V;;;;1;Japan
+Honda;HR-V;;;;1;Japan
+Honda;Insight;;;;1;Japan
+Honda;Jade;;;;1;Japan
+Honda;Jazz;;;;1;Japan
+Honda;"Jazz Crosstar";;;;1;Japan
+Honda;Legend;;;;1;Japan
+Honda;Odyssey;;;;1;Japan
+Honda;Passport;;;;1;Japan
+Honda;Pilot;;;;1;Japan
+Honda;Prelude;;;;1;Japan
+Honda;Ridgeline;;;;1;Japan
+Honda;S2000;;;;1;Japan
+Honda;Shuttle;;;;1;Japan
+Honda;Stepwgn;;;;1;Japan
+Honda;Stream;;;;1;Japan
+Honda;Vezel;;;;1;Japan
+Hongqi;E-HS9;;;;1;China
+Hongqi;H5;;;;1;China
+Hummer;H1;;;;1;USA
+Hummer;H2;;;;1;USA
+Hummer;H3;;;;1;USA
+Hyundai;Accent;;;;1;"South Korea"
+Hyundai;"Atos Prime";;;;1;"South Korea"
+Hyundai;Azera;;;;1;"South Korea"
+Hyundai;Bayon;;;;1;"South Korea"
+Hyundai;Centennial;;;;1;"South Korea"
+Hyundai;Creta;;;;1;"South Korea"
+Hyundai;"Creta Grand";;;;1;"South Korea"
+Hyundai;Elantra;;;;1;"South Korea"
+Hyundai;Entourage;;;;1;"South Korea"
+Hyundai;Eon;;;;1;"South Korea"
+Hyundai;Equus;;;;1;"South Korea"
+Hyundai;Galloper;;;;1;"South Korea"
+Hyundai;Genesis;;;;1;"South Korea"
+Hyundai;"Genesis Coupe";;;;1;"South Korea"
+Hyundai;Getz;;;;1;"South Korea"
+Hyundai;Grandeur;;;;1;"South Korea"
+Hyundai;H-1;;;;1;"South Korea"
+Hyundai;i10;;;;1;"South Korea"
+Hyundai;i20;;;;1;"South Korea"
+Hyundai;"i20 N";;;;1;"South Korea"
+Hyundai;i30;;;;1;"South Korea"
+Hyundai;"i30 N";;;;1;"South Korea"
+Hyundai;i40;;;;1;"South Korea"
+Hyundai;Ioniq;;;;1;"South Korea"
+Hyundai;"Ioniq 5";;;;1;"South Korea"
+Hyundai;"Ioniq 6";;;;1;"South Korea"
+Hyundai;ix20;;;;1;"South Korea"
+Hyundai;ix35;;;;1;"South Korea"
+Hyundai;Kona;;;;1;"South Korea"
+Hyundai;"Kona N";;;;1;"South Korea"
+Hyundai;Kusto;;;;1;"South Korea"
+Hyundai;Matrix;;;;1;"South Korea"
+Hyundai;Mistra;;;;1;"South Korea"
+Hyundai;Nexo;;;;1;"South Korea"
+Hyundai;Palisade;;;;1;"South Korea"
+Hyundai;Porter;;;;1;"South Korea"
+Hyundai;"Santa Cruz";;;;1;"South Korea"
+Hyundai;"Santa Fe";;;;1;"South Korea"
+Hyundai;Solaris;;;;1;"South Korea"
+Hyundai;Sonata;;;;1;"South Korea"
+Hyundai;Staria;;;;1;"South Korea"
+Hyundai;Terracan;;;;1;"South Korea"
+Hyundai;Trajet;;;;1;"South Korea"
+Hyundai;Tucson;;;;1;"South Korea"
+Hyundai;Veloster;;;;1;"South Korea"
+Hyundai;Venue;;;;1;"South Korea"
+Hyundai;Veracruz;;;;1;"South Korea"
+Hyundai;Verna;;;;1;"South Korea"
+Hyundai;Xcent;;;;1;"South Korea"
+Hyundai;XG;;;;1;"South Korea"
+Infiniti;EX;;;;1;Japan
+Infiniti;FX;;;;1;Japan
+Infiniti;G;;;;1;Japan
+Infiniti;I35;;;;1;Japan
+Infiniti;JX;;;;1;Japan
+Infiniti;M;;;;1;Japan
+Infiniti;Q30;;;;1;Japan
+Infiniti;Q40;;;;1;Japan
+Infiniti;Q45;;;;1;Japan
+Infiniti;Q50;;;;1;Japan
+Infiniti;Q60;;;;1;Japan
+Infiniti;Q70;;;;1;Japan
+Infiniti;QX30;;;;1;Japan
+Infiniti;QX4;;;;1;Japan
+Infiniti;QX50;;;;1;Japan
+Infiniti;QX55;;;;1;Japan
+Infiniti;QX56;;;;1;Japan
+Infiniti;QX60;;;;1;Japan
+Infiniti;QX70;;;;1;Japan
+Infiniti;QX80;;;;1;Japan
+Isuzu;Ascender;;;;1;Other
+Isuzu;Axiom;;;;1;Other
+Isuzu;D-Max;;;;1;Other
+Isuzu;"D-Max Rodeo";;;;1;Other
+Isuzu;I280;;;;1;Other
+Isuzu;I290;;;;1;Other
+Isuzu;I350;;;;1;Other
+Isuzu;I370;;;;1;Other
+Isuzu;mu-X;;;;1;Other
+Isuzu;Rodeo;;;;1;Other
+Isuzu;Trooper;;;;1;Other
+Isuzu;VehiCross;;;;1;Other
+Iveco;Daily;;;;1;Other
+Jac;iEV7S;;;;1;China
+Jac;J7;;;;1;China
+Jac;JS3;;;;1;China
+Jac;JS4;;;;1;China
+Jac;JS6;;;;1;China
+Jac;"S3 Pro";;;;1;China
+Jac;T6;;;;1;China
+Jac;T8;;;;1;China
+Jac;"T8 Pro";;;;1;China
+Jac;T9;;;;1;China
+Jaecoo;J8;;;;1;China
+Jaguar;E-Pace;;;;1;UK
+Jaguar;F-Pace;;;;1;UK
+Jaguar;F-Type;;;;1;UK
+Jaguar;I-Pace;;;;1;UK
+Jaguar;S-Type;;;;1;UK
+Jaguar;X-Type;;;;1;UK
+Jaguar;XE;;;;1;UK
+Jaguar;XF;;;;1;UK
+Jaguar;XJ;;;;1;UK
+Jaguar;XK/XKR;;;;1;UK
+Jeep;Cherokee;;;;1;USA
+Jeep;Commander;;;;1;USA
+Jeep;Compass;;;;1;USA
+Jeep;Gladiator;;;;1;USA
+Jeep;"Grand Cherokee";;;;1;USA
+Jeep;"Grand Wagoneer";;;;1;USA
+Jeep;Liberty;;;;1;USA
+Jeep;Meridian;;;;1;USA
+Jeep;Patriot;;;;1;USA
+Jeep;Renegade;;;;1;USA
+Jeep;Wagoneer;;;;1;USA
+Jeep;Wrangler;;;;1;USA
+Jetour;Dashing;;;;1;China
+Jetour;Traveler;;;;1;China
+Jetour;"X70 Plus";;;;1;China
+Jetour;"X90 Plus";;;;1;China
+Kaiyi;E5;;;;1;China
+Kia;Carens;;;;1;"South Korea"
+Kia;Carnival;;;;1;"South Korea"
+Kia;Ceed;;;;1;"South Korea"
+Kia;Cerato;;;;1;"South Korea"
+Kia;Clarus;;;;1;"South Korea"
+Kia;EV6;;;;1;"South Korea"
+Kia;EV9;;;;1;"South Korea"
+Kia;Forte;;;;1;"South Korea"
+Kia;K5;;;;1;"South Korea"
+Kia;K8;;;;1;"South Korea"
+Kia;K9;;;;1;"South Korea"
+Kia;K900;;;;1;"South Korea"
+Kia;Magentis;;;;1;"South Korea"
+Kia;Mohave;;;;1;"South Korea"
+Kia;Niro;;;;1;"South Korea"
+Kia;Opirus;;;;1;"South Korea"
+Kia;Optima;;;;1;"South Korea"
+Kia;Picanto;;;;1;"South Korea"
+Kia;ProCeed;;;;1;"South Korea"
+Kia;Quoris;;;;1;"South Korea"
+Kia;Ray;;;;1;"South Korea"
+Kia;Rio;;;;1;"South Korea"
+Kia;"Rio X";;;;1;"South Korea"
+Kia;"Rio X-Line";;;;1;"South Korea"
+Kia;Seltos;;;;1;"South Korea"
+Kia;Shuma;;;;1;"South Korea"
+Kia;Sonet;;;;1;"South Korea"
+Kia;Sorento;;;;1;"South Korea"
+Kia;"Sorento Prime";;;;1;"South Korea"
+Kia;Soul;;;;1;"South Korea"
+Kia;Spectra;;;;1;"South Korea"
+Kia;Sportage;;;;1;"South Korea"
+Kia;Stinger;;;;1;"South Korea"
+Kia;Stonic;;;;1;"South Korea"
+Kia;Telluride;;;;1;"South Korea"
+Kia;Venga;;;;1;"South Korea"
+Kia;XCeed;;;;1;"South Korea"
+Lamborghini;Aventador;;;;1;Italy
+Lamborghini;Centenario;;;;1;Italy
+Lamborghini;Diablo;;;;1;Italy
+Lamborghini;Gallardo;;;;1;Italy
+Lamborghini;Huracan;;;;1;Italy
+Lamborghini;Murcielago;;;;1;Italy
+Lamborghini;Reventon;;;;1;Italy
+Lamborghini;Sian;;;;1;Italy
+Lamborghini;Urus;;;;1;Italy
+Lancia;Delta;;;;1;Italy
+Lancia;Lybra;;;;1;Italy
+Lancia;Musa;;;;1;Italy
+Lancia;Phedra;;;;1;Italy
+Lancia;Thema;;;;1;Italy
+Lancia;Thesis;;;;1;Italy
+Lancia;Ypsilon;;;;1;Italy
+"Land Rover";Defender;;;;1;UK
+"Land Rover";Discovery;;;;1;UK
+"Land Rover";"Discovery Sport";;;;1;UK
+"Land Rover";Evoque;;;;1;UK
+"Land Rover";Freelander;;;;1;UK
+"Land Rover";"Range Rover";;;;1;UK
+"Land Rover";"Range Rover Sport";;;;1;UK
+"Land Rover";"Range Rover Velar";;;;1;UK
+Lexus;CT;;;;1;Japan
+Lexus;ES;;;;1;Japan
+Lexus;GS;;;;1;Japan
+Lexus;GX;;;;1;Japan
+Lexus;HS;;;;1;Japan
+Lexus;IS;;;;1;Japan
+Lexus;LBX;;;;1;Japan
+Lexus;LC;;;;1;Japan
+Lexus;LFA;;;;1;Japan
+Lexus;LM;;;;1;Japan
+Lexus;LS;;;;1;Japan
+Lexus;LX;;;;1;Japan
+Lexus;NX;;;;1;Japan
+Lexus;RC;;;;1;Japan
+Lexus;"RC F";;;;1;Japan
+Lexus;RX;;;;1;Japan
+Lexus;RZ;;;;1;Japan
+Lexus;SC;;;;1;Japan
+Lexus;TX;;;;1;Japan
+Lexus;UX;;;;1;Japan
+Lifan;Breez;;;;1;China
+Lifan;Cebrium;;;;1;China
+Lifan;Celliya;;;;1;China
+Lifan;Murman;;;;1;China
+Lifan;Myway;;;;1;China
+Lifan;Smily;;;;1;China
+Lifan;Solano;;;;1;China
+Lifan;X50;;;;1;China
+Lifan;X60;;;;1;China
+Lifan;X70;;;;1;China
+Lifan;X80;;;;1;China
+Lincoln;Aviator;;;;1;USA
+Lincoln;Corsair;;;;1;USA
+Lincoln;"Mark LT";;;;1;USA
+Lincoln;MKC;;;;1;USA
+Lincoln;MKS;;;;1;USA
+Lincoln;MKT;;;;1;USA
+Lincoln;MKX;;;;1;USA
+Lincoln;MKZ;;;;1;USA
+Lincoln;Nautilus;;;;1;USA
+Lincoln;Navigator;;;;1;USA
+Lincoln;"Town Car";;;;1;USA
+Lincoln;Zephyr;;;;1;USA
+Livan;"S6 Pro";;;;1;Other
+Livan;"X3 Pro";;;;1;Other
+Livan;"X6 Pro";;;;1;Other
+LiXiang;L6;;;;1;China
+LiXiang;L7;;;;1;China
+LiXiang;L8;;;;1;China
+LiXiang;L9;;;;1;China
+LiXiang;Mega;;;;1;China
+Lotus;Elise;;;;1;Other
+Lotus;Emira;;;;1;Other
+Lotus;"Europa S";;;;1;Other
+Lotus;Evora;;;;1;Other
+Lotus;Exige;;;;1;Other
+Marussia;B1;;;;1;Other
+Marussia;B2;;;;1;Other
+Maserati;"3200 GT";;;;1;Italy
+Maserati;Ghibli;;;;1;Italy
+Maserati;"Gran Cabrio";;;;1;Italy
+Maserati;"Gran Turismo";;;;1;Italy
+Maserati;"Gran Turismo S";;;;1;Italy
+Maserati;Grecale;;;;1;Italy
+Maserati;Levante;;;;1;Italy
+Maserati;MC20;;;;1;Italy
+Maserati;Quattroporte;;;;1;Italy
+Maserati;"Quattroporte S";;;;1;Italy
+Maybach;57;;;;1;Germany
+Maybach;"57 S";;;;1;Germany
+Maybach;62;;;;1;Germany
+Maybach;"62 S";;;;1;Germany
+Maybach;Landaulet;;;;1;Germany
+Mazda;2;;;;1;Japan
+Mazda;"2 Hybrid";;;;1;Japan
+Mazda;3;;;;1;Japan
+Mazda;323;;;;1;Japan
+Mazda;5;;;;1;Japan
+Mazda;6;;;;1;Japan
+Mazda;626;;;;1;Japan
+Mazda;B-Series;;;;1;Japan
+Mazda;BT-50;;;;1;Japan
+Mazda;CX-3;;;;1;Japan
+Mazda;CX-30;;;;1;Japan
+Mazda;"CX-30 EV";;;;1;Japan
+Mazda;CX-4;;;;1;Japan
+Mazda;CX-5;;;;1;Japan
+Mazda;CX-50;;;;1;Japan
+Mazda;CX-60;;;;1;Japan
+Mazda;CX-7;;;;1;Japan
+Mazda;CX-8;;;;1;Japan
+Mazda;CX-80;;;;1;Japan
+Mazda;CX-9;;;;1;Japan
+Mazda;MPV;;;;1;Japan
+Mazda;MX-30;;;;1;Japan
+Mazda;MX-5;;;;1;Japan
+Mazda;Premacy;;;;1;Japan
+Mazda;RX-7;;;;1;Japan
+Mazda;RX-8;;;;1;Japan
+Mazda;Tribute;;;;1;Japan
+McLaren;540C;;;;1;Other
+McLaren;570S;;;;1;Other
+McLaren;600LT;;;;1;Other
+McLaren;650S;;;;1;Other
+McLaren;675LT;;;;1;Other
+McLaren;720S;;;;1;Other
+McLaren;"720S Spider";;;;1;Other
+McLaren;765LT;;;;1;Other
+McLaren;Artura;;;;1;Other
+McLaren;MP4-12C;;;;1;Other
+McLaren;P1;;;;1;Other
+Mercedes;A-class;;;;1;Germany
+Mercedes;"AMG GT";;;;1;Germany
+Mercedes;"AMG GT 4-Door";;;;1;Germany
+Mercedes;B-class;;;;1;Germany
+Mercedes;C-class;;;;1;Germany
+Mercedes;"C-class Sport Coupe";;;;1;Germany
+Mercedes;Citan;;;;1;Germany
+Mercedes;CL-class;;;;1;Germany
+Mercedes;CLA-class;;;;1;Germany
+Mercedes;CLC-class;;;;1;Germany
+Mercedes;CLK-class;;;;1;Germany
+Mercedes;CLS-class;;;;1;Germany
+Mercedes;E-class;;;;1;Germany
+Mercedes;"E-class Coupe";;;;1;Germany
+Mercedes;EQA;;;;1;Germany
+Mercedes;EQB;;;;1;Germany
+Mercedes;EQC;;;;1;Germany
+Mercedes;EQE;;;;1;Germany
+Mercedes;"EQE AMG";;;;1;Germany
+Mercedes;EQS;;;;1;Germany
+Mercedes;"EQS AMG";;;;1;Germany
+Mercedes;EQT;;;;1;Germany
+Mercedes;EQV;;;;1;Germany
+Mercedes;G-class;;;;1;Germany
+Mercedes;GL-class;;;;1;Germany
+Mercedes;GLA-class;;;;1;Germany
+Mercedes;"GLA-class AMG";;;;1;Germany
+Mercedes;GLB-class;;;;1;Germany
+Mercedes;GLC-class;;;;1;Germany
+Mercedes;"GLC-class AMG";;;;1;Germany
+Mercedes;"GLC-class Coupe";;;;1;Germany
+Mercedes;GLE-class;;;;1;Germany
+Mercedes;"GLE-class AMG";;;;1;Germany
+Mercedes;"GLE-class Coupe";;;;1;Germany
+Mercedes;GLK-class;;;;1;Germany
+Mercedes;GLS-class;;;;1;Germany
+Mercedes;"GLS-class AMG";;;;1;Germany
+Mercedes;M-class;;;;1;Germany
+Mercedes;R-class;;;;1;Germany
+Mercedes;S-class;;;;1;Germany
+Mercedes;"S-class Cabrio";;;;1;Germany
+Mercedes;"S-class Coupe";;;;1;Germany
+Mercedes;SL-class;;;;1;Germany
+Mercedes;"SL-Class AMG";;;;1;Germany
+Mercedes;SLC-class;;;;1;Germany
+Mercedes;SLR-class;;;;1;Germany
+Mercedes;"SLS AMG";;;;1;Germany
+Mercedes;Sprinter;;;;1;Germany
+Mercedes;Vaneo;;;;1;Germany
+Mercedes;Viano;;;;1;Germany
+Mercedes;Vito;;;;1;Germany
+Mercedes;X-class;;;;1;Germany
+Mercury;"Grand Marquis";;;;0;
+Mercury;Mariner;;;;1;
+Mercury;Milan;;;;1;
+Mercury;Montego;;;;1;
+Mercury;Monterey;;;;1;
+Mercury;Mountaineer;;;;1;
+Mercury;Sable;;;;1;
+MG;4;;;;1;Other
+MG;Hector;;;;1;Other
+MG;TF;;;;1;Other
+MG;VS;;;;1;Other
+MG;"XPower SV";;;;1;Other
+MG;ZR;;;;1;Other
+MG;ZS;;;;1;Other
+MG;"ZS EV";;;;1;Other
+MG;ZT;;;;1;Other
+MG;ZT-T;;;;1;Other
+Mini;Aceman;;;;1;UK
+Mini;Clubman;;;;1;UK
+Mini;"Clubman S";;;;1;UK
+Mini;Clubvan;;;;1;UK
+Mini;Cooper;;;;1;UK
+Mini;"Cooper Cabrio";;;;1;UK
+Mini;"Cooper S";;;;1;UK
+Mini;"Cooper S Cabrio";;;;1;UK
+Mini;"Cooper S Countryman All4";;;;1;UK
+Mini;Countryman;;;;1;UK
+Mini;One;;;;1;UK
+Mitsubishi;"3000 GT";;;;1;Japan
+Mitsubishi;ASX;;;;1;Japan
+Mitsubishi;Carisma;;;;1;Japan
+Mitsubishi;Colt;;;;1;Japan
+Mitsubishi;Dignity;;;;1;Japan
+Mitsubishi;Eclipse;;;;1;Japan
+Mitsubishi;"Eclipse Cross";;;;1;Japan
+Mitsubishi;Endeavor;;;;1;Japan
+Mitsubishi;Galant;;;;1;Japan
+Mitsubishi;Grandis;;;;1;Japan
+Mitsubishi;i-MiEV;;;;1;Japan
+Mitsubishi;L200;;;;1;Japan
+Mitsubishi;Lancer;;;;1;Japan
+Mitsubishi;"Lancer Evo";;;;1;Japan
+Mitsubishi;Mirage;;;;1;Japan
+Mitsubishi;Outlander;;;;1;Japan
+Mitsubishi;"Outlander Sport";;;;1;Japan
+Mitsubishi;"Outlander XL";;;;1;Japan
+Mitsubishi;Pajero;;;;1;Japan
+Mitsubishi;"Pajero Pinin";;;;1;Japan
+Mitsubishi;"Pajero Sport";;;;1;Japan
+Mitsubishi;Raider;;;;1;Japan
+Mitsubishi;"Space Gear";;;;1;Japan
+Mitsubishi;"Space Runner";;;;1;Japan
+Mitsubishi;"Space Star";;;;1;Japan
+Mitsubishi;Xpander;;;;1;Japan
+Moskvich;3e;;;;1;Russia
+Nissan;350Z;;;;1;Japan
+Nissan;370Z;;;;1;Japan
+Nissan;Almera;;;;1;Japan
+Nissan;"Almera Classic";;;;1;Japan
+Nissan;"Almera Tino";;;;1;Japan
+Nissan;Altima;;;;1;Japan
+Nissan;Ariya;;;;1;Japan
+Nissan;Armada;;;;1;Japan
+Nissan;"Bluebird Sylphy";;;;1;Japan
+Nissan;e-NV200;;;;1;Japan
+Nissan;Frontier;;;;1;Japan
+Nissan;GT-R;;;;1;Japan
+Nissan;Juke;;;;1;Japan
+Nissan;Leaf;;;;1;Japan
+Nissan;Maxima;;;;1;Japan
+Nissan;Micra;;;;1;Japan
+Nissan;Murano;;;;1;Japan
+Nissan;Navara;;;;1;Japan
+Nissan;Note;;;;1;Japan
+Nissan;NP300;;;;1;Japan
+Nissan;Pathfinder;;;;1;Japan
+Nissan;Patrol;;;;1;Japan
+Nissan;Primera;;;;1;Japan
+Nissan;Qashqai;;;;1;Japan
+Nissan;Qashqai+2;;;;1;Japan
+Nissan;Quest;;;;1;Japan
+Nissan;Rogue;;;;1;Japan
+Nissan;Sentra;;;;1;Japan
+Nissan;Skyline;;;;1;Japan
+Nissan;Sylphy;;;;1;Japan
+Nissan;Teana;;;;1;Japan
+Nissan;Terrano;;;;1;Japan
+Nissan;Tiida;;;;1;Japan
+Nissan;Titan;;;;1;Japan
+Nissan;"Titan XD";;;;1;Japan
+Nissan;Townstar;;;;1;Japan
+Nissan;X-Trail;;;;1;Japan
+Nissan;XTerra;;;;1;Japan
+Nissan;Z;;;;1;Japan
+Omoda;"S5 GT";;;;1;China
+Opel;Adam;;;;1;Germany
+Opel;Agila;;;;1;Germany
+Opel;Ampera-e;;;;1;Germany
+Opel;Antara;;;;1;Germany
+Opel;Astra;;;;1;Germany
+Opel;"Astra GTC";;;;1;Germany
+Opel;"Astra OPC";;;;1;Germany
+Opel;Cascada;;;;1;Germany
+Opel;Combo;;;;1;Germany
+Opel;"Combo Life";;;;1;Germany
+Opel;Corsa;;;;1;Germany
+Opel;"Corsa OPC";;;;1;Germany
+Opel;Crossland;;;;1;Germany
+Opel;"Crossland X";;;;1;Germany
+Opel;Frontera;;;;1;Germany
+Opel;Grandland;;;;1;Germany
+Opel;"Grandland X";;;;1;Germany
+Opel;Insignia;;;;1;Germany
+Opel;"Insignia OPC";;;;1;Germany
+Opel;Karl;;;;1;Germany
+Opel;Meriva;;;;1;Germany
+Opel;Mokka;;;;1;Germany
+Opel;Omega;;;;1;Germany
+Opel;Signum;;;;1;Germany
+Opel;Speedster;;;;1;Germany
+Opel;Tigra;;;;1;Germany
+Opel;Vectra;;;;1;Germany
+Opel;Vivaro;;;;1;Germany
+Opel;Zafira;;;;1;Germany
+Opel;"Zafira Life";;;;1;Germany
+Opel;"Zafira Tourer";;;;1;Germany
+Peugeot;1007;;;;1;France
+Peugeot;107;;;;1;France
+Peugeot;108;;;;1;France
+Peugeot;2008;;;;1;France
+Peugeot;206;;;;1;France
+Peugeot;207;;;;1;France
+Peugeot;208;;;;1;France
+Peugeot;3008;;;;1;France
+Peugeot;301;;;;1;France
+Peugeot;307;;;;1;France
+Peugeot;308;;;;1;France
+Peugeot;4007;;;;1;France
+Peugeot;4008;;;;1;France
+Peugeot;406;;;;1;France
+Peugeot;407;;;;1;France
+Peugeot;408;;;;1;France
+Peugeot;5008;;;;1;France
+Peugeot;508;;;;1;France
+Peugeot;607;;;;1;France
+Peugeot;807;;;;1;France
+Peugeot;Boxer;;;;1;France
+Peugeot;Expert;;;;1;France
+Peugeot;Landtrek;;;;1;France
+Peugeot;Manager;;;;1;France
+Peugeot;Partner;;;;1;France
+Peugeot;"Partner Crossway";;;;1;France
+Peugeot;"Partner Rapid";;;;1;France
+Peugeot;"RCZ Sport";;;;1;France
+Peugeot;Rifter;;;;1;France
+Peugeot;Traveller;;;;1;France
+Plymouth;"Road Runner";;;;1;Other
+Pontiac;Aztec;;;;1;Other
+Pontiac;Bonneville;;;;1;Other
+Pontiac;Firebird;;;;1;Other
+Pontiac;"G5 Pursuit";;;;1;Other
+Pontiac;G6;;;;1;Other
+Pontiac;G8;;;;1;Other
+Pontiac;"Grand AM";;;;1;Other
+Pontiac;"Grand Prix";;;;1;Other
+Pontiac;GTO;;;;1;Other
+Pontiac;Montana;;;;1;Other
+Pontiac;Solstice;;;;1;Other
+Pontiac;Sunfire;;;;1;Other
+Pontiac;Torrent;;;;1;Other
+Pontiac;Vibe;;;;1;Other
+Porsche;"718 Boxster";;;;1;Germany
+Porsche;"718 Cayman";;;;1;Germany
+Porsche;911;;;;1;Germany
+Porsche;Boxster;;;;1;Germany
+Porsche;Cayenne;;;;1;Germany
+Porsche;Cayman;;;;1;Germany
+Porsche;Macan;;;;1;Germany
+Porsche;Panamera;;;;1;Germany
+Porsche;Taycan;;;;1;Germany
+Ravon;Gentra;;;;1;Other
+Renault;Alaskan;;;;1;France
+Renault;Arkana;;;;1;France
+Renault;Austral;;;;1;France
+Renault;Avantime;;;;1;France
+Renault;Captur;;;;1;France
+Renault;Clio;;;;1;France
+Renault;Duster;;;;1;France
+Renault;"Duster Oroch";;;;1;France
+Renault;Espace;;;;1;France
+Renault;Fluence;;;;1;France
+Renault;"Grand Scenic";;;;1;France
+Renault;Kadjar;;;;1;France
+Renault;Kangoo;;;;1;France
+Renault;Kaptur;;;;1;France
+Renault;Kiger;;;;1;France
+Renault;Koleos;;;;1;France
+Renault;Laguna;;;;1;France
+Renault;Latitude;;;;1;France
+Renault;Logan;;;;1;France
+Renault;"Logan Stepway";;;;1;France
+Renault;Master;;;;1;France
+Renault;Megane;;;;1;France
+Renault;"Megane E-Tech";;;;1;France
+Renault;Modus;;;;1;France
+Renault;Rafale;;;;1;France
+Renault;Sandero;;;;1;France
+Renault;"Sandero Stepway";;;;1;France
+Renault;Scenic;;;;1;France
+Renault;Symbol;;;;1;France
+Renault;Taliant;;;;1;France
+Renault;Talisman;;;;1;France
+Renault;Trafic;;;;1;France
+Renault;Triber;;;;1;France
+Renault;Twingo;;;;1;France
+Renault;Twizy;;;;1;France
+Renault;"Vel Satis";;;;1;France
+Renault;Wind;;;;1;France
+Renault;Zoe;;;;1;France
+Rolls-Royce;Cullinan;;;;1;UK
+Rolls-Royce;Dawn;;;;1;UK
+Rolls-Royce;Ghost;;;;1;UK
+Rolls-Royce;Phantom;;;;1;UK
+Rolls-Royce;Spectre;;;;1;UK
+Rolls-Royce;Wraith;;;;1;UK
+Rover;25;;;;1;UK
+Rover;400;;;;1;UK
+Rover;45;;;;1;UK
+Rover;600;;;;1;UK
+Rover;75;;;;1;UK
+Rover;Streetwise;;;;1;UK
+Saab;9-2x;;;;1;Sweden
+Saab;9-3;;;;1;Sweden
+Saab;9-4x;;;;1;Sweden
+Saab;9-5;;;;1;Sweden
+Saab;9-7x;;;;1;Sweden
+Saturn;Aura;;;;1;Other
+Saturn;Ion;;;;1;Other
+Saturn;LW;;;;1;Other
+Saturn;Outlook;;;;1;Other
+Saturn;Sky;;;;1;Other
+Saturn;Vue;;;;1;Other
+Scion;FR-S;;;;1;Other
+Scion;tC;;;;1;Other
+Scion;xA;;;;1;Other
+Scion;xB;;;;1;Other
+Scion;xD;;;;1;Other
+Seat;Alhambra;;;;1;Spain
+Seat;Altea;;;;1;Spain
+Seat;"Altea Freetrack";;;;1;Spain
+Seat;"Altea XL";;;;1;Spain
+Seat;Arona;;;;1;Spain
+Seat;Arosa;;;;1;Spain
+Seat;Ateca;;;;1;Spain
+Seat;Cordoba;;;;1;Spain
+Seat;Exeo;;;;1;Spain
+Seat;Ibiza;;;;1;Spain
+Seat;Leon;;;;1;Spain
+Seat;Mii;;;;1;Spain
+Seat;Tarraco;;;;1;Spain
+Seat;Toledo;;;;1;Spain
+Seres;"Seres 3";;;;1;Spain
+Skoda;Citigo;;;;1;Germany
+Skoda;"Enyaq iV";;;;1;Germany
+Skoda;Fabia;;;;1;Germany
+Skoda;Felicia;;;;1;Germany
+Skoda;Kamiq;;;;1;Germany
+Skoda;Karoq;;;;1;Germany
+Skoda;Kodiaq;;;;1;Germany
+Skoda;Octavia;;;;1;Germany
+Skoda;"Octavia Scout";;;;1;Germany
+Skoda;"Octavia Tour";;;;1;Germany
+Skoda;Praktik;;;;1;Germany
+Skoda;Rapid;;;;1;Germany
+Skoda;"Rapid Spaceback (NH1)";;;;1;Germany
+Skoda;Roomster;;;;1;Germany
+Skoda;Scala;;;;1;Germany
+Skoda;Superb;;;;1;Germany
+Skoda;Yeti;;;;1;Germany
+Smart;#1;;;;1;Other
+Smart;Forfour;;;;1;Other
+Smart;Fortwo;;;;1;Other
+Smart;Roadster;;;;1;Other
+"Ssang Yong";Actyon;;;;1;Other
+"Ssang Yong";"Actyon Sports";;;;1;Other
+"Ssang Yong";Chairman;;;;1;Other
+"Ssang Yong";Korando;;;;1;Other
+"Ssang Yong";Kyron;;;;1;Other
+"Ssang Yong";LUVi;;;;1;Other
+"Ssang Yong";Musso;;;;1;Other
+"Ssang Yong";"Musso Grand";;;;1;Other
+UAZ;"3159 Bars";;;;1;Russia
+UAZ;3160;;;;1;Russia
+UAZ;"3162 Simbir";;;;1;Russia
+UAZ;Buhanka;;;;1;Russia
+UAZ;"Patriot Sport";;;;1;Russia
+UAZ;Pickup;;;;1;Russia
+UAZ;Profi;;;;1;Russia
+UAZ;Патриот;;;;1;Russia
+UAZ;Хантер;;;;1;Russia
+VAZ;2101-2107;;;;1;Russia
+VAZ;2108;;;;1;Russia
+VAZ;2110;;;;1;Russia
+VAZ;2113;;;;1;Russia
+VAZ;"4x4 Urban";;;;1;Russia
+VAZ;Granta;;;;1;Russia
+VAZ;"Granta Cross";;;;1;Russia
+VAZ;Largus;;;;1;Russia
+VAZ;"Largus Cross";;;;1;Russia
+VAZ;"Niva Bronto";;;;1;Russia
+VAZ;"Niva Legend";;;;1;Russia
+VAZ;"Niva Travel";;;;1;Russia
+VAZ;"Vesta Cross";;;;1;Russia
+VAZ;"Vesta Sport";;;;1;Russia
+VAZ;"Vesta SW";;;;1;Russia
+VAZ;XRay;;;;1;Russia
+VAZ;"XRay Cross";;;;1;Russia
+VAZ;Веста;;;;1;Russia
+VAZ;Калина;;;;1;Russia
+VAZ;"Нива 4X4";;;;1;Russia
+VAZ;Ока;;;;1;Russia
+VAZ;Приора;;;;1;Russia
+Volkswagen;Amarok;;;;1;Germany
+Volkswagen;Arteon;;;;1;Germany
+Volkswagen;Beetle;;;;1;Germany
+Volkswagen;Bora;;;;1;Germany
+Volkswagen;Caddy;;;;1;Germany
+Volkswagen;CC;;;;1;Germany
+Volkswagen;Crafter;;;;1;Germany
+Volkswagen;CrossGolf;;;;1;Germany
+Volkswagen;CrossPolo;;;;1;Germany
+Volkswagen;CrossTouran;;;;1;Germany
+Volkswagen;Eos;;;;1;Germany
+Volkswagen;Fox;;;;1;Germany
+Volkswagen;Golf;;;;1;Germany
+Volkswagen;ID.3;;;;1;Germany
+Volkswagen;ID.4;;;;1;Germany
+Volkswagen;"ID.4 X";;;;1;Germany
+Volkswagen;ID.5;;;;1;Germany
+Volkswagen;"ID.6 Crozz";;;;1;Germany
+Volkswagen;"ID.6 X";;;;1;Germany
+Volkswagen;ID.7;;;;1;Germany
+Volkswagen;ID.Buzz;;;;1;Germany
+Volkswagen;Jetta;;;;1;Germany
+Volkswagen;Lupo;;;;1;Germany
+Volkswagen;Multivan;;;;1;Germany
+Volkswagen;"New Beetle";;;;1;Germany
+Volkswagen;Passat;;;;1;Germany
+Volkswagen;"Passat CC";;;;1;Germany
+Volkswagen;Phaeton;;;;1;Germany
+Volkswagen;Pointer;;;;1;Germany
+Volkswagen;Polo;;;;1;Germany
+Volkswagen;Routan;;;;1;Germany
+Volkswagen;Scirocco;;;;1;Germany
+Volkswagen;Sharan;;;;1;Germany
+Volkswagen;T-Cross;;;;1;Germany
+Volkswagen;T-Roc;;;;1;Germany
+Volkswagen;Taigo;;;;1;Germany
+Volkswagen;Taos;;;;1;Germany
+Volkswagen;Tayron;;;;1;Germany
+Volkswagen;Teramont;;;;1;Germany
+Volkswagen;"Teramont X";;;;1;Germany
+Volkswagen;Tiguan;;;;1;Germany
+Volkswagen;"Tiguan X";;;;1;Germany
+Volkswagen;Touareg;;;;1;Germany
+Volkswagen;Touran;;;;1;Germany
+Volkswagen;Transporter;;;;1;Germany
+Volkswagen;Up;;;;1;Germany
+Volvo;C30;;;;1;Sweden
+Volvo;C40;;;;1;Sweden
+Volvo;C70;;;;1;Sweden
+Volvo;"C70 Convertible";;;;1;Sweden
+Volvo;"C70 Coupe";;;;1;Sweden
+Volvo;EC40;;;;1;Sweden
+Volvo;EX30;;;;1;Sweden
+Volvo;EX90;;;;1;Sweden
+Volvo;S40;;;;1;Sweden
+Volvo;S60;;;;1;Sweden
+Volvo;S70;;;;1;Sweden
+Volvo;S80;;;;1;Sweden
+Volvo;S90;;;;1;Sweden
+Volvo;V40;;;;1;Sweden
+Volvo;V50;;;;1;Sweden
+Volvo;V60;;;;1;Sweden
+Volvo;V70;;;;1;Sweden
+Volvo;V90;;;;1;Sweden
+Volvo;XC40;;;;1;Sweden
+Volvo;XC60;;;;1;Sweden
+Volvo;XC70;;;;1;Sweden
+Volvo;XC90;;;;1;Sweden
+Voyah;Dream;;;;1;China
+Voyah;Free;;;;1;China
+Voyah;Passion;;;;1;China
+Wiesmann;Thunderball;;;;1;Other
+Zeekr;001;;;;1;China
+Zeekr;009;;;;1;China
+Zeekr;X;;;;1;China

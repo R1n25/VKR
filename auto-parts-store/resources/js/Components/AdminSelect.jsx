@@ -1,26 +1,29 @@
 import React, { forwardRef, useEffect, useRef } from 'react';
 
 const AdminSelect = forwardRef(function AdminSelect(
-    { name, id, value, className = '', required, isFocused, handleChange, children, disabled = false },
+    { name, id, value, className = '', required, isFocused, onChange, handleChange, children, disabled = false },
     ref
 ) {
-    const select = ref ? ref : useRef();
+    const input = ref ? ref : useRef();
 
     useEffect(() => {
         if (isFocused) {
-            select.current.focus();
+            input.current.focus();
         }
     }, [isFocused]);
+
+    // Используем handleChange, если он предоставлен, иначе используем onChange
+    const changeHandler = handleChange || onChange;
 
     return (
         <select
             name={name}
             id={id || name}
             value={value}
-            className={`admin-input ${className}`}
-            ref={select}
+            className={`admin-select ${className}`}
+            ref={input}
             required={required}
-            onChange={(e) => handleChange(e)}
+            onChange={changeHandler}
             disabled={disabled}
         >
             {children}

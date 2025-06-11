@@ -9,8 +9,8 @@
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Главная</a></li>
             <li class="breadcrumb-item"><a href="{{ route('brands.index') }}">Бренды</a></li>
             <li class="breadcrumb-item"><a href="{{ route('brands.show', $engine->brand_id) }}">{{ $engine->brand_name }}</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('models.show', $engine->model_id) }}">{{ $engine->model_name }}</a></li>
-            <li class="breadcrumb-item"><a href="{{ route('engines.index', $engine->model_id) }}">Двигатели</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('models.show', ['id' => $engine->model_id]) }}">{{ $engine->model_name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('engines.index', ['id' => $engine->model_id]) }}">Двигатели</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ $engine->name }}</li>
         </ol>
     </nav>

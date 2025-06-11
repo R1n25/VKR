@@ -3,8 +3,14 @@ import { Head, Link } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 
 export default function Orders({ auth, orders }) {
+    // Создаем объект с развернутыми заказами по умолчанию
+    const initialExpandedOrders = {};
+    orders.forEach(order => {
+        initialExpandedOrders[order.id] = true;
+    });
+    
     // Состояние для отслеживания открытых/закрытых деталей заказов
-    const [expandedOrders, setExpandedOrders] = useState({});
+    const [expandedOrders, setExpandedOrders] = useState(initialExpandedOrders);
     
     // Функция для переключения состояния раскрытия заказа
     const toggleOrderDetails = (orderId) => {

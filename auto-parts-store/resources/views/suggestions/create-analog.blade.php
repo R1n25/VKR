@@ -46,8 +46,6 @@
             </div>
             
             <form action="{{ route('suggestions.store-analog', $sparePart) }}" method="POST">
-                @csrf
-                
                 <div class="mb-4">
                     <label for="analog_spare_part_id" class="block text-gray-700 font-medium mb-2">Запчасть-аналог</label>
                     <select id="analog_spare_part_id" name="analog_spare_part_id" class="w-full border-gray-300 rounded-md shadow-sm focus:border-blue-500 focus:ring focus:ring-blue-500 focus:ring-opacity-50" required>

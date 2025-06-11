@@ -23,23 +23,14 @@ class Order extends Model
         'user_id',
         'total_price',
         'status',
-        'shipping_method',
         'address',
-        'shipping_city',
-        'shipping_postal_code',
-        'shipping_country',
         'phone',
         'email',
-        'shipping_name',
-        'shipping_tracking_number',
         'notes',
         'notes_json',
         'status_history',
         'status_updated_at',
         'status_updated_by',
-        'completed_at',
-        'canceled_at',
-        'refunded_at',
         'customer_name',
         'order_number',
         'total',
@@ -55,9 +46,6 @@ class Order extends Model
         'notes_json' => 'array',
         'status_history' => 'array',
         'status_updated_at' => 'datetime',
-        'completed_at' => 'datetime',
-        'canceled_at' => 'datetime',
-        'refunded_at' => 'datetime',
     ];
 
     protected static function boot()
@@ -102,6 +90,14 @@ class Order extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /**
+     * Алиас для получения элементов заказа с именем order_items для совместимости с фронтендом
+     */
+    public function getOrderItemsAttribute()
+    {
+        return $this->orderItems()->get();
     }
 
     /**
@@ -193,13 +189,6 @@ class Order extends Model
                 'status_updated_at' => now(),
                 'status_updated_by' => $userId ?? auth()->id(),
             ];
-            
-            // Устанавливаем дополнительные временные метки для особых статусов
-            if ($newStatus === 'completed' && $oldStatus !== 'completed') {
-                $updates['completed_at'] = now();
-            } elseif ($newStatus === 'cancelled' && $oldStatus !== 'cancelled') {
-                $updates['canceled_at'] = now();
-            }
             
             // Применяем обновления
             $this->update($updates);

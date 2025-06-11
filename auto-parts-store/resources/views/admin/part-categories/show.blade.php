@@ -69,7 +69,6 @@
                             <i class="fas fa-edit"></i> Редактировать
                         </a>
                         <form action="{{ route('admin.part-categories.destroy', $partCategory->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Вы уверены, что хотите удалить эту категорию?');">
-                            @csrf
                             @method('DELETE')
                             <button type="submit" class="btn btn-danger">
                                 <i class="fas fa-trash"></i> Удалить

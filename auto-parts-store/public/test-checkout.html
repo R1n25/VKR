@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестовое оформление заказа</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Тестовое оформление заказа</h1>
+    
+    <div id="form-container">
+        <div class="form-group">
+            <label for="customer_name">ФИО:</label>
+            <input type="text" id="customer_name" value="Иванов Иван Иванович">
+        </div>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" value="test@example.com">
+        </div>
+        
+        <div class="form-group">
+            <label for="phone">Телефон:</label>
+            <input type="text" id="phone" value="+7 (123) 456-78-90">
+        </div>
+        
+        <div class="form-group">
+            <label for="address">Адрес:</label>
+            <textarea id="address">г. Москва, ул. Примерная, д. 123, кв. 45</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="notes">Примечания:</label>
+            <textarea id="notes">Тестовый заказ</textarea>
+        </div>
+        
+        <button id="submit-button">Оформить заказ</button>
+    </div>
+    
+    <div id="response-container" class="response" style="display: none;">
+        <h3>Ответ сервера:</h3>
+        <pre id="response-data"></pre>
+    </div>
+    
+    <script>
+        // Функция для получения CSRF-токена из cookie
+        function getCsrfToken() {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                const [name, value] = cookie.trim().split('=');
+                if (name === 'XSRF-TOKEN') {
+                    return decodeURIComponent(value);
+                }
+            }
+            return null;
+        }
+
+        document.getElementById('submit-button').addEventListener('click', function() {
+            const responseContainer = document.getElementById('response-container');
+            const responseData = document.getElementById('response-data');
+            
+            // Собираем данные формы
+            const formData = {
+                customer_name: document.getElementById('customer_name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                notes: document.getElementById('notes').value,
+                cart_items: [
+                    {
+                        id: 15211,
+                        quantity: 2,
+                        price: 342.50
+                    },
+                    {
+                        id: 14086,
+                        quantity: 1,
+                        price: 1361.25
+                    }
+                ]
+            };
+            
+            // Отправляем данные
+            responseData.textContent = 'Отправка данных...';
+            responseContainer.style.display = 'block';
+            
+            // Получаем CSRF-токен
+            const csrfToken = getCsrfToken();
+            console.log('CSRF Token:', csrfToken);
+            
+            // Формируем заголовки с CSRF-токеном
+            const headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            
+            if (csrfToken) {
+                headers['X-CSRF-TOKEN'] = csrfToken;
+            } else {
+                console.warn('CSRF-токен не найден в cookie!');
+            }
+            
+            // Сначала пробуем стандартный endpoint
+            fetch('/checkout', {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(formData),
+                credentials: 'same-origin' // Важно для отправки и получения cookies
+            })
+            .then(response => {
+                console.log('Получен ответ от /checkout:', response);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Данные успешно получены:', data);
+                responseData.textContent = JSON.stringify(data, null, 2);
+            })
+            .catch(error => {
+                console.error('Ошибка при оформлении заказа:', error);
+                
+                // Если основной endpoint не работает, пробуем тестовый API endpoint
+                console.log('Пробуем тестовый endpoint /api/test-checkout');
+                
+                fetch('/api/test-checkout', {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(formData),
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Данные успешно получены от тестового API:', data);
+                    responseData.textContent = 'Основной endpoint (/checkout) не отвечает.\n\nОтвет от тестового API:\n' + JSON.stringify(data, null, 2);
+                })
+                .catch(error => {
+                    console.error('Ошибка при тестовом API запросе:', error);
+                    
+                    // Третий вариант - безопасный API без CSRF
+                    console.log('Пробуем безопасный endpoint без CSRF /api/no-csrf-checkout');
+                    
+                    fetch('/api/no-csrf-checkout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Данные успешно получены от безопасного API:', data);
+                        responseData.textContent = 'Оба основных endpoint не отвечают.\n\nОтвет от безопасного API без CSRF:\n' + JSON.stringify(data, null, 2);
+                    })
+                    .catch(finalError => {
+                        console.error('Ошибка при всех запросах:', finalError);
+                        responseData.textContent = 'Ошибка при оформлении заказа: ' + error.message + '\n\nВсе endpoint не отвечают.';
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html> 

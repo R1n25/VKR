@@ -17,7 +17,6 @@
         </div>
         <div class="card-body">
             <form action="{{ route('admin.part-categories.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
                 
                 <div class="mb-3">
                     <label for="name" class="form-label">Название категории <span class="text-danger">*</span></label>

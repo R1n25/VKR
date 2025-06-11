@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Schema;
+use App\Models\CarModel;
+use App\Models\CarEngine;
 
 class SuggestionController extends Controller
 {
@@ -151,7 +153,7 @@ class SuggestionController extends Controller
                     // Проверяем и конвертируем data в массив, если это не массив
                     $data = is_array($suggestion->data) ? $suggestion->data : [];
                     
-                    // Если есть данные о двигателе, добавляем только в таблицу car_engine_spare_part
+                    // Если есть данные о двигателе, добавляем в таблицу car_engine_spare_part
                     if (!empty($data['car_engine_id'])) {
                         $compatibilityData['car_engine_id'] = $data['car_engine_id'];
                         \Log::info('Adding engine data', ['car_engine_id' => $data['car_engine_id']]);
@@ -166,101 +168,112 @@ class SuggestionController extends Controller
                         
                         // Добавляем запись в таблицу car_engine_spare_part
                         if ($engine) {
-                            \App\Models\SparePart::find($suggestion->spare_part_id)->carEngines()->syncWithoutDetaching([
-                                $data['car_engine_id'] => [
-                                    'notes' => $suggestion->comment ?? null
-                                ]
-                            ]);
-                            \Log::info('Added record to car_engine_spare_part table', [
-                                'spare_part_id' => $suggestion->spare_part_id,
+                            $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
+                            if ($sparePart) {
+                                // Используем syncWithoutDetaching для добавления связи без удаления существующих
+                                $sparePart->carEngines()->syncWithoutDetaching([
+                                    $data['car_engine_id'] => [
+                                        'notes' => $suggestion->comment ?? null
+                                    ]
+                                ]);
+                                \Log::info('Added record to car_engine_spare_part table', [
+                                    'spare_part_id' => $suggestion->spare_part_id,
+                                    'car_engine_id' => $data['car_engine_id']
+                                ]);
+                            } else {
+                                \Log::error('Spare part not found for engine compatibility', [
+                                    'spare_part_id' => $suggestion->spare_part_id
+                                ]);
+                            }
+                        } else {
+                            \Log::error('Engine not found for compatibility', [
                                 'car_engine_id' => $data['car_engine_id']
                             ]);
                         }
-                    } else {
-                        // Если данных о двигателе нет, добавляем запись в таблицу spare_part_compatibilities
-                        
-                        // Если есть данные о годах выпуска, добавляем их
-                        if (!empty($data['start_year'])) {
-                            $compatibilityData['start_year'] = $data['start_year'];
-                        }
-                        if (!empty($data['end_year'])) {
-                            $compatibilityData['end_year'] = $data['end_year'];
-                        }
-                        
-                        // Проверяем существование запчасти и модели автомобиля
-                        $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
-                        $carModel = \App\Models\CarModel::find($suggestion->car_model_id);
-                        
-                        if (!$sparePart || !$carModel) {
-                            \Log::error('Required entities not found:', [
-                                'spare_part_exists' => $sparePart ? true : false,
-                                'car_model_exists' => $carModel ? true : false,
-                                'spare_part_id' => $suggestion->spare_part_id,
-                                'car_model_id' => $suggestion->car_model_id
-                            ]);
-                            
-                            throw new \Exception('Не найдена запчасть или модель автомобиля');
-                        }
-                        
-                        \Log::info('Checking entities existence:', [
+                    }
+                    
+                    // Всегда добавляем запись в таблицу spare_part_compatibilities для модели автомобиля
+                    // Если есть данные о годах выпуска, добавляем их
+                    if (!empty($data['start_year'])) {
+                        $compatibilityData['start_year'] = $data['start_year'];
+                    }
+                    if (!empty($data['end_year'])) {
+                        $compatibilityData['end_year'] = $data['end_year'];
+                    }
+                    
+                    // Проверяем существование запчасти и модели автомобиля
+                    $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
+                    $carModel = \App\Models\CarModel::find($suggestion->car_model_id);
+                    
+                    if (!$sparePart || !$carModel) {
+                        \Log::error('Required entities not found:', [
                             'spare_part_exists' => $sparePart ? true : false,
                             'car_model_exists' => $carModel ? true : false,
-                            'spare_part_data' => $sparePart ? [
-                                'id' => $sparePart->id,
-                                'name' => $sparePart->name,
-                                'part_number' => $sparePart->part_number
-                            ] : null,
-                            'car_model_data' => $carModel ? [
-                                'id' => $carModel->id,
-                                'name' => $carModel->name,
-                                'brand_id' => $carModel->brand_id
-                            ] : null
+                            'spare_part_id' => $suggestion->spare_part_id,
+                            'car_model_id' => $suggestion->car_model_id
                         ]);
                         
-                        // Проверяем структуру таблицы совместимостей
-                        $columns = \Schema::getColumnListing('spare_part_compatibilities');
-                        \Log::info('Spare part compatibilities table columns:', $columns);
-                        
-                        try {
-                            // Проверим, существует ли уже такая совместимость 
-                            // и явно удалим ее, если она существует с другим набором данных (проблема с уникальным индексом)
-                            $existing = \App\Models\SparePartCompatibility::where('spare_part_id', $suggestion->spare_part_id)
-                                ->where('car_model_id', $suggestion->car_model_id)
-                                ->where(function($query) use ($compatibilityData) {
-                                    if (isset($compatibilityData['car_engine_id'])) {
-                                        $query->where('car_engine_id', $compatibilityData['car_engine_id']);
-                                    } else {
-                                        $query->whereNull('car_engine_id');
-                                    }
-                                })
-                                ->first();
-                                
-                            if ($existing) {
-                                \Log::info('Found existing compatibility, updating it', [
-                                    'id' => $existing->id,
-                                    'existing_data' => $existing->toArray(),
-                                    'new_data' => $compatibilityData
-                                ]);
-                                
-                                $existing->fill($compatibilityData);
-                                $existing->save();
-                                $compatibility = $existing;
-                            } else {
-                                // Создаем новую запись о совместимости
-                                $compatibility = \App\Models\SparePartCompatibility::create($compatibilityData);
-                                \Log::info('Created new compatibility relation', [
-                                    'id' => $compatibility->id,
-                                    'data' => $compatibilityData
-                                ]);
-                            }
-                        } catch (\Exception $e) {
-                            \Log::error('Error creating compatibility relation', [
-                                'error' => $e->getMessage(),
-                                'trace' => $e->getTraceAsString(),
-                                'compatibility_data' => $compatibilityData
+                        throw new \Exception('Не найдена запчасть или модель автомобиля');
+                    }
+                    
+                    \Log::info('Checking entities existence:', [
+                        'spare_part_exists' => $sparePart ? true : false,
+                        'car_model_exists' => $carModel ? true : false,
+                        'spare_part_data' => $sparePart ? [
+                            'id' => $sparePart->id,
+                            'name' => $sparePart->name,
+                            'part_number' => $sparePart->part_number
+                        ] : null,
+                        'car_model_data' => $carModel ? [
+                            'id' => $carModel->id,
+                            'name' => $carModel->name,
+                            'brand_id' => $carModel->brand_id
+                        ] : null
+                    ]);
+                    
+                    // Проверяем структуру таблицы совместимостей
+                    $columns = \Schema::getColumnListing('spare_part_compatibilities');
+                    \Log::info('Spare part compatibilities table columns:', $columns);
+                    
+                    try {
+                        // Проверим, существует ли уже такая совместимость 
+                        // и явно удалим ее, если она существует с другим набором данных (проблема с уникальным индексом)
+                        $existing = \App\Models\SparePartCompatibility::where('spare_part_id', $suggestion->spare_part_id)
+                            ->where('car_model_id', $suggestion->car_model_id)
+                            ->where(function($query) use ($compatibilityData) {
+                                if (isset($compatibilityData['car_engine_id'])) {
+                                    $query->where('car_engine_id', $compatibilityData['car_engine_id']);
+                                } else {
+                                    $query->whereNull('car_engine_id');
+                                }
+                            })
+                            ->first();
+                            
+                        if ($existing) {
+                            \Log::info('Found existing compatibility, updating it', [
+                                'id' => $existing->id,
+                                'existing_data' => $existing->toArray(),
+                                'new_data' => $compatibilityData
                             ]);
-                            throw new \Exception('Ошибка при создании совместимости: ' . $e->getMessage());
+                            
+                            $existing->fill($compatibilityData);
+                            $existing->save();
+                            $compatibility = $existing;
+                        } else {
+                            // Создаем новую запись о совместимости
+                            $compatibility = \App\Models\SparePartCompatibility::create($compatibilityData);
+                            \Log::info('Created new compatibility relation', [
+                                'id' => $compatibility->id,
+                                'data' => $compatibilityData
+                            ]);
                         }
+                    } catch (\Exception $e) {
+                        \Log::error('Error creating compatibility relation', [
+                            'error' => $e->getMessage(),
+                            'trace' => $e->getTraceAsString(),
+                            'compatibility_data' => $compatibilityData
+                        ]);
+                        throw new \Exception('Ошибка при создании совместимости: ' . $e->getMessage());
                     }
                 } else {
                     \Log::error('Missing required IDs for compatibility relation', [
@@ -299,13 +312,12 @@ class SuggestionController extends Controller
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Предложение успешно одобрено',
-                    'suggestion_id' => $suggestion->id
+                    'message' => 'Предложение успешно одобрено'
                 ]);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
-                ->with('success', 'Предложение успешно одобрено.');
+            return redirect()->route('admin.suggestions.index')
+                ->with('success', 'Предложение успешно одобрено');
         } catch (\Exception $e) {
             DB::rollBack();
             
@@ -330,25 +342,13 @@ class SuggestionController extends Controller
                 ], 500);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
+            return redirect()->route('admin.suggestions.index')
                 ->with('error', 'Ошибка при одобрении предложения: ' . $e->getMessage());
         }
     }
 
     /**
      * Отображение списка предложений пользователей
-     */
-    public function index()
-    {
-        $suggestions = UserSuggestion::with(['user', 'sparePart', 'analogSparePart', 'carModel.brand', 'approvedBy'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
-        
-        return view('admin.suggestions.index', compact('suggestions'));
-    }
-
-    /**
-     * Отображение списка предложений пользователей через Inertia
      */
     public function indexInertia()
     {
@@ -364,14 +364,14 @@ class SuggestionController extends Controller
         // Загружаем запчасти для каждого предложения напрямую
         foreach ($suggestions as $suggestion) {
             if ($suggestion->spare_part_id) {
-                $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
+                $sparePart = SparePart::find($suggestion->spare_part_id);
                 if ($sparePart) {
                     $suggestion->setRelation('sparePart', $sparePart);
                 }
             }
             
             if ($suggestion->analog_spare_part_id) {
-                $analogPart = \App\Models\SparePart::find($suggestion->analog_spare_part_id);
+                $analogPart = SparePart::find($suggestion->analog_spare_part_id);
                 if ($analogPart) {
                     $suggestion->setRelation('analogSparePart', $analogPart);
                 }
@@ -387,7 +387,7 @@ class SuggestionController extends Controller
             if ($suggestion->suggestion_type === 'compatibility') {
                 // Загружаем информацию о двигателе, если он указан
                 if (!empty($suggestion->data['car_engine_id'])) {
-                    $engine = \DB::table('car_engines')
+                    $engine = DB::table('car_engines')
                         ->where('id', $suggestion->data['car_engine_id'])
                         ->first();
                     
@@ -398,7 +398,7 @@ class SuggestionController extends Controller
                 
                 // Загружаем информацию о бренде, если он указан
                 if (!empty($suggestion->data['car_brand_id'])) {
-                    $brand = \DB::table('car_brands')
+                    $brand = DB::table('car_brands')
                         ->where('id', $suggestion->data['car_brand_id'])
                         ->first();
                     
@@ -409,69 +409,16 @@ class SuggestionController extends Controller
             }
         }
 
-        return \Inertia\Inertia::render('Admin/Suggestions/Index', [
+        return Inertia::render('Admin/Suggestions/Index', [
             'suggestions' => $suggestions,
             'auth' => [
-                'user' => \Illuminate\Support\Facades\Auth::user()
+                'user' => Auth::user()
             ]
         ]);
     }
 
     /**
      * Отображение детальной информации о предложении
-     */
-    public function show(UserSuggestion $suggestion)
-    {
-        // Предварительно загружаем базовую информацию о предложении
-        $suggestion->load(['user', 'approvedBy']);
-        
-        // Принудительно загружаем запчасти напрямую из базы данных
-        if ($suggestion->spare_part_id) {
-            $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
-            if ($sparePart) {
-                $suggestion->setRelation('sparePart', $sparePart);
-            }
-        }
-        
-        if ($suggestion->analog_spare_part_id) {
-            $analogPart = \App\Models\SparePart::find($suggestion->analog_spare_part_id);
-            if ($analogPart) {
-                $suggestion->setRelation('analogSparePart', $analogPart);
-            }
-        }
-        
-        // Загружаем дополнительные отношения
-        if ($suggestion->car_model_id) {
-            // Загружаем модель автомобиля напрямую из базы данных
-            $carModel = \DB::table('car_models')->where('id', $suggestion->car_model_id)->first();
-            if ($carModel) {
-                // Загружаем бренд автомобиля
-                $brand = \DB::table('car_brands')->where('id', $carModel->brand_id)->first();
-                
-                // Преобразуем объекты stdClass в массивы для удобства
-                $carModelArray = json_decode(json_encode($carModel), true);
-                if ($brand) {
-                    $carModelArray['brand'] = json_decode(json_encode($brand), true);
-                }
-                
-                // Устанавливаем данные в объект suggestion
-                $suggestion->car_model_data = $carModelArray;
-            }
-        }
-        
-        // Подготовка дополнительных данных для отображения
-        $analogTypeText = 'Прямой аналог';
-        
-        if ($suggestion->suggestion_type === 'analog' && !empty($suggestion->data)) {
-            $analogType = $suggestion->data['analog_type'] ?? 'direct';
-            $analogTypeText = $analogType === 'direct' ? 'Прямой аналог' : 'Заменитель';
-        }
-        
-        return view('admin.suggestions.show', compact('suggestion', 'analogTypeText'));
-    }
-
-    /**
-     * Отображение детальной информации о предложении через Inertia
      */
     public function showInertia(UserSuggestion $suggestion)
     {
@@ -481,122 +428,80 @@ class SuggestionController extends Controller
             
             // Проверка существования отношений в модели
             $relations = get_class_methods($suggestion);
-            \Log::debug('Доступные методы в модели UserSuggestion:', $relations);
+            Log::debug('Доступные методы в модели UserSuggestion:', $relations);
             
             // Проверка существования запчастей в базе данных
-            $sparePart = \App\Models\SparePart::find($suggestion->spare_part_id);
-            $analogPart = \App\Models\SparePart::find($suggestion->analog_spare_part_id);
+            $sparePart = null;
+            $analogPart = null;
             
-            \Log::debug('Проверка запчастей в базе данных:', [
-                'spare_part_id' => $suggestion->spare_part_id,
-                'spare_part_exists' => $sparePart ? true : false,
-                'spare_part_name' => $sparePart ? $sparePart->name : null,
-                'analog_spare_part_id' => $suggestion->analog_spare_part_id,
-                'analog_spare_part_exists' => $analogPart ? true : false,
-                'analog_spare_part_name' => $analogPart ? $analogPart->name : null,
-            ]);
-            
-            // Принудительно загружаем запчасти напрямую из базы данных
             if ($suggestion->spare_part_id) {
-                if ($sparePart) {
-                    $sparePart->load('category');
-                    $suggestion->setRelation('sparePart', $sparePart);
-                    \Log::info("Загружена запчасть с ID: {$sparePart->id}, Название: {$sparePart->name}");
-                } else {
-                    \Log::warning("Запчасть с ID: {$suggestion->spare_part_id} не найдена в базе данных");
-                }
+                $sparePart = SparePart::with('category')->find($suggestion->spare_part_id);
+                Log::debug('Загружена основная запчасть:', [
+                    'id' => $suggestion->spare_part_id,
+                    'exists' => $sparePart ? true : false,
+                    'name' => $sparePart ? $sparePart->name : null,
+                ]);
             }
             
             if ($suggestion->analog_spare_part_id) {
-                if ($analogPart) {
-                    $analogPart->load('category');
-                    $suggestion->setRelation('analogSparePart', $analogPart);
-                    \Log::info("Загружен аналог с ID: {$analogPart->id}, Название: {$analogPart->name}");
-                } else {
-                    \Log::warning("Запчасть-аналог с ID: {$suggestion->analog_spare_part_id} не найдена в базе данных");
-                }
+                $analogPart = SparePart::with('category')->find($suggestion->analog_spare_part_id);
+                Log::debug('Загружена запчасть-аналог:', [
+                    'id' => $suggestion->analog_spare_part_id,
+                    'exists' => $analogPart ? true : false,
+                    'name' => $analogPart ? $analogPart->name : null,
+                ]);
             }
             
-            // Загружаем дополнительные отношения
-            if ($suggestion->car_model_id) {
-                // Загружаем модель автомобиля напрямую из базы данных
-                $carModel = \DB::table('car_models')->where('id', $suggestion->car_model_id)->first();
-                if ($carModel) {
-                    // Загружаем бренд автомобиля
-                    $brand = \DB::table('car_brands')->where('id', $carModel->brand_id)->first();
-                    
-                    // Преобразуем объекты stdClass в массивы для удобства
-                    $carModelArray = json_decode(json_encode($carModel), true);
-                    if ($brand) {
-                        $carModelArray['brand'] = json_decode(json_encode($brand), true);
-                    }
-                    
-                    // Устанавливаем данные в объект suggestion
-                    $suggestion->car_model_data = $carModelArray;
-                }
+            // Принудительно устанавливаем отношения
+            if ($sparePart) {
+                $suggestion->setRelation('sparePart', $sparePart);
             }
             
-            // Отладка данных
-            \Log::debug('Suggestion data after loading:', [
-                'id' => $suggestion->id,
-                'spare_part_id' => $suggestion->spare_part_id,
-                'analog_spare_part_id' => $suggestion->analog_spare_part_id,
-                'spare_part' => $suggestion->sparePart ? [
-                    'id' => $suggestion->sparePart->id,
-                    'name' => $suggestion->sparePart->name,
-                    'part_number' => $suggestion->sparePart->part_number,
-                ] : null,
-                'analog_spare_part' => $suggestion->analogSparePart ? [
-                    'id' => $suggestion->analogSparePart->id,
-                    'name' => $suggestion->analogSparePart->name,
-                    'part_number' => $suggestion->analogSparePart->part_number,
-                ] : null,
-            ]);
-
-            // Если это предложение совместимости, загружаем дополнительную информацию
+            if ($analogPart) {
+                $suggestion->setRelation('analogSparePart', $analogPart);
+            }
+            
+            // Загружаем дополнительные отношения для совместимости
             if ($suggestion->suggestion_type === 'compatibility') {
+                // Загружаем модель автомобиля
+                if ($suggestion->car_model_id) {
+                    $carModel = CarModel::with('brand')->find($suggestion->car_model_id);
+                    if ($carModel) {
+                        $suggestion->setRelation('carModel', $carModel);
+                        Log::info("Загружена модель автомобиля: {$carModel->brand->name} {$carModel->name}");
+                    } else {
+                        Log::warning("Модель автомобиля с ID: {$suggestion->car_model_id} не найдена");
+                    }
+                }
+                
                 // Если в данных есть ID двигателя, загружаем информацию о нем
                 if (!empty($suggestion->data['car_engine_id'])) {
-                    $engine = \App\Models\CarEngine::find($suggestion->data['car_engine_id']);
-                    if ($engine) {
-                        $suggestion->setRelation('engine', $engine);
-                        \Log::info("Загружен двигатель с ID: {$engine->id}, Название: {$engine->name}");
-                    } else {
-                        \Log::warning("Двигатель с ID: {$suggestion->data['car_engine_id']} не найден в базе данных");
-                    }
-                }
-                
-                // Если в данных есть ID бренда, загружаем информацию о нем
-                if (!empty($suggestion->data['car_brand_id'])) {
-                    $brand = \App\Models\CarBrand::find($suggestion->data['car_brand_id']);
-                    if ($brand) {
-                        $suggestion->brand = $brand;
-                        \Log::info("Загружен бренд из данных с ID: {$brand->id}, Название: {$brand->name}");
-                    }
-                }
-                
-                // Проверяем наличие связи между запчастью и двигателем в таблице car_engine_spare_part
-                if ($suggestion->spare_part_id && !empty($suggestion->data['car_engine_id'])) {
-                    $enginePartRelation = \DB::table('car_engine_spare_part')
-                        ->where('spare_part_id', $suggestion->spare_part_id)
-                        ->where('car_engine_id', $suggestion->data['car_engine_id'])
-                        ->first();
+                    $engineId = $suggestion->data['car_engine_id'];
+                    $engine = CarEngine::find($engineId);
                     
-                    if ($enginePartRelation) {
-                        $suggestion->engine_part_relation = $enginePartRelation;
-                        \Log::info("Найдена существующая связь между запчастью и двигателем");
+                    if ($engine) {
+                        $suggestion->engine = $engine;
+                        Log::info("Загружен двигатель: {$engine->name}");
+                    } else {
+                        Log::warning("Двигатель с ID: {$engineId} не найден");
                     }
                 }
             }
 
+            // Определяем тип аналога
             $analogTypeText = '';
-            if ($suggestion->suggestion_type === 'analog' && isset($suggestion->data['analog_type'])) {
-                $analogTypes = [
-                    'original' => 'Оригинал',
-                    'analog' => 'Аналог',
-                    'substitute' => 'Заменитель'
-                ];
-                $analogTypeText = $analogTypes[$suggestion->data['analog_type']] ?? 'Неизвестный тип';
+            if ($suggestion->suggestion_type === 'analog') {
+                if (isset($suggestion->data['analog_type'])) {
+                    $analogTypes = [
+                        'direct' => 'Прямой аналог',
+                        'indirect' => 'Неполный аналог',
+                        'universal' => 'Универсальный аналог',
+                        'original' => 'Оригинал',
+                        'analog' => 'Аналог',
+                        'substitute' => 'Заменитель'
+                    ];
+                    $analogTypeText = $analogTypes[$suggestion->data['analog_type']] ?? 'Неизвестный тип';
+                }
             }
 
             return Inertia::render('Admin/Suggestions/Show', [
@@ -607,17 +512,17 @@ class SuggestionController extends Controller
                     'reject' => Auth::user()->can('reject', $suggestion),
                 ],
                 'auth' => [
-                    'user' => \Illuminate\Support\Facades\Auth::user()
+                    'user' => Auth::user()
                 ]
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error loading suggestion: ' . $e->getMessage(), [
+            Log::error('Ошибка при отображении предложения:', [
                 'suggestion_id' => $suggestion->id,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
             
-            return redirect()->route('admin.suggestions.inertia')
+            return redirect()->route('admin.suggestions.index')
                 ->with('error', 'Ошибка при загрузке предложения: ' . $e->getMessage());
         }
     }
@@ -659,20 +564,16 @@ class SuggestionController extends Controller
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
                 return response()->json([
                     'success' => true,
-                    'message' => 'Предложение успешно отклонено',
-                    'suggestion_id' => $suggestion->id
+                    'message' => 'Предложение успешно отклонено'
                 ]);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
-                ->with('success', 'Предложение успешно отклонено.');
+            return redirect()->route('admin.suggestions.index')
+                ->with('success', 'Предложение успешно отклонено');
         } catch (\Exception $e) {
-            DB::rollBack();
-            
-            \Log::error('Error rejecting suggestion', [
-                'id' => $suggestion->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Ошибка при отклонении предложения:', [
+                'suggestion_id' => $suggestion->id,
+                'error' => $e->getMessage()
             ]);
             
             // Возвращаем JSON-ответ с ошибкой для AJAX-запроса
@@ -683,45 +584,33 @@ class SuggestionController extends Controller
                 ], 500);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
+            return redirect()->route('admin.suggestions.index')
                 ->with('error', 'Ошибка при отклонении предложения: ' . $e->getMessage());
         }
     }
 
     /**
-     * Удаление предложения пользователя
+     * Удаление предложения
      */
     public function destroy(UserSuggestion $suggestion)
     {
         try {
-            DB::beginTransaction();
-            
-            // Сохраняем информацию о предложении для сообщения
-            $suggestionType = $suggestion->suggestion_type === 'analog' ? 'аналога' : 'совместимости';
-            
-            // Удаляем предложение
             $suggestion->delete();
-            
-            DB::commit();
             
             // Возвращаем JSON-ответ для AJAX-запроса
             if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
                 return response()->json([
                     'success' => true,
-                    'message' => "Предложение {$suggestionType} успешно удалено",
-                    'suggestion_id' => $suggestion->id
+                    'message' => 'Предложение успешно удалено'
                 ]);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
-                ->with('success', "Предложение {$suggestionType} успешно удалено.");
+            return redirect()->route('admin.suggestions.index')
+                ->with('success', 'Предложение успешно удалено');
         } catch (\Exception $e) {
-            DB::rollBack();
-            
-            \Log::error('Error deleting suggestion', [
-                'id' => $suggestion->id,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+            Log::error('Ошибка при удалении предложения:', [
+                'suggestion_id' => $suggestion->id,
+                'error' => $e->getMessage()
             ]);
             
             // Возвращаем JSON-ответ с ошибкой для AJAX-запроса
@@ -732,7 +621,7 @@ class SuggestionController extends Controller
                 ], 500);
             }
             
-            return redirect()->route('admin.suggestions.inertia')
+            return redirect()->route('admin.suggestions.index')
                 ->with('error', 'Ошибка при удалении предложения: ' . $e->getMessage());
         }
     }

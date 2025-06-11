@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Providers\RouteServiceProvider;
+use App\Services\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,13 @@ use Inertia\Response;
 
 class AuthenticatedSessionController extends Controller
 {
+    protected $cartService;
+    
+    public function __construct(CartService $cartService)
+    {
+        $this->cartService = $cartService;
+    }
+    
     /**
      * Display the login view.
      */
@@ -38,6 +46,9 @@ class AuthenticatedSessionController extends Controller
 
         // Регенерируем сессию
         $request->session()->regenerate();
+        
+        // Объединяем корзину гостя с корзиной пользователя
+        $this->cartService->mergeGuestCartWithUserCart(Auth::user());
 
         // Перенаправляем на домашнюю страницу
         return redirect()->intended(RouteServiceProvider::HOME);
@@ -53,6 +64,13 @@ class AuthenticatedSessionController extends Controller
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
+        
+        // Очищаем ключ корзины гостя при выходе
+        if ($request->hasHeader('User-Agent')) {
+            $response = redirect('/login');
+            $response->header('Set-Cookie', 'cart_guest_key=; Max-Age=0; path=/');
+            return $response;
+        }
 
         return redirect('/login');
     }

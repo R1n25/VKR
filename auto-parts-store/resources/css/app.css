@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Основные переменные */
 :root {
     --color-primary: #0ea5e9;
@@ -217,11 +218,15 @@ footer.mt-auto {
 
 /* Улучшенные таблицы */
 .table-responsive {
-    @apply overflow-x-auto -mx-4 sm:-mx-6 lg:-mx-8;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .table-responsive table {
-    @apply min-w-full divide-y divide-gray-200;
+    width: 100%;
+    min-width: 100%;
+    border-collapse: collapse;
 }
 
 /* Скроллбары */
@@ -250,27 +255,27 @@ footer.mt-auto {
 
 /* Дополнительные стили для админ-панели */
 .admin-card {
-    @apply bg-white overflow-hidden shadow-sm sm:rounded-lg transition-all duration-300 hover:shadow-md;
+    @apply bg-white overflow-hidden shadow-sm sm:rounded-lg transition-all duration-300 hover:shadow-md w-full;
 }
 
 .admin-card-header {
-    @apply px-6 py-4 border-b border-gray-200 bg-gray-50 font-medium;
+    @apply px-4 py-3 border-b border-gray-200 bg-gray-50 font-medium;
 }
 
 .admin-card-body {
-    @apply p-6;
+    @apply p-4;
 }
 
 .admin-table {
-    @apply min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden;
+    @apply w-full divide-y divide-gray-200 border border-gray-200 rounded-lg overflow-hidden;
 }
 
 .admin-table-header {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
+    @apply px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50;
 }
 
 .admin-table-cell {
-    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500;
+    @apply px-4 py-3 whitespace-nowrap text-sm text-gray-500;
 }
 
 .admin-table-row {
@@ -326,4 +331,23 @@ footer.mt-auto {
 
 .btn-info {
     @apply inline-flex items-center justify-center rounded-md border border-transparent bg-blue-500 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition duration-300 ease-in-out hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 active:bg-blue-700 disabled:opacity-40;
+}
+
+/* Стили для интерактивных полей ввода в публичной части сайта */
+input[type="text"], 
+input[type="number"], 
+input[type="email"], 
+input[type="password"], 
+input[type="search"], 
+textarea, 
+select {
+    @apply bg-white text-black border border-gray-300 pointer-events-auto opacity-100 !important;
+}
+
+select {
+    @apply cursor-pointer !important;
+}
+
+input:focus, textarea:focus, select:focus {
+    @apply border-indigo-500 outline-none ring-2 ring-indigo-200 !important;
 }

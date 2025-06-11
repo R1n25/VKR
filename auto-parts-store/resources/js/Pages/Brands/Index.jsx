@@ -122,7 +122,7 @@ export default function BrandsIndex({ auth, brands: initialBrands }) {
                                     {filteredBrands.map(brand => (
                                         <Link
                                             key={brand.id}
-                                            href={route('brands.show', brand.id)}
+                                            href={route('brands.show', { id: String(brand.id) })}
                                             className="group relative flex flex-col items-center p-6 bg-white rounded-xl border border-gray-100 hover:border-green-200 hover:shadow-lg transition-all duration-300"
                                         >
                                             <div className="relative w-full aspect-square mb-4 flex items-center justify-center">

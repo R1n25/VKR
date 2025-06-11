@@ -18,33 +18,85 @@ class CartService
      */
     public function getCart()
     {
-        // Проверяем авторизованного пользователя
-        if (Auth::check()) {
-            $user = Auth::user();
-            $cart = $this->getUserCart($user);
-        } else {
-            $cart = $this->getSessionCart();
+        try {
+            // Получаем текущий идентификатор сессии
+            $sessionId = Session::getId();
+            
+            // Проверяем авторизованного пользователя
+            if (Auth::check()) {
+                $user = Auth::user();
+                
+                // Ищем активную корзину пользователя
+                $cart = Cart::where('user_id', $user->id)
+                    ->where('is_active', true)
+                    ->first();
+                    
+                // Если корзины нет, создаем новую
+                if (!$cart) {
+                    $cart = Cart::create([
+                        'user_id' => $user->id,
+                        'session_id' => null,
+                        'is_active' => true,
+                        'total_price' => 0
+                    ]);
+                }
+                
+                return $cart;
+            } else {
+                // Для гостя используем корзину, привязанную к сессии
+                $cart = $this->getSessionCart($sessionId);
+                return $cart;
+            }
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Ошибка при получении корзины: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => auth()->id(),
+                'session_id' => Session::getId()
+            ]);
+            
+            // Возвращаем новую пустую корзину в случае ошибки
+            return new Cart([
+                'user_id' => auth()->id(),
+                'session_id' => Session::getId(),
+                'is_active' => true,
+                'total_price' => 0
+            ]);
         }
-
-        return $cart;
     }
 
     /**
      * Получить корзину авторизованного пользователя
      *
      * @param User $user
+     * @param string $sessionId
      * @return Cart
      */
-    private function getUserCart(User $user)
+    private function getUserCart(User $user, $sessionId)
     {
+        // Ищем активную корзину пользователя только по user_id
         $cart = Cart::where('user_id', $user->id)
             ->where('is_active', true)
             ->first();
 
         if (!$cart) {
+            // Если корзины пользователя нет, пытаемся найти корзину по текущей сессии
+            $sessionCart = Cart::where('session_id', $sessionId)
+                ->where('is_active', true)
+                ->whereNull('user_id')
+                ->first();
+            
+            if ($sessionCart) {
+                // Если корзина сессии существует, привязываем её к пользователю и отвязываем от сессии
+                $sessionCart->user_id = $user->id;
+                $sessionCart->session_id = null;
+                $sessionCart->save();
+                return $sessionCart;
+            }
+            
+            // Если ни корзины пользователя, ни корзины сессии нет, создаем новую
             $cart = Cart::create([
                 'user_id' => $user->id,
-                'session_id' => Session::getId(),
+                'session_id' => null, // Не привязываем к сессии, только к пользователю
                 'is_active' => true
             ]);
         }
@@ -55,16 +107,19 @@ class CartService
     /**
      * Получить корзину для гостя по session_id
      *
+     * @param string $sessionId
      * @return Cart
      */
-    private function getSessionCart()
+    private function getSessionCart($sessionId)
     {
-        $sessionId = Session::getId();
+        // Ищем корзину по текущей сессии
         $cart = Cart::where('session_id', $sessionId)
             ->where('is_active', true)
+            ->whereNull('user_id')
             ->first();
 
         if (!$cart) {
+            // Если корзины нет, создаем новую
             $cart = Cart::create([
                 'session_id' => $sessionId,
                 'is_active' => true
@@ -101,7 +156,7 @@ class CartService
                 'cart_id' => $cart->id,
                 'spare_part_id' => $sparePartId,
                 'quantity' => $quantity,
-                'price' => $sparePart->price
+                'price' => $sparePart->price // Используем обычную цену без наценки
             ]);
         }
 
@@ -196,15 +251,29 @@ class CartService
      */
     public function getCartWithItems()
     {
-        $cart = $this->getCart();
-        $cartItems = CartItem::with('sparePart')
-            ->where('cart_id', $cart->id)
-            ->get();
+        try {
+            $cart = $this->getCart();
+            $cartItems = CartItem::with('sparePart')
+                ->where('cart_id', $cart->id)
+                ->get();
 
-        return [
-            'cart' => $cart,
-            'items' => $cartItems
-        ];
+            return [
+                'cart' => $cart,
+                'items' => $cartItems
+            ];
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Ошибка при получении данных корзины: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => auth()->id(),
+                'session_id' => session()->getId()
+            ]);
+            
+            // Возвращаем пустую корзину в случае ошибки
+            return [
+                'cart' => new Cart(),
+                'items' => collect([])
+            ];
+        }
     }
 
     /**
@@ -216,47 +285,83 @@ class CartService
     public function mergeGuestCartWithUserCart(User $user)
     {
         $sessionId = Session::getId();
+        
+        // Деактивируем все старые корзины пользователя
+        Cart::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->update(['is_active' => false]);
+        
+        // Ищем корзину гостя по текущему ID сессии
         $guestCart = Cart::where('session_id', $sessionId)
             ->where('user_id', null)
             ->where('is_active', true)
             ->first();
 
-        // Если корзина гостя не найдена, просто возвращаем корзину пользователя
-        if (!$guestCart) {
-            return $this->getUserCart($user);
-        }
+        // Создаем новую корзину для пользователя
+        $userCart = Cart::create([
+            'user_id' => $user->id,
+            'session_id' => null,
+            'is_active' => true,
+            'total_price' => 0
+        ]);
 
-        // Получаем или создаем корзину пользователя
-        $userCart = $this->getUserCart($user);
+        // Если корзина гостя найдена, перемещаем товары из неё
+        if ($guestCart) {
+            // Перемещаем товары из корзины гостя в корзину пользователя
+            $guestCartItems = CartItem::where('cart_id', $guestCart->id)->get();
 
-        // Перемещаем товары из корзины гостя в корзину пользователя
-        $guestCartItems = CartItem::where('cart_id', $guestCart->id)->get();
+            foreach ($guestCartItems as $guestItem) {
+                // Проверяем, есть ли такой товар уже в корзине пользователя
+                $userItem = CartItem::where('cart_id', $userCart->id)
+                    ->where('spare_part_id', $guestItem->spare_part_id)
+                    ->first();
 
-        foreach ($guestCartItems as $guestItem) {
-            // Проверяем, есть ли такой товар уже в корзине пользователя
-            $userItem = CartItem::where('cart_id', $userCart->id)
-                ->where('spare_part_id', $guestItem->spare_part_id)
-                ->first();
-
-            if ($userItem) {
-                // Если товар уже есть, увеличиваем количество
-                $userItem->quantity += $guestItem->quantity;
-                $userItem->save();
-                // Удаляем товар из корзины гостя
-                $guestItem->delete();
-            } else {
-                // Если товара нет, просто перемещаем его в корзину пользователя
-                $guestItem->cart_id = $userCart->id;
-                $guestItem->save();
+                if ($userItem) {
+                    // Если товар уже есть, увеличиваем количество
+                    $userItem->quantity += $guestItem->quantity;
+                    $userItem->save();
+                    // Удаляем товар из корзины гостя
+                    $guestItem->delete();
+                } else {
+                    // Если товара нет, просто перемещаем его в корзину пользователя
+                    $guestItem->cart_id = $userCart->id;
+                    $guestItem->save();
+                }
             }
+
+            // Пересчитываем общую стоимость корзины пользователя
+            $userCart->calculateTotalPrice();
+
+            // Деактивируем корзину гостя, чтобы она не использовалась в дальнейшем
+            $guestCart->is_active = false;
+            $guestCart->save();
         }
-
-        // Удаляем пустую корзину гостя
-        $guestCart->delete();
-
-        // Пересчитываем общую стоимость корзины пользователя
-        $userCart->calculateTotalPrice();
 
         return $userCart;
+    }
+
+    /**
+     * Получить корзину по ID пользователя
+     *
+     * @param int $userId
+     * @return Cart
+     */
+    public function getCartByUserId($userId)
+    {
+        // Проверяем, существует ли активная корзина для этого пользователя
+        $cart = Cart::where('user_id', $userId)
+            ->where('is_active', true)
+            ->first();
+        
+        // Если корзины нет, создаем новую
+        if (!$cart) {
+            $cart = Cart::create([
+                'user_id' => $userId,
+                'session_id' => null,
+                'is_active' => true
+            ]);
+        }
+        
+        return $cart;
     }
 } 

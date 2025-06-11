@@ -101,9 +101,9 @@ class CarEngineController extends Controller
     public function show($id)
     {
         try {
-            // Сначала получаем двигатель
+            // Получаем двигатель по ID
             $engine = DB::table('car_engines')
-                ->where('car_engines.id', $id)
+                ->where('id', $id)
                 ->first();
             
             if (!$engine) {
@@ -113,33 +113,22 @@ class CarEngineController extends Controller
                 ], 404);
             }
             
-            // Получаем модель отдельным запросом
+            // Получаем информацию о модели
             $model = DB::table('car_models')
                 ->where('id', $engine->model_id)
                 ->first();
-            
-            if ($model) {
-                $engine->model_name = $model->name;
-                $engine->model_id = $model->id;
                 
-                // Получаем бренд отдельным запросом
+            // Получаем информацию о бренде
+            $brand = null;
+            if ($model && $model->brand_id) {
                 $brand = DB::table('car_brands')
                     ->where('id', $model->brand_id)
                     ->first();
-                
-                if ($brand) {
-                    $engine->brand_name = $brand->name;
-                    $engine->brand_id = $brand->id;
-                } else {
-                    $engine->brand_name = 'Неизвестный бренд';
-                    $engine->brand_id = 0;
-                }
-            } else {
-                $engine->model_name = 'Неизвестная модель';
-                $engine->model_id = 0;
-                $engine->brand_name = 'Неизвестный бренд';
-                $engine->brand_id = 0;
             }
+            
+            // Добавляем информацию о модели и бренде к двигателю
+            $engine->model_name = $model ? $model->name : 'Неизвестная модель';
+            $engine->brand_name = $brand ? $brand->name : 'Неизвестный бренд';
             
             return response()->json([
                 'status' => 'success',
@@ -148,9 +137,7 @@ class CarEngineController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Ошибка при получении данных двигателя: ' . $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
+                'message' => 'Ошибка при получении информации о двигателе: ' . $e->getMessage()
             ], 500);
         }
     }

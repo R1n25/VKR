@@ -37,11 +37,14 @@ class BrandService
     /**
      * Получить информацию о конкретном бренде по ID
      * 
-     * @param int $id ID бренда
+     * @param int|string $id ID бренда
      * @return \App\Models\CarBrand
      */
-    public function getBrandById(int $id)
+    public function getBrandById($id)
     {
+        // Преобразуем $id в целое число, если это строка
+        $id = is_string($id) ? (int)$id : $id;
+        
         $brand = CarBrand::with('carModels')->findOrFail($id);
         
         // Удаляем кавычки из названия
@@ -55,11 +58,14 @@ class BrandService
     /**
      * Получить модели для указанного бренда
      * 
-     * @param int $brandId ID бренда
+     * @param int|string $brandId ID бренда
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getModelsByBrandId(int $brandId)
+    public function getModelsByBrandId($brandId)
     {
+        // Преобразуем $brandId в целое число, если это строка
+        $brandId = is_string($brandId) ? (int)$brandId : $brandId;
+        
         return CarModel::where('brand_id', $brandId)
             ->orderBy('name')
             ->get();

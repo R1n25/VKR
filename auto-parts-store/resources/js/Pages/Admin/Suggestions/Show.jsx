@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 export default function Show({ auth, suggestion, analogTypeText }) {
     const [isApproving, setIsApproving] = useState(false);
@@ -12,94 +13,143 @@ export default function Show({ auth, suggestion, analogTypeText }) {
     const [isDeleting, setIsDeleting] = useState(false);
     const [sparePartData, setSparePartData] = useState(null);
     const [analogSparePartData, setAnalogSparePartData] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [sparePartLoading, setSparePartLoading] = useState(false);
+    const [analogSparePartLoading, setAnalogSparePartLoading] = useState(false);
+    const [sparePart, setSparePart] = useState(suggestion.sparePart || null);
+    const [analogSparePart, setAnalogSparePart] = useState(suggestion.analogSparePart || null);
+    const [carModel, setCarModel] = useState(suggestion.carModel || null);
+    const [carModelLoading, setCarModelLoading] = useState(false);
+    const [carEngine, setCarEngine] = useState(suggestion.carEngine || null);
+    const [carEngineLoading, setCarEngineLoading] = useState(false);
     
     // Отладка данных
     console.log('Suggestion data:', suggestion);
     console.log('Original part:', suggestion.sparePart);
     console.log('Analog part:', suggestion.analogSparePart);
     console.log('Car model:', suggestion.carModel);
+    console.log('Car engine:', suggestion.carEngine);
     console.log('Suggestion type:', suggestion.suggestion_type);
     console.log('Engine:', suggestion.engine);
+    console.log('Suggestion data object:', suggestion.data);
     
     // Загружаем данные о запчастях при монтировании компонента
     useEffect(() => {
-        // Если sparePart не загружен, но есть ID, сначала проверяем существование запчасти
-        if (!suggestion.sparePart && suggestion.spare_part_id) {
-            // Сначала проверяем, существует ли запчасть
-            fetch(`/api/spare-parts/${suggestion.spare_part_id}/exists`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Spare part exists check:', data);
-                    
-                    if (data.exists) {
-                        // Если запчасть существует, загружаем полные данные
-                        fetch(`/api/spare-parts/${suggestion.spare_part_id}/full`)
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error('Ошибка загрузки данных о запчасти');
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('Loaded spare part data:', data);
-                                setSparePartData(data);
-                            })
-                            .catch(error => {
-                                console.error('Ошибка при загрузке данных о запчасти:', error);
-                            });
-                    } else {
-                        console.warn(`Запчасть с ID ${suggestion.spare_part_id} не существует в базе данных`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка при проверке существования запчасти:', error);
-                });
+        // Загрузка данных о запчасти, если есть ID, но нет данных
+        if (suggestion.spare_part_id && !sparePart) {
+            loadSparePart(suggestion.spare_part_id);
         }
         
-        // Если analogSparePart не загружен, но есть ID, сначала проверяем существование запчасти-аналога
-        if (!suggestion.analogSparePart && suggestion.analog_spare_part_id) {
-            // Сначала проверяем, существует ли запчасть-аналог
-            fetch(`/api/spare-parts/${suggestion.analog_spare_part_id}/exists`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Analog spare part exists check:', data);
-                    
-                    if (data.exists) {
-                        // Если запчасть-аналог существует, загружаем полные данные
-                        fetch(`/api/spare-parts/${suggestion.analog_spare_part_id}/full`)
-                            .then(response => {
-                                if (!response.ok) {
-                                    throw new Error('Ошибка загрузки данных о запчасти-аналоге');
-                                }
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('Loaded analog spare part data:', data);
-                                setAnalogSparePartData(data);
-                            })
-                            .catch(error => {
-                                console.error('Ошибка при загрузке данных о запчасти-аналоге:', error);
-                            });
-                    } else {
-                        console.warn(`Запчасть-аналог с ID ${suggestion.analog_spare_part_id} не существует в базе данных`);
-                    }
-                })
-                .catch(error => {
-                    console.error('Ошибка при проверке существования запчасти-аналога:', error);
-                });
+        // Загрузка данных об аналоге, если есть ID, но нет данных
+        if (suggestion.suggestion_type === 'analog') {
+            // Проверяем наличие ID аналога в разных местах
+            const analogId = suggestion.analog_spare_part_id || 
+                            (suggestion.data && suggestion.data.analog_spare_part_id);
+            
+            if (analogId && !analogSparePart) {
+                loadAnalogSparePart(analogId);
+            }
+        }
+        
+        // Загрузка данных о модели автомобиля, если есть ID, но нет данных
+        if (suggestion.car_model_id && !carModel) {
+            loadCarModel(suggestion.car_model_id);
+        }
+        
+        // Загрузка данных о двигателе автомобиля, если есть ID, но нет данных
+        if (suggestion.car_engine_id && !carEngine) {
+            loadCarEngine(suggestion.car_engine_id);
         }
     }, [suggestion]);
+    
+    // Загружаем данные о запчасти
+    const loadSparePart = async (id) => {
+        setSparePartLoading(true);
+        try {
+            const response = await axios.get(`/api/spare-parts/${id}/exists`);
+            const { exists, spare_part } = response.data;
+            
+            if (exists && spare_part) {
+                console.log('Loaded spare part data:', spare_part);
+                setSparePart(spare_part);
+            } else {
+                console.error('Spare part not found in API response');
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке данных о запчасти:', error);
+        } finally {
+            setSparePartLoading(false);
+        }
+    };
+    
+    // Загружаем данные об аналоге запчасти
+    const loadAnalogSparePart = async (id) => {
+        setAnalogSparePartLoading(true);
+        try {
+            const response = await axios.get(`/api/spare-parts/${id}/exists`);
+            const { exists, spare_part } = response.data;
+            
+            if (exists && spare_part) {
+                console.log('Loaded analog spare part data:', spare_part);
+                setAnalogSparePart(spare_part);
+            } else {
+                console.error('Analog spare part not found in API response');
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке данных об аналоге запчасти:', error);
+        } finally {
+            setAnalogSparePartLoading(false);
+        }
+    };
+    
+    // Загружаем данные о модели автомобиля
+    const loadCarModel = async (id) => {
+        setCarModelLoading(true);
+        try {
+            const response = await axios.get(`/api/car-models/${id}`);
+            if (response.data.status === 'success' && response.data.data) {
+                console.log('Loaded car model data:', response.data.data);
+                setCarModel(response.data.data);
+            } else {
+                console.error('Car model not found in API response');
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке данных о модели автомобиля:', error);
+        } finally {
+            setCarModelLoading(false);
+        }
+    };
+    
+    // Загружаем данные о двигателе автомобиля
+    const loadCarEngine = async (id) => {
+        setCarEngineLoading(true);
+        try {
+            const response = await axios.get(`/api/car-engines/${id}`);
+            if (response.data.status === 'success' && response.data.data) {
+                console.log('Loaded car engine data:', response.data.data);
+                setCarEngine(response.data.data);
+            } else {
+                console.error('Car engine not found in API response');
+            }
+        } catch (error) {
+            console.error('Ошибка при загрузке данных о двигателе автомобиля:', error);
+        } finally {
+            setCarEngineLoading(false);
+        }
+    };
     
     const { data, setData, post, processing, reset, errors } = useForm({
         admin_comment: '',
     });
     
     const getSuggestionTypeText = (type) => {
-        switch (type) {
-            case 'analog': return 'Аналог';
-            case 'compatibility': return 'Совместимость';
-            default: return 'Неизвестно';
-        }
+        const types = {
+            'compatibility': 'Совместимость',
+            'analog': 'Аналог',
+            'price': 'Цена',
+            'info': 'Информация'
+        };
+        return types[type] || type;
     };
     
     const getStatusText = (status) => {
@@ -126,24 +176,46 @@ export default function Show({ auth, suggestion, analogTypeText }) {
         return format(date, 'dd MMMM yyyy, HH:mm', { locale: ru });
     };
     
-    const handleApprove = (e) => {
-        e.preventDefault();
-        
-        // Добавляем отладочную информацию
-        console.log('Approving suggestion:', suggestion.id);
-        
-        // Закрываем модальное окно, так как теперь у нас есть отдельная форма для одобрения
-        setIsApproving(false);
+    const handleApprove = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.post(`/admin/suggestions/${suggestion.id}/approve`, {
+                admin_comment: data.admin_comment
+            });
+            
+            if (response.data.success) {
+                toast.success('Предложение успешно одобрено');
+                window.location.href = url('admin/suggestions');
+            } else {
+                toast.error('Ошибка при одобрении предложения: ' + (response.data.message || 'Неизвестная ошибка'));
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Ошибка при одобрении предложения:', error);
+            toast.error('Ошибка при одобрении предложения: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+            setLoading(false);
+        }
     };
     
-    const handleReject = (e) => {
-        e.preventDefault();
-        
-        // Добавляем отладочную информацию
-        console.log('Rejecting suggestion:', suggestion.id);
-        
-        // Отправляем форму для POST-запроса
-        document.getElementById('rejectForm').submit();
+    const handleReject = async () => {
+        setLoading(true);
+        try {
+            const response = await axios.post(`/admin/suggestions/${suggestion.id}/reject`, {
+                admin_comment: data.admin_comment
+            });
+            
+            if (response.data.success) {
+                toast.success('Предложение отклонено');
+                window.location.href = url('admin/suggestions');
+            } else {
+                toast.error('Ошибка при отклонении предложения: ' + (response.data.message || 'Неизвестная ошибка'));
+                setLoading(false);
+            }
+        } catch (error) {
+            console.error('Ошибка при отклонении предложения:', error);
+            toast.error('Ошибка при отклонении предложения: ' + (error.response?.data?.message || 'Неизвестная ошибка'));
+            setLoading(false);
+        }
     };
     
     const handleDelete = (e) => {
@@ -152,15 +224,17 @@ export default function Show({ auth, suggestion, analogTypeText }) {
         const formData = new FormData();
         formData.append('_method', 'DELETE');
         
-        fetch(route('admin.suggestions.destroy', suggestion.id), {
+        fetch(url('admin/suggestions') + '/' + suggestion.id, {
             method: 'POST',
             body: formData,
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'X-Requested-With': 'XMLHttpRequest',
             }
         }).then(response => {
             if (response.ok) {
-                window.location.href = route('admin.suggestions.inertia');
+                setIsDeleting(false);
+                // Перенаправление на список предложений
+                window.location.href = url('admin/suggestions');
             }
         }).catch(error => {
             console.error('Error:', error);
@@ -168,8 +242,8 @@ export default function Show({ auth, suggestion, analogTypeText }) {
     };
     
     // Определяем, какие данные о запчасти использовать (из отношения или из загруженных данных)
-    const actualSparePart = suggestion.sparePart || sparePartData;
-    const actualAnalogSparePart = suggestion.analogSparePart || analogSparePartData;
+    const actualSparePart = suggestion.sparePart || sparePart;
+    const actualAnalogSparePart = suggestion.analogSparePart || analogSparePart;
     
     return (
         <AdminLayout
@@ -178,95 +252,70 @@ export default function Show({ auth, suggestion, analogTypeText }) {
         >
             <Head title={`Предложение #${suggestion.id}`} />
             
-            <div className="p-4">
-                <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-                    <div className="p-4 border-b border-gray-200">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                </svg>
-                                <span className="text-lg font-medium">Информация о предложении</span>
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
+                        {/* Заголовок и статус */}
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-2xl font-semibold text-gray-900">
+                                    {getSuggestionTypeText(suggestion.suggestion_type)}
+                                </h2>
+                                <div className="flex items-center mt-2">
+                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColorClass(suggestion.status)}`}>
+                                        {getStatusText(suggestion.status)}
+                                    </span>
+                                    <span className="ml-4 text-sm text-gray-500">
+                                        Создано: {formatDate(suggestion.created_at)}
+                                    </span>
+                                    {suggestion.approved_at && (
+                                        <span className="ml-4 text-sm text-gray-500">
+                                            Обработано: {formatDate(suggestion.approved_at)}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <Link href={route('admin.suggestions.inertia')} className="text-blue-600 hover:text-blue-900 flex items-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                                    </svg>
+                            <div>
+                                <Link
+                                    href={url('admin/suggestions')}
+                                    className="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-300 active:bg-gray-400 focus:outline-none focus:border-gray-500 focus:ring ring-gray-300 disabled:opacity-25 transition ease-in-out duration-150"
+                                >
                                     Назад к списку
                                 </Link>
-                                
                                 <button
                                     onClick={() => setIsDeleting(true)}
-                                    className="text-red-600 hover:text-red-900 flex items-center"
+                                    className="ml-2 inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 active:bg-red-800 focus:outline-none focus:border-red-700 focus:ring ring-red-300 disabled:opacity-25 transition ease-in-out duration-150"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
                                     Удалить
                                 </button>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div className="p-4">
-                        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Основная информация</h3>
-                                <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600">ID:</p>
-                                        <p className="font-semibold">{suggestion.id}</p>
-                                    </div>
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600">Тип предложения:</p>
-                                        <p className="font-semibold">{getSuggestionTypeText(suggestion.suggestion_type)}</p>
-                                    </div>
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600">Статус:</p>
-                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColorClass(suggestion.status)}`}>
-                                            {getStatusText(suggestion.status)}
-                                        </span>
-                                    </div>
-                                    <div className="mb-4">
-                                        <p className="text-sm text-gray-600">Дата создания:</p>
-                                        <p className="font-semibold">{formatDate(suggestion.created_at)}</p>
-                                    </div>
-                                    {suggestion.approved_at && (
-                                        <div className="mb-4">
-                                            <p className="text-sm text-gray-600">Дата одобрения/отклонения:</p>
-                                            <p className="font-semibold">{formatDate(suggestion.approved_at)}</p>
-                                        </div>
-                                    )}
+                        
+                        {/* Информация о пользователе */}
+                        <div className="mb-8">
+                            <h3 className="text-lg font-semibold mb-4">Информация о пользователе</h3>
+                            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-600">Имя:</p>
+                                    <p className="font-semibold">{suggestion.user?.name || 'Неизвестный пользователь'}</p>
                                 </div>
-                            </div>
-                            
-                            <div>
-                                <h3 className="text-lg font-semibold mb-4">Информация о пользователе</h3>
-                                <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
-                                    {suggestion.user ? (
-                                        <>
-                                            <div className="mb-4">
-                                                <p className="text-sm text-gray-600">Имя:</p>
-                                                <p className="font-semibold">{suggestion.user.name}</p>
-                                            </div>
-                                            <div className="mb-4">
-                                                <p className="text-sm text-gray-600">Email:</p>
-                                                <p className="font-semibold">{suggestion.user.email}</p>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <p className="text-gray-500">Информация о пользователе не найдена</p>
-                                    )}
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-600">Email:</p>
+                                    <p className="font-semibold">{suggestion.user?.email || 'Email не указан'}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-600">Дата регистрации:</p>
+                                    <p className="font-semibold">{suggestion.user?.created_at ? formatDate(suggestion.user.created_at) : 'Неизвестно'}</p>
                                 </div>
                             </div>
                         </div>
                         
+                        {/* Информация о запчасти */}
                         <div className="mb-8">
                             <h3 className="text-lg font-semibold mb-4">Информация о запчасти</h3>
                             <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
                                 {actualSparePart ? (
-                                    <>
+                                    <div>
                                         <div className="mb-4">
                                             <p className="text-sm text-gray-600">Название:</p>
                                             <p className="font-semibold">{actualSparePart.name}</p>
@@ -276,79 +325,113 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                                             <p className="font-semibold">{actualSparePart.part_number}</p>
                                         </div>
                                         <div className="mb-4">
-                                            <h3 className="text-sm font-medium text-gray-600">Производитель:</h3>
+                                            <p className="text-sm text-gray-600">Производитель:</p>
                                             <p className="font-semibold">{actualSparePart.manufacturer}</p>
                                         </div>
                                         
-                                        {/* Совместимость с автомобилем */}
-                                        <div className="mt-6 border-t pt-4">
-                                            <h3 className="text-base font-semibold mb-3">Совместимость с автомобилем:</h3>
-                                            
-                                            {(suggestion.carModel || suggestion.car_model_data) && (
-                                                <div className="bg-blue-50 p-3 rounded-md">
-                                                    {/* Информация о бренде */}
-                                                    <div className="mb-2">
-                                                        <span className="text-sm text-gray-600">Бренд:</span>{' '}
-                                                        <span className="font-semibold">
-                                                            {suggestion.carModel?.brand?.name || 
-                                                             suggestion.car_model_data?.brand?.name || 
-                                                             'Не указан'}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                    {/* Информация о модели */}
-                                                    <div className="mb-2">
-                                                        <span className="text-sm text-gray-600">Модель:</span>{' '}
-                                                        <span className="font-semibold">
-                                                            {suggestion.carModel?.name || suggestion.car_model_data?.name}
-                                                            {(suggestion.carModel?.generation || suggestion.car_model_data?.generation) && 
-                                                                ` (${suggestion.carModel?.generation || suggestion.car_model_data?.generation})`}
-                                                        </span>
-                                                    </div>
-                                                    
-                                                                                                            {/* Информация о двигателе */}
-                                                        {suggestion.engine && (
+                                        {/* Информация о совместимости для предложений совместимости */}
+                                        {suggestion.suggestion_type === 'compatibility' && (
+                                            <div className="mt-4 border-t pt-4">
+                                                <h4 className="text-md font-semibold mb-3">Информация о совместимости</h4>
+                                                
+                                                {(suggestion.carModel || suggestion.car_model_data || carModel) && (
+                                                    <div className="bg-blue-50 p-3 rounded-md">
+                                                        {/* Информация о бренде и модели */}
+                                                        <div className="mb-2">
+                                                            <span className="text-sm text-gray-600 font-semibold">Автомобиль:</span>{' '}
+                                                            <span className="font-semibold">
+                                                                {suggestion.carModel?.brand?.name || 
+                                                                suggestion.car_model_data?.brand?.name || 
+                                                                carModel?.brand_name || 'Неизвестный бренд'}{' '}
+                                                                {suggestion.carModel?.name || 
+                                                                suggestion.car_model_data?.name || 
+                                                                carModel?.name || 'Неизвестная модель'}
+                                                                {(suggestion.carModel?.generation || 
+                                                                  suggestion.car_model_data?.generation || 
+                                                                  carModel?.generation) && 
+                                                                    ` (${suggestion.carModel?.generation || 
+                                                                        suggestion.car_model_data?.generation || 
+                                                                        carModel?.generation})`}
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {/* Информация о двигателе */}
+                                                        {(suggestion.engine || carEngine) && (
                                                             <div className="mb-2">
-                                                                <span className="text-sm text-gray-600">Двигатель:</span>{' '}
+                                                                <span className="text-sm text-gray-600 font-semibold">Двигатель:</span>{' '}
                                                                 <span className="font-semibold">
-                                                                    {suggestion.engine.volume && `${suggestion.engine.volume}L `}
-                                                                    {suggestion.engine.power && `${suggestion.engine.power} л.с. `}
-                                                                    {suggestion.engine.fuel_type && `(${suggestion.engine.fuel_type})`}
+                                                                    {carEngine ? (
+                                                                        <>
+                                                                            {carEngine.name}
+                                                                            {carEngine.volume && ` ${carEngine.volume}л`}
+                                                                            {carEngine.power && ` ${carEngine.power}л.с.`}
+                                                                            {carEngine.type && ` (${carEngine.type})`}
+                                                                        </>
+                                                                    ) : suggestion.engine ? (
+                                                                        <>
+                                                                            {suggestion.engine.volume && `${suggestion.engine.volume}L `}
+                                                                            {suggestion.engine.power && `${suggestion.engine.power} л.с. `}
+                                                                            {suggestion.engine.fuel_type && `(${suggestion.engine.fuel_type})`}
+                                                                            {suggestion.engine.description && (
+                                                                                <p className="text-xs text-gray-500 mt-1">
+                                                                                    {suggestion.engine.description}
+                                                                                </p>
+                                                                            )}
+                                                                        </>
+                                                                    ) : (
+                                                                        'Не указан'
+                                                                    )}
                                                                 </span>
-                                                                {suggestion.engine.description && (
-                                                                    <p className="text-xs text-gray-500 mt-1">
-                                                                        {suggestion.engine.description}
-                                                                    </p>
-                                                                )}
                                                             </div>
                                                         )}
-                                                </div>
-                                            )}
-                                            
-                                            {!suggestion.carModel && !suggestion.car_model_data && suggestion.car_model_id && (
-                                                <div className="mb-2 bg-yellow-50 p-2 rounded">
-                                                    <p className="text-sm font-medium text-yellow-700 mb-1">
-                                                        Информация о модели загружается напрямую:
-                                                    </p>
-                                                    <p className="text-sm text-yellow-800">
-                                                        ID модели: {suggestion.car_model_id}
-                                                    </p>
-                                                    <button 
-                                                        onClick={() => window.location.reload()}
-                                                        className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
-                                                    >
-                                                        Обновить страницу
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </>
-                                ) : suggestion.spare_part_id ? (
-                                    <div className="p-3 bg-yellow-50 rounded-md">
-                                        <p className="text-yellow-800">
-                                            <span className="font-semibold">ID запчасти:</span> {suggestion.spare_part_id}
-                                        </p>
-                                        <p className="text-yellow-800 mt-2">Проверка наличия запчасти в базе данных...</p>
+                                                    </div>
+                                                )}
+                                                
+                                                {!suggestion.carModel && !suggestion.car_model_data && !carModel && suggestion.car_model_id && (
+                                                    <div className="mb-2 bg-yellow-50 p-2 rounded">
+                                                        <p className="text-sm font-medium text-yellow-700 mb-1">
+                                                            Информация о модели загружается напрямую:
+                                                        </p>
+                                                        <p className="text-sm text-yellow-800">
+                                                            {carModelLoading ? 'Загрузка данных о модели...' : (
+                                                                `ID модели: ${suggestion.car_model_id}`
+                                                            )}
+                                                        </p>
+                                                        {!carModel && !carModelLoading && (
+                                                            <button 
+                                                                onClick={() => loadCarModel(suggestion.car_model_id)}
+                                                                className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
+                                                            >
+                                                                Загрузить данные о модели
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                                
+                                                {!suggestion.engine && !carEngine && suggestion.car_engine_id && (
+                                                    <div className="mb-2 bg-blue-50 p-2 rounded">
+                                                        <p className="text-sm font-medium text-blue-700 mb-1">
+                                                            Информация о двигателе загружается напрямую:
+                                                        </p>
+                                                        <p className="text-sm text-blue-800">
+                                                            {carEngineLoading ? 'Загрузка данных о двигателе...' : (
+                                                                `ID двигателя: ${suggestion.car_engine_id}`
+                                                            )}
+                                                        </p>
+                                                        {!carEngine && !carEngineLoading && (
+                                                            <button 
+                                                                onClick={() => loadCarEngine(suggestion.car_engine_id)}
+                                                                className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
+                                                            >
+                                                                Загрузить данные о двигателе
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                
+                                        {/* Информация о категории - убираем из блока совместимости, так как она уже отображается выше */}
                                     </div>
                                 ) : (
                                     <p className="text-gray-500">Информация о запчасти не найдена</p>
@@ -380,7 +463,16 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                                             <p className="text-yellow-800">
                                                 <span className="font-semibold">ID запчасти-аналога:</span> {suggestion.analog_spare_part_id}
                                             </p>
-                                            <p className="text-yellow-800 mt-2">Проверка наличия запчасти-аналога в базе данных...</p>
+                                            <p className="text-yellow-800 mt-2">
+                                                {analogSparePartLoading ? 'Загрузка данных о запчасти-аналоге...' : 'Запчасть-аналог не найдена в базе данных'}
+                                            </p>
+                                            <button 
+                                                onClick={() => loadAnalogSparePart(suggestion.analog_spare_part_id)}
+                                                className="mt-2 text-xs bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded"
+                                                disabled={analogSparePartLoading}
+                                            >
+                                                {analogSparePartLoading ? 'Загрузка...' : 'Попробовать загрузить снова'}
+                                            </button>
                                         </div>
                                     ) : suggestion.data?.analog_article ? (
                                         <>
@@ -439,21 +531,9 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                         
                         {suggestion.status === 'pending' && (
                             <div className="flex space-x-4">
-                                <form method="POST" action={route('admin.suggestions.approve', suggestion.id)}>
-                                    <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')} />
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        Одобрить
-                                    </button>
-                                </form>
-                                
                                 <button
-                                    onClick={() => setIsRejecting(true)}
+                                    onClick={handleReject}
+                                    disabled={loading}
                                     className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -461,62 +541,21 @@ export default function Show({ auth, suggestion, analogTypeText }) {
                                     </svg>
                                     Отклонить
                                 </button>
+                                <button
+                                    onClick={handleApprove}
+                                    disabled={loading}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    Одобрить
+                                </button>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
-            
-            {/* Модальное окно для одобрения */}
-            <ConfirmationModal
-                isOpen={isApproving}
-                onClose={() => setIsApproving(false)}
-                onConfirm={handleApprove}
-                title="Подтверждение одобрения"
-                confirmText="Одобрить"
-                confirmButtonClass="bg-green-600 hover:bg-green-700"
-            >
-                <p className="mb-4">Вы уверены, что хотите одобрить это предложение?</p>
-                
-                {suggestion.suggestion_type === 'analog' && (
-                    <div className="p-4 bg-blue-50 text-blue-800 rounded-md mb-4">
-                        <p className="font-medium">Внимание!</p>
-                        <p>После одобрения будет создана связь между запчастями как аналогов.</p>
-                    </div>
-                )}
-                
-                {suggestion.suggestion_type === 'compatibility' && (
-                    <div className="p-4 bg-blue-50 text-blue-800 rounded-md mb-4">
-                        <p className="font-medium">Внимание!</p>
-                        <p>После одобрения будет создана связь совместимости между запчастью и автомобилем.</p>
-                    </div>
-                )}
-            </ConfirmationModal>
-            
-            {/* Модальное окно для отклонения */}
-            <ConfirmationModal
-                isOpen={isRejecting}
-                onClose={() => setIsRejecting(false)}
-                onConfirm={handleReject}
-                title="Отклонение предложения"
-                confirmText="Отклонить"
-                confirmButtonClass="bg-red-600 hover:bg-red-700"
-            >
-                <form id="rejectForm" method="POST" action={route('admin.suggestions.reject', suggestion.id)}>
-                    <input type="hidden" name="_token" value={document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')} />
-                    
-                    <p className="mb-4">Укажите причину отклонения предложения:</p>
-                    <textarea
-                        name="admin_comment"
-                        value={data.admin_comment}
-                        onChange={e => setData('admin_comment', e.target.value)}
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                        rows="3"
-                        placeholder="Причина отклонения"
-                    ></textarea>
-                    {errors.admin_comment && <div className="text-red-500 text-sm mt-1">{errors.admin_comment}</div>}
-                </form>
-            </ConfirmationModal>
             
             {/* Модальное окно для удаления */}
             <ConfirmationModal

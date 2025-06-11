@@ -26,6 +26,8 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\EngineController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\PartDetailController;
+use App\Http\Controllers\SparePartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,12 +79,16 @@ Route::get('/engines/{id}/parts', function ($id) {
 })->name('engines.parts');
 
 // Маршруты для запчастей
-Route::get('/parts/{id}', [PartsController::class, 'show'])->name('parts.show');
-// Дублирующийся маршрут (закомментирован, так как дублирует parts.show)
-// Route::get('/spare-parts/{id}', [PartsController::class, 'show'])->name('spare-parts.show');
-Route::get('/search', [PartsController::class, 'search'])->name('search');
-Route::get('/article-search', [PartsController::class, 'findByArticle'])->name('parts.article-search');
-
+Route::middleware(['auth', 'verified'])->group(function () {
+    // Поиск запчастей
+    Route::get('/search', [SparePartController::class, 'search'])->name('search');
+    
+    // Поиск запчасти по артикулу
+    Route::get('/article-search', [SparePartController::class, 'findByArticle'])->name('parts.article-search');
+    
+    // Детальная информация о запчасти
+    Route::get('/parts/{id}', [PartDetailController::class, 'show'])->name('parts.show');
+});
 
 // Маршруты для авторизованных пользователей
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -102,19 +108,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // Маршрут для корзины
-Route::get('/cart', function () {
-    return Inertia::render('Cart', [
-        'auth' => [
-            'user' => Auth::user(),
-        ],
-    ]);
-})->name('cart');
+Route::get('/cart', [CartController::class, 'index'])->name('cart');
 
 // Маршрут для оформления заказа
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
 
-// Маршрут для обработки формы заказа
-Route::post('/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+// Маршрут для обработки заказа без CSRF-защиты
+Route::post('/process-order', [CheckoutController::class, 'processOrder'])->name('process.order')->withoutMiddleware(['web']);
+
+// Маршрут для страницы успешного оформления заказа
+Route::get('/order-success', function() {
+    return Inertia::render('OrderSuccess', [
+        'auth' => [
+            'user' => Auth::user(),
+        ],
+        'order' => session('order')
+    ]);
+})->name('order.success');
+
+// Специальный маршрут для тестирования оформления заказа
+Route::post('/test-checkout', [CheckoutController::class, 'processTestCheckout'])->name('test.checkout');
+
+// Тестовая страница оформления заказа
+Route::get('/test-checkout-page', function() {
+    return Inertia::render('TestCheckout');
+})->name('test.checkout.page');
 
 // Маршрут для просмотра списка заказов (требуется аутентификация)
 Route::get('/orders', [OrderController::class, 'index'])->middleware(['auth'])->name('orders.index');
@@ -153,6 +171,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/spare-parts/{sparePart}/suggest-compatibility', [UserSuggestionController::class, 'storeCompatibility'])
         ->name('suggestions.store-compatibility')
         ->middleware('auth');
+        
+    // Маршруты для предложений через id запчасти (для страницы каталога)
+    Route::get('/parts/{id}/suggest-analog', [UserSuggestionController::class, 'createAnalogById'])
+        ->name('suggestions.create-analog-by-id')
+        ->middleware('auth');
+    Route::post('/parts/{id}/suggest-analog', [UserSuggestionController::class, 'storeAnalogById'])
+        ->name('suggestions.store-analog-by-id')
+        ->middleware('auth');
+    Route::get('/parts/{id}/suggest-compatibility', [UserSuggestionController::class, 'createCompatibilityById'])
+        ->name('suggestions.create-compatibility-by-id')
+        ->middleware('auth');
+    Route::post('/parts/{id}/suggest-compatibility', [UserSuggestionController::class, 'storeCompatibilityById'])
+        ->name('suggestions.store-compatibility-by-id')
+        ->middleware('auth');
 });
 
 // Маршруты админ-панели
@@ -160,19 +192,30 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
     Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     
     // Управление запчастями
-    Route::resource('spare-parts', App\Http\Controllers\Admin\SparePartController::class);
-    Route::get('spare-parts-inertia', [App\Http\Controllers\Admin\SparePartController::class, 'indexInertia'])->name('spare-parts.inertia');
-    Route::get('spare-parts-create', [App\Http\Controllers\Admin\SparePartController::class, 'createInertia'])->name('spare-parts.create-inertia');
-    Route::post('spare-parts-store', [App\Http\Controllers\Admin\SparePartController::class, 'storeInertia'])->name('spare-parts.store-inertia');
-    Route::get('spare-parts-show/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'showInertia'])->name('spare-parts.show-inertia');
-    Route::get('spare-parts-edit/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'editInertia'])->name('spare-parts.edit-inertia');
-    Route::put('spare-parts-update/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateInertia'])->name('spare-parts.update-inertia');
-    Route::put('spare-parts-update-category/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateCategory'])->name('spare-parts.update-category');
-    
-    // Управление аналогами запчастей
-    Route::get('spare-parts/{sparePart}/analogs', [App\Http\Controllers\Admin\SparePartController::class, 'manageAnalogs'])->name('spare-parts.analogs');
-    Route::post('spare-parts/{sparePart}/add-analog', [App\Http\Controllers\Admin\SparePartController::class, 'addAnalog'])->name('spare-parts.add-analog');
-    Route::delete('spare-parts/{sparePart}/analogs/{analogId}', [App\Http\Controllers\Admin\SparePartController::class, 'removeAnalog'])->name('spare-parts.remove-analog');
+    Route::prefix('spare-parts')->name('spare-parts.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Admin\SparePartController::class, 'indexInertia'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Admin\SparePartController::class, 'createInertia'])->name('create');
+        Route::post('/', [App\Http\Controllers\Admin\SparePartController::class, 'storeInertia'])->name('store');
+        Route::get('/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'showInertia'])->name('show');
+        Route::get('/{sparePart}/edit', [App\Http\Controllers\Admin\SparePartController::class, 'editInertia'])->name('edit');
+        Route::put('/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'updateInertia'])->name('update');
+        Route::delete('/{sparePart}', [App\Http\Controllers\Admin\SparePartController::class, 'destroy'])->name('destroy');
+        
+        // Маршруты для управления аналогами
+        Route::get('/{id}/analogs', [App\Http\Controllers\Admin\SparePartController::class, 'manageAnalogs'])->name('analogs');
+        Route::post('/{id}/add-analog', [App\Http\Controllers\Admin\SparePartController::class, 'addAnalog'])->name('add-analog');
+        Route::delete('/{id}/analogs/{analogId}', [App\Http\Controllers\Admin\SparePartController::class, 'removeAnalog'])->name('remove-analog');
+        
+        // Маршрут для обновления категории запчасти
+        Route::put('/{sparePart}/update-category', [App\Http\Controllers\Admin\SparePartController::class, 'updateCategory'])->name('update-category');
+        
+        // Маршруты для массовых действий
+        Route::post('/activate-all', [App\Http\Controllers\Admin\SparePartController::class, 'activateAll'])->name('activate-all');
+        Route::post('/set-all-active', [App\Http\Controllers\Admin\SparePartController::class, 'setAllActive'])->name('set-all-active');
+        
+        // Маршрут для синхронизации аналогов
+        Route::get('/sync-all-analogs', [App\Http\Controllers\Admin\SparePartController::class, 'syncAllAnalogs'])->name('sync-all-analogs');
+    });
     
     // Управление VIN-запросами
     Route::get('/vin-requests', [App\Http\Controllers\Admin\VinRequestController::class, 'index'])->name('vin-requests.index');
@@ -196,32 +239,34 @@ Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])->prefix
 
 
     // Управление предложениями пользователей
-    Route::get('/suggestions-inertia', [App\Http\Controllers\Admin\SuggestionController::class, 'indexInertia'])->name('suggestions.inertia');
-    Route::get('/suggestions-show-inertia/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'showInertia'])->name('suggestions.show-inertia')->whereNumber('suggestion');
-    Route::get('/suggestions', [App\Http\Controllers\Admin\SuggestionController::class, 'index'])->name('suggestions.index');
-    Route::get('/suggestions/{suggestion}', function($suggestion) {
-        return redirect()->route('admin.suggestions.show-inertia', $suggestion);
-    })->name('suggestions.show');
+    Route::get('/suggestions', [App\Http\Controllers\Admin\SuggestionController::class, 'indexInertia'])->name('suggestions.index');
+    Route::get('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'showInertia'])->name('suggestions.show')->whereNumber('suggestion');
     Route::post('/suggestions/{suggestion}/approve', [App\Http\Controllers\Admin\SuggestionController::class, 'approve'])->name('suggestions.approve');
     Route::post('/suggestions/{suggestion}/reject', [App\Http\Controllers\Admin\SuggestionController::class, 'reject'])->name('suggestions.reject');
     Route::delete('/suggestions/{suggestion}', [App\Http\Controllers\Admin\SuggestionController::class, 'destroy'])->name('suggestions.destroy');
     
     // Управление каталогом
     Route::get('/catalog-manager', [CatalogManagerController::class, 'index'])->name('catalog-manager.index');
+    Route::get('/catalog-manager/import-parts', function() {
+        return redirect()->route('admin.catalog-manager.index');
+    })->name('catalog-manager.import-parts.get');
     Route::post('/catalog-manager/import-parts', [CatalogManagerController::class, 'importParts'])->name('catalog-manager.import-parts');
+    Route::get('/catalog-manager/import-cars', function() {
+        return redirect()->route('admin.catalog-manager.index');
+    })->name('catalog-manager.import-cars.get');
     Route::post('/catalog-manager/import-cars', [CatalogManagerController::class, 'importCars'])->name('catalog-manager.import-cars');
     Route::get('/catalog-manager/export-parts', [CatalogManagerController::class, 'exportParts'])->name('catalog-manager.export-parts');
     Route::get('/catalog-manager/export-cars', [CatalogManagerController::class, 'exportCars'])->name('catalog-manager.export-cars');
     Route::get('/catalog-manager/download-backup', [CatalogManagerController::class, 'downloadBackup'])->name('catalog-manager.download-backup');
 
-    // Управление категориями запчастей (Inertia-версии)
-    Route::get('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'indexInertia'])->name('part-categories.inertia');
-    Route::get('part-categories/create', [\App\Http\Controllers\Admin\PartCategoryController::class, 'createInertia'])->name('part-categories.create-inertia');
-    Route::post('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'storeInertia'])->name('part-categories.store-inertia');
-    Route::get('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'showInertia'])->name('part-categories.show-inertia');
-    Route::get('part-categories/{partCategory}/edit', [\App\Http\Controllers\Admin\PartCategoryController::class, 'editInertia'])->name('part-categories.edit-inertia');
-    Route::put('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update-inertia');
-    Route::delete('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy-inertia');
+    // Управление категориями запчастей
+    Route::get('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'indexInertia'])->name('part-categories.index');
+    Route::get('part-categories/create', [\App\Http\Controllers\Admin\PartCategoryController::class, 'createInertia'])->name('part-categories.create');
+    Route::post('part-categories', [\App\Http\Controllers\Admin\PartCategoryController::class, 'storeInertia'])->name('part-categories.store');
+    Route::get('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'showInertia'])->name('part-categories.show');
+    Route::get('part-categories/{partCategory}/edit', [\App\Http\Controllers\Admin\PartCategoryController::class, 'editInertia'])->name('part-categories.edit');
+    Route::put('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'updateInertia'])->name('part-categories.update');
+    Route::delete('part-categories/{partCategory}', [\App\Http\Controllers\Admin\PartCategoryController::class, 'destroyInertia'])->name('part-categories.destroy');
 
 
 
@@ -243,5 +288,14 @@ Route::get('/catalog/{brandSlug}/{modelSlug}', [CatalogController::class, 'model
 Route::get('/catalog/{brandSlug}/{modelSlug}/{generation}', [CatalogController::class, 'generation'])->name('catalog.generation');
 Route::get('/catalog/{brandSlug}/{modelSlug}/{generation}/parts', [CatalogController::class, 'parts'])->name('catalog.parts');
 Route::get('/part/{partSlug}', [CatalogController::class, 'part'])->name('catalog.part');
+
+// Тестовый маршрут для проверки отключения CSRF
+Route::post('/test-post', function (Request $request) {
+    return response()->json([
+        'success' => true,
+        'message' => 'Тестовый запрос успешно обработан',
+        'data' => $request->all()
+    ]);
+})->middleware('api')->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 
 require __DIR__.'/auth.php';

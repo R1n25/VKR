@@ -18,7 +18,7 @@ export default function VinRequestIndex({ auth }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('vin-request.store'), { onSuccess: () => reset() });
+        post(url('vin-request/store'), { onSuccess: () => reset() });
     };
 
     return (

@@ -9,154 +9,161 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Http\UploadedFile;
+use Exception;
+use Illuminate\Support\Facades\File;
 
 class ImportService
 {
+    private $exportService;
+
+    public function __construct(ExportService $exportService)
+    {
+        $this->exportService = $exportService;
+    }
+
     /**
      * Импортировать запчасти из CSV файла
      *
-     * @param string $filePath Путь к CSV файлу
+     * @param UploadedFile|string $file Загруженный файл или путь к файлу
      * @param bool $updateExisting Обновлять существующие записи
+     * @param bool $createBackup Создать резервную копию перед импортом
      * @return array Статистика импорта
      */
-    public function importSpareParts(string $filePath, bool $updateExisting = true): array
+    public function importSpareParts($file, bool $updateExisting = false, bool $createBackup = true): array
     {
-        $stats = [
-            'processed' => 0,
-            'created' => 0,
-            'updated' => 0,
-            'skipped' => 0,
-            'errors' => 0,
+        if ($createBackup) {
+            $this->exportService->exportSpareParts();
+        }
+
+        // Получаем путь к файлу в зависимости от типа параметра
+        $path = $file;
+        if ($file instanceof UploadedFile) {
+            $path = $file->getRealPath();
+        }
+
+        $fileHandle = fopen($path, 'r');
+        if ($fileHandle === false) {
+            throw new Exception("Не удалось открыть файл: {$path}");
+        }
+
+        // Чтение заголовков
+        $headers = fgetcsv($fileHandle, 0, ';');
+        
+        // Проверка структуры файла (ожидаемые заголовки)
+        $expectedHeaders = [
+            'бренд', 'артикул', 'наименование', 'количество', 'цена'
         ];
-
-        if (!file_exists($filePath)) {
-            Log::error("Файл не найден: {$filePath}");
-            throw new \Exception("Файл не найден: {$filePath}");
+        
+        // Добавим поддержку файла prise.csv с другими заголовками
+        $alternativeHeaders = [
+            'Бренд', 'Артикул', 'Наименование номенклатуры', 'Количество', 'Окончательная цена'
+        ];
+        
+        // Проверяем, соответствуют ли заголовки ожидаемым или альтернативным
+        $headersValid = (count(array_intersect($headers, $expectedHeaders)) === count($expectedHeaders)) || 
+                        (count(array_intersect($headers, $alternativeHeaders)) === count($alternativeHeaders));
+        
+        if (!$headersValid) {
+            fclose($fileHandle);
+            throw new Exception('Формат файла не соответствует ожидаемому. Не найдены все необходимые колонки. Требуются: бренд, артикул, наименование, количество, цена.');
         }
-
-        DB::beginTransaction();
-        try {
-            // Сначала прочитаем файл целиком и преобразуем кодировку
-            $content = file_get_contents($filePath);
-            $content = mb_convert_encoding($content, 'UTF-8', 'Windows-1251');
-            
-            // Сохраним преобразованный файл временно
-            $tempFile = tempnam(sys_get_temp_dir(), 'csv_import');
-            file_put_contents($tempFile, $content);
-            
-            $handle = fopen($tempFile, 'r');
-            
-            // Читаем заголовки (используем точку с запятой как разделитель)
-            $headers = fgetcsv($handle, 0, ';');
-            
-            // Добавим проверку заголовков
-            if (!$headers || count($headers) < 5) {
-                Log::error("Некорректные заголовки CSV: " . print_r($headers, true));
-                throw new \Exception("Некорректные заголовки CSV файла.");
+        
+        // Определяем отображение заголовков на поля базы данных
+        $headerMap = [];
+        if (count(array_intersect($headers, $expectedHeaders)) === count($expectedHeaders)) {
+            $headerMap = [
+                'бренд' => 'manufacturer',
+                'артикул' => 'part_number',
+                'наименование' => 'name',
+                'количество' => 'stock_quantity',
+                'цена' => 'price'
+            ];
+        } else {
+            $headerMap = [
+                'Бренд' => 'manufacturer',
+                'Артикул' => 'part_number',
+                'Наименование номенклатуры' => 'name',
+                'Количество' => 'stock_quantity',
+                'Окончательная цена' => 'price'
+            ];
+        }
+        
+        // Получаем индексы колонок
+        $columnIndexes = [];
+        foreach ($headerMap as $fileHeader => $dbField) {
+            $index = array_search($fileHeader, $headers);
+            if ($index !== false) {
+                $columnIndexes[$dbField] = $index;
             }
+        }
+        
+        // Статистика импорта
+        $stats = [
+            'processed' => 0,  // Всего обработано строк
+            'created' => 0,    // Создано новых записей
+            'updated' => 0,    // Обновлено существующих записей
+            'skipped' => 0,    // Пропущено записей
+            'errors' => 0      // Количество ошибок
+        ];
+        
+        // Чтение данных и импорт
+        while (($data = fgetcsv($fileHandle, 0, ';')) !== false) {
+            $stats['processed']++;
             
-            // Нормализуем заголовки
-            $headers = array_map(function($header) {
-                return mb_strtolower(trim($header));
-            }, $headers);
-            
-            Log::info("Заголовки CSV файла: " . implode(", ", $headers));
-            
-            // Пробуем найти нужные колонки, поддерживаем разные варианты написания
-            $brandIndex = $this->findColumnIndex($headers, ['бренд', 'brand', 'производитель', 'марка']);
-            $partNumberIndex = $this->findColumnIndex($headers, ['артикул', 'partnumber', 'номер', 'номер детали', 'part_number']);
-            $nameIndex = $this->findColumnIndex($headers, ['наименование', 'название', 'наименование номенклатуры', 'name', 'title']);
-            $quantityIndex = $this->findColumnIndex($headers, ['количество', 'кол-во', 'кол', 'qty', 'quantity', 'остаток']);
-            $priceIndex = $this->findColumnIndex($headers, ['цена', 'окончательная цена', 'стоимость', 'price']);
-            
-            Log::info("Найденные индексы: бренд({$brandIndex}), артикул({$partNumberIndex}), " .
-                     "наименование({$nameIndex}), количество({$quantityIndex}), цена({$priceIndex})");
-            
-            if ($brandIndex === -1 || $partNumberIndex === -1 || $nameIndex === -1 || 
-                $quantityIndex === -1 || $priceIndex === -1) {
-                throw new \Exception("Формат файла не соответствует ожидаемому. Не найдены все необходимые колонки. " . 
-                                   "Требуются: бренд, артикул, наименование, количество, цена.");
-            }
-            
-            while (($row = fgetcsv($handle, 0, ';')) !== false) {
-                $stats['processed']++;
-                
-                try {
-                    // Проверяем, что достаточно данных
-                    if (count($row) <= max($brandIndex, $partNumberIndex, $nameIndex, $quantityIndex, $priceIndex)) {
+            try {
+                if (count($data) >= count($columnIndexes)) {
+                    $manufacturer = trim($data[$columnIndexes['manufacturer']]);
+                    $partNumber = trim($data[$columnIndexes['part_number']]);
+                    $name = trim($data[$columnIndexes['name']]);
+                    $quantity = (int)trim($data[$columnIndexes['stock_quantity']]);
+                    $price = (float)str_replace([' ', ','], ['', '.'], trim($data[$columnIndexes['price']]));
+                    
+                    // Пропускаем строки с пустыми ключевыми значениями
+                    if (empty($manufacturer) || empty($partNumber) || empty($name)) {
                         $stats['skipped']++;
                         continue;
                     }
                     
-                    // Извлекаем данные из соответствующих колонок
-                    $manufacturer = trim($row[$brandIndex]);
-                    $partNumber = trim($row[$partNumberIndex]);
-                    $name = trim($row[$nameIndex]);
-                    $stockQuantity = (int)trim($row[$quantityIndex]);
-                    // Очистка цены от пробелов и конвертация в число
-                    $price = (float)str_replace([' ', ','], ['', '.'], trim($row[$priceIndex]));
+                    // Обрабатываем запись
+                    $sparePart = SparePart::where('manufacturer', $manufacturer)
+                        ->where('part_number', $partNumber)
+                        ->first();
                     
-                    // Проверяем обязательные поля
-                    if (empty($partNumber)) {
-                        $stats['skipped']++;
-                        continue;
-                    }
-                    
-                    // Создаем slug для URL
-                    $slug = Str::slug($name . '-' . $partNumber);
-                    
-                    // Ищем существующую запчасть по артикулу
-                    $sparePart = SparePart::where('part_number', $partNumber)->first();
-                    
-                    // Подготавливаем данные для запчасти
-                    $sparePartData = [
-                        'name' => $name,
-                        'slug' => $slug,
-                        'description' => $name,
-                        'part_number' => $partNumber,
-                        'price' => $price,
-                        'stock_quantity' => $stockQuantity,
-                        'manufacturer' => $manufacturer,
-                        'is_available' => $stockQuantity > 0,
-                        'category' => 'Запчасти', // Категория по умолчанию
-                    ];
-                    
-                    if ($sparePart) {
-                        if ($updateExisting) {
-                            $sparePart->update($sparePartData);
-                            $stats['updated']++;
-                        } else {
-                            $stats['skipped']++;
-                        }
-                    } else {
-                        SparePart::create($sparePartData);
+                    if ($sparePart && $updateExisting) {
+                        $sparePart->update([
+                            'name' => $name,
+                            'stock_quantity' => $quantity,
+                            'price' => $price
+                        ]);
+                        $stats['updated']++;
+                    } elseif (!$sparePart) {
+                        SparePart::create([
+                            'manufacturer' => $manufacturer,
+                            'part_number' => $partNumber,
+                            'name' => $name,
+                            'slug' => Str::slug($manufacturer . '-' . $partNumber . '-' . $name),
+                            'stock_quantity' => $quantity,
+                            'price' => $price,
+                            'is_available' => $quantity > 0,
+                            'is_active' => true
+                        ]);
                         $stats['created']++;
+                    } else {
+                        // Существующая запись, но обновление отключено
+                        $stats['skipped']++;
                     }
-                } catch (\Exception $e) {
-                    Log::error("Ошибка при импорте строки {$stats['processed']}: " . $e->getMessage());
-                    $stats['errors']++;
+                } else {
+                    // Недостаточно данных в строке
+                    $stats['skipped']++;
                 }
-                
-                // Периодически сохраняем изменения для экономии памяти
-                if ($stats['processed'] % 100 === 0) {
-                    DB::commit();
-                    DB::beginTransaction();
-                }
+            } catch (\Exception $e) {
+                $stats['errors']++;
             }
-            
-            fclose($handle);
-            // Удаляем временный файл
-            @unlink($tempFile);
-            DB::commit();
-            
-            Log::info('Импорт запчастей завершен', $stats);
-            return $stats;
-            
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Ошибка при импорте запчастей: ' . $e->getMessage());
-            throw $e;
         }
+        
+        fclose($fileHandle);
+        return $stats;
     }
     
     /**

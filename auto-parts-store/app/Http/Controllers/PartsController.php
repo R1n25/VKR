@@ -9,6 +9,7 @@ use App\Services\BrandService;
 use App\Services\CategoryService;
 use App\Models\SparePart;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PartsController extends Controller
 {
@@ -73,30 +74,23 @@ class PartsController extends Controller
         
         // Затем добавляем данные из таблицы car_engine_spare_part
         try {
-            \Log::info('Выполняем запрос для получения совместимости двигателей для запчасти ID: ' . $id);
-            
             // Получаем все записи из car_engine_spare_part для данной запчасти
             $engineSparePartRecords = DB::table('car_engine_spare_part')
                 ->where('spare_part_id', $id)
                 ->get();
                 
-            \Log::info('Найдено записей car_engine_spare_part: ' . $engineSparePartRecords->count());
-            
             // Если записи найдены, получаем данные о двигателях
             $engineCompatibilities = collect();
             
             if ($engineSparePartRecords->count() > 0) {
                 // Получаем ID двигателей
                 $engineIds = $engineSparePartRecords->pluck('car_engine_id')->toArray();
-                \Log::info('ID двигателей: ' . implode(', ', $engineIds));
                 
                 // Получаем данные о двигателях
                 $engines = DB::table('car_engines')
                     ->whereIn('id', $engineIds)
                     ->get();
                     
-                \Log::info('Найдено двигателей: ' . $engines->count());
-                
                 // Создаем словарь для быстрого поиска двигателей по ID
                 $enginesById = [];
                 foreach ($engines as $engine) {
@@ -157,13 +151,8 @@ class PartsController extends Controller
                 }
             }
             
-            \Log::info('Подготовлено записей совместимости: ' . $engineCompatibilities->count());
-            \Log::info('Данные совместимости:', $engineCompatibilities->toArray());
-            
             // Объединяем данные из обоих источников
             $allCompatibilities = $compatibilities->concat($engineCompatibilities);
-            
-            \Log::info('Всего записей совместимости: ' . $allCompatibilities->count());
             
         } catch (\Exception $e) {
             \Log::error('Ошибка при загрузке совместимостей двигателей: ' . $e->getMessage());
@@ -174,11 +163,6 @@ class PartsController extends Controller
             
         // Добавляем совместимости к объекту запчасти
         $part->compatibilities = $allCompatibilities;
-        
-        // Отладочный вывод
-        \Log::info('Part data:', ['part' => $part->toArray()]);
-        \Log::info('Compatibilities count: ' . $allCompatibilities->count());
-        \Log::info('Compatibilities data:', $allCompatibilities->toArray());
         
         // Получаем похожие запчасти
         $similarParts = $this->sparePartService->getSimilarParts($id, 4, $isAdmin);
@@ -238,45 +222,86 @@ class PartsController extends Controller
      */
     public function search(Request $request)
     {
-        // Проверяем оба параметра - q (с фронтенда) и query (для обратной совместимости)
-        $searchQueryParam = null;
-        if ($request->filled('q')) {
-            $searchQueryParam = $request->input('q');
-        } elseif ($request->filled('query')) {
-            $searchQueryParam = $request->input('query');
+        try {
+            // Проверяем оба параметра - q (с фронтенда) и query (для обратной совместимости)
+            $searchQueryParam = null;
+            if ($request->filled('q')) {
+                $searchQueryParam = $request->input('q');
+            } elseif ($request->filled('query')) {
+                $searchQueryParam = $request->input('query');
+            }
+            
+            \Log::info('Поиск запчастей: запрос = ' . ($searchQueryParam ?? 'пустой'));
+            
+            // Проверяем, является ли пользователь администратором
+            $isAdmin = auth()->check() && auth()->user()->is_admin;
+            
+            // Если запрос пустой, возвращаем пустой результат
+            if (empty($searchQueryParam)) {
+                return response()->json([
+                    'status' => 'success',
+                    'data' => [],
+                    'message' => 'Пустой поисковый запрос'
+                ]);
+            }
+            
+            // Получаем список запчастей по поисковому запросу
+            $spareParts = app(SparePartService::class)->searchParts($searchQueryParam, $isAdmin);
+            
+            // Логируем полученные данные для отладки
+            \Log::info('Результаты поиска: ' . json_encode([
+                'query' => $searchQueryParam,
+                'count' => count($spareParts),
+                'first_item' => $spareParts->first()
+            ]));
+            
+            // Преобразуем коллекцию в массив для передачи во фронтенд
+            // Убедимся, что это массив, а не коллекция объектов
+            if (is_object($spareParts) && method_exists($spareParts, 'toArray')) {
+                $sparePartsArray = $spareParts->toArray();
+            } else {
+                $sparePartsArray = $spareParts;
+            }
+            
+            // Проверяем, что все элементы массива имеют необходимые поля
+            foreach ($sparePartsArray as $index => $part) {
+                // Проверяем и устанавливаем обязательные поля
+                $sparePartsArray[$index]['id'] = $part['id'] ?? ($index + 1000);
+                $sparePartsArray[$index]['name'] = $part['name'] ?? 'Запчасть без названия';
+                $sparePartsArray[$index]['part_number'] = $part['part_number'] ?? 'Н/Д';
+                
+                // Используем manufacturer или brand_name, если доступно
+                $sparePartsArray[$index]['manufacturer'] = $part['manufacturer'] ?? $part['brand_name'] ?? 'Производитель не указан';
+                
+                // Используем category_name или category, если доступно
+                $sparePartsArray[$index]['category'] = $part['category_name'] ?? $part['category'] ?? 'Категория не указана';
+                
+                // Добавляем информацию о модели, если доступно
+                if (!empty($part['model_name'])) {
+                    $sparePartsArray[$index]['model'] = $part['model_name'];
+                }
+                
+                $sparePartsArray[$index]['price'] = $part['price'] ?? 0;
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => $sparePartsArray,
+                'count' => count($sparePartsArray),
+                'query' => $searchQueryParam
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при поиске запчастей: ' . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
+            // В случае ошибки возвращаем пустой результат
+            return response()->json([
+                'status' => 'error',
+                'data' => [],
+                'message' => 'Произошла ошибка при поиске запчастей: ' . $e->getMessage(),
+                'query' => $searchQueryParam ?? ''
+            ], 500);
         }
-        
-        // Проверяем, является ли пользователь администратором
-        $isAdmin = auth()->check() && auth()->user()->is_admin;
-        
-        // Используем сервис для поиска запчастей
-        $spareParts = $this->sparePartService->searchSpareParts($searchQueryParam, $isAdmin);
-        
-        // Логируем результаты поиска для отладки
-        \Log::info("Поиск: '{$searchQueryParam}', Найдено: " . $spareParts->count());
-        
-        // Получение категорий для фильтрации
-        $categories = \App\Models\PartCategory::orderBy('name')->get();
-        
-        // Получение производителей для фильтрации
-        $manufacturers = SparePart::select('manufacturer')
-            ->distinct()
-            ->where('is_available', true)
-            ->whereNotNull('manufacturer')
-            ->orderBy('manufacturer')
-            ->pluck('manufacturer');
-        
-        return Inertia::render('Search', [
-            'auth' => [
-                'user' => auth()->user(),
-            ],
-            'spareParts' => $spareParts,
-            'categories' => $categories,
-            'manufacturers' => $manufacturers,
-            'filters' => $request->only(['q', 'query', 'category_id', 'manufacturer', 'car_model_id', 'price_min', 'price_max', 'sort_by', 'sort_order']),
-            'searchQuery' => $searchQueryParam,
-            'isAdmin' => $isAdmin
-        ]);
     }
 
     /**

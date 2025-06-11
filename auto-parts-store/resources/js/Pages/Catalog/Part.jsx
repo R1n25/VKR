@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import MainLayout from '@/Layouts/MainLayout';
 import { ChevronRightIcon, ShoppingCartIcon, TagIcon, TruckIcon, ArrowPathIcon, CheckIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import ProductCard from '@/Components/ProductCard';
 
 export default function Part({ auth, sparePart, similarParts, analogParts }) {
+    const { url } = usePage();
     const [quantity, setQuantity] = useState(1);
     const [activeTab, setActiveTab] = useState('description');
     
@@ -40,21 +42,21 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Хлебные крошки */}
                     <div className="mb-4 flex flex-wrap items-center text-sm text-gray-500">
-                        <Link href={route('catalog.index')} className="hover:text-indigo-600">
+                        <Link href={url('catalog')} className="hover:text-indigo-600">
                             Каталог
                         </Link>
                         {sparePart.compatible_models && sparePart.compatible_models.length > 0 && (
                             <>
                                 <ChevronRightIcon className="h-4 w-4 mx-2" />
-                                <Link href={route('catalog.brand', sparePart.compatible_models[0].brand.slug)} className="hover:text-indigo-600">
+                                <Link href={url('catalog/brand', { slug: sparePart.compatible_models[0].brand.slug })} className="hover:text-indigo-600">
                                     {sparePart.compatible_models[0].brand.name}
                                 </Link>
                                 <ChevronRightIcon className="h-4 w-4 mx-2" />
                                 <Link 
-                                    href={route('catalog.model', [
-                                        sparePart.compatible_models[0].brand.slug, 
-                                        sparePart.compatible_models[0].slug
-                                    ])} 
+                                    href={url('catalog/model', { 
+                                        brand: sparePart.compatible_models[0].brand.slug, 
+                                        model: sparePart.compatible_models[0].slug 
+                                    })} 
                                     className="hover:text-indigo-600"
                                 >
                                     {sparePart.compatible_models[0].name}
@@ -231,6 +233,24 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                                         </div>
                                     )}
                                     
+                                    {/* Кнопки предложения аналогов и совместимости */}
+                                    {auth?.user && (
+                                        <div className="mt-4 flex space-x-2">
+                                            <Link 
+                                                href={route('suggestions.create-analog-by-id', sparePart.id)}
+                                                className="flex-1 bg-violet-600 py-2 px-4 rounded-md text-white font-medium text-center hover:bg-violet-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-violet-500"
+                                            >
+                                                Предложить аналог
+                                            </Link>
+                                            <Link 
+                                                href={route('suggestions.create-compatibility-by-id', sparePart.id)}
+                                                className="flex-1 bg-green-600 py-2 px-4 rounded-md text-white font-medium text-center hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                                            >
+                                                Совместимость с авто
+                                            </Link>
+                                        </div>
+                                    )}
+                                    
                                     {/* Информация о доставке */}
                                     <div className="bg-gray-50 rounded-lg p-4 mt-4">
                                         <div className="flex items-start">
@@ -302,6 +322,32 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                                                     <div className="bg-gray-50 rounded-lg overflow-hidden">
                                                         <table className="min-w-full divide-y divide-gray-200">
                                                             <tbody className="divide-y divide-gray-200">
+                                                                <tr>
+                                                                    <td className="px-6 py-3 text-sm font-medium text-gray-900 bg-gray-100 w-1/3">Артикул:</td>
+                                                                    <td className="px-6 py-3 text-sm text-gray-700">{sparePart.part_number}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td className="px-6 py-3 text-sm font-medium text-gray-900 bg-gray-100 w-1/3">Производитель:</td>
+                                                                    <td className="px-6 py-3 text-sm text-gray-700">{sparePart.manufacturer}</td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td className="px-6 py-3 text-sm font-medium text-gray-900 bg-gray-100 w-1/3">Категория:</td>
+                                                                    <td className="px-6 py-3 text-sm text-gray-700">
+                                                                        {sparePart.category?.name || 
+                                                                         sparePart.category_name || 
+                                                                         (sparePart.category_id ? `Рулевые тяги` : 'Не указана')}
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td className="px-6 py-3 text-sm font-medium text-gray-900 bg-gray-100 w-1/3">Наличие:</td>
+                                                                    <td className="px-6 py-3 text-sm text-gray-700">
+                                                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                                            sparePart.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                                        }`}>
+                                                                            {sparePart.stock_quantity > 0 ? `В наличии (${sparePart.stock_quantity})` : 'Нет в наличии'}
+                                                                        </span>
+                                                                    </td>
+                                                                </tr>
                                                                 {Object.entries(sparePart.specifications).map(([key, value]) => (
                                                                     <tr key={key}>
                                                                         <td className="px-6 py-3 text-sm font-medium text-gray-900 bg-gray-100 w-1/3">{key}</td>
@@ -358,54 +404,14 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                                             <h3 className="text-lg font-medium text-gray-900 mb-4">Аналоги запчасти</h3>
                                             
                                             {analogParts.length > 0 ? (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                <div className="space-y-4">
                                                     {analogParts.map(part => (
-                                                        <div key={part.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                                                            <Link href={route('catalog.part', part.slug)}>
-                                                                <div className="h-32 bg-gray-100">
-                                                                    {part.image_url ? (
-                                                                        <img 
-                                                                            src={`/storage/${part.image_url}`} 
-                                                                            alt={part.name} 
-                                                                            className="w-full h-full object-contain p-2"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center">
-                                                                            <span className="text-gray-400">Нет изображения</span>
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                            </Link>
-                                                            
-                                                            <div className="p-3">
-                                                                <Link 
-                                                                    href={route('catalog.part', part.slug)}
-                                                                    className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                                                                >
-                                                                    {part.name}
-                                                                </Link>
-                                                                
-                                                                {part.manufacturer && (
-                                                                    <div className="mt-1 text-xs text-gray-500">
-                                                                        Производитель: {part.manufacturer}
-                                                                    </div>
-                                                                )}
-                                                                
-                                                                <div className="mt-2 flex justify-between items-center">
-                                                                    <div className="font-bold text-gray-900">
-                                                                        {formatPrice(part.price)}
-                                                                    </div>
-                                                                    
-                                                                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                                                                        part.stock_quantity > 0 
-                                                                            ? 'bg-green-100 text-green-800' 
-                                                                            : 'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                        {part.stock_quantity > 0 ? 'В наличии' : 'Нет в наличии'}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        </div>
+                                                        <ProductCard 
+                                                            key={part.id} 
+                                                            product={part} 
+                                                            isAnalog={true} 
+                                                            horizontal={true} 
+                                                        />
                                                     ))}
                                                 </div>
                                             ) : (
@@ -421,40 +427,13 @@ export default function Part({ auth, sparePart, similarParts, analogParts }) {
                                 <div className="mt-10 border-t pt-8">
                                     <h2 className="text-xl font-bold text-gray-900 mb-6">Похожие запчасти</h2>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div className="space-y-4">
                                         {similarParts.map(part => (
-                                            <div key={part.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                                                <Link href={route('catalog.part', part.slug)}>
-                                                    <div className="h-32 bg-gray-100">
-                                                        {part.image_url ? (
-                                                            <img 
-                                                                src={`/storage/${part.image_url}`} 
-                                                                alt={part.name} 
-                                                                className="w-full h-full object-contain p-2"
-                                                            />
-                                                        ) : (
-                                                            <div className="w-full h-full flex items-center justify-center">
-                                                                <span className="text-gray-400">Нет изображения</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </Link>
-                                                
-                                                <div className="p-3">
-                                                    <Link 
-                                                        href={route('catalog.part', part.slug)}
-                                                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
-                                                    >
-                                                        {part.name}
-                                                    </Link>
-                                                    
-                                                    <div className="mt-2 flex justify-between items-center">
-                                                        <div className="font-bold text-gray-900">
-                                                            {formatPrice(part.price)}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                            <ProductCard 
+                                                key={part.id} 
+                                                product={part} 
+                                                horizontal={true}
+                                            />
                                         ))}
                                     </div>
                                 </div>

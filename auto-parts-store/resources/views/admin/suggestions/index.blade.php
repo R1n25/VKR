@@ -2,6 +2,14 @@
 
 @section('content')
 <div class="container-fluid px-4">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>Важно!</strong> Мы переходим на новую версию интерфейса. 
+        <a href="{{ route('admin.suggestions.index') }}" class="btn btn-primary btn-sm">Перейти на новую версию</a>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
     <h1 class="mt-4">Предложения пользователей</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
@@ -273,7 +281,6 @@
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                                                     <form action="{{ route('admin.suggestions.approve', $suggestion->id) }}" method="POST">
-                                                        @csrf
                                                         <button type="submit" class="btn btn-success">Одобрить</button>
                                                     </form>
                                                 </div>
@@ -290,7 +297,6 @@
                                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                 </div>
                                                 <form action="{{ route('admin.suggestions.reject', $suggestion->id) }}" method="POST">
-                                                    @csrf
                                                     <div class="modal-body">
                                                         <div class="mb-3">
                                                             <label for="admin_comment" class="form-label">Причина отклонения</label>
@@ -321,7 +327,6 @@
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                                                     <form action="{{ route('admin.suggestions.destroy', $suggestion->id) }}" method="POST">
-                                                        @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-danger">Удалить</button>
                                                     </form>

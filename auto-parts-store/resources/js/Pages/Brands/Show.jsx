@@ -153,7 +153,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
                                                 {models.map(model => (
                                                     <Link
                                                         key={model.id}
-                                                        href={route('models.show', model.id)}
+                                                        href={route('models.show', { id: String(model.id) })}
                                                         className="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition group"
                                                     >
                                                         <div className="aspect-w-16 aspect-h-9 bg-gray-100">

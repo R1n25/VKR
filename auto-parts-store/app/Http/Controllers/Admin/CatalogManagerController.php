@@ -39,32 +39,35 @@ class CatalogManagerController extends Controller
     }
     
     /**
-     * Импортировать запчасти
+     * Импорт запчастей из CSV-файла
      */
     public function importParts(Request $request)
     {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:10240',
+            'update_existing' => 'boolean',
+            'create_backup' => 'boolean',
+        ]);
+
         try {
-            $validator = Validator::make($request->all(), [
-                'file' => 'required|file|mimes:csv,txt|max:10240',
-                'update_existing' => 'boolean',
-                'create_backup' => 'boolean',
-            ]);
-            
-            if ($validator->fails()) {
-                return back()->withErrors($validator);
-            }
-            
             $file = $request->file('file');
-            $path = $file->getRealPath();
-            
-            $updateExisting = $request->boolean('update_existing', true);
+            $updateExisting = $request->boolean('update_existing', false);
             $createBackup = $request->boolean('create_backup', true);
-            
-            $stats = $this->catalogManager->importSpareParts($path, $updateExisting, $createBackup);
-            
-            return back()->with('success', 'Импорт запчастей успешно выполнен!')->with('stats', $stats);
+
+            $importCount = $this->catalogManager->importSpareParts($file, $updateExisting, $createBackup);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Импорт успешно завершен. Обработано записей: {$importCount}",
+                'data' => [
+                    'imported' => $importCount
+                ]
+            ]);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Ошибка при импорте: ' . $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при импорте файла: ' . $e->getMessage()
+            ], 422);
         }
     }
     

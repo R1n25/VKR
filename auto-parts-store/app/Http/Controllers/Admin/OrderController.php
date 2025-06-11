@@ -55,7 +55,7 @@ class OrderController extends Controller
         
         if ($request->filled('customer_name')) {
             $query->where(function($q) use ($request) {
-                $q->where('shipping_name', 'like', '%' . $request->customer_name . '%')
+                $q->where('customer_name', 'like', '%' . $request->customer_name . '%')
                   ->orWhereHas('user', function($query) use ($request) {
                       $query->where('name', 'like', '%' . $request->customer_name . '%');
                   });
@@ -328,7 +328,7 @@ class OrderController extends Controller
                 fputcsv($file, [
                     $order->id,
                     $order->created_at->format('d.m.Y H:i'),
-                    $order->shipping_name,
+                    $order->customer_name,
                     $order->email,
                     $order->phone,
                     $order->address,

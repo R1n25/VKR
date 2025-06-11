@@ -84,4 +84,12 @@ class User extends Authenticatable
     protected $appends = [
         'is_admin',
     ];
+    
+    /**
+     * Получить заказы пользователя
+     */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
 }

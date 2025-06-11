@@ -23,11 +23,11 @@ export default function Model({ auth, brand, model, generations }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Хлебные крошки */}
                     <div className="mb-4 flex items-center text-sm text-gray-500">
-                        <Link href={route('catalog.index')} className="hover:text-indigo-600">
+                        <Link href={url('catalog')} className="hover:text-indigo-600">
                             Каталог
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.brand', brand.slug)} className="hover:text-indigo-600">
+                        <Link href={url('catalog/brand', { slug: brand.slug })} className="hover:text-indigo-600">
                             {brand.name}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
@@ -120,7 +120,7 @@ export default function Model({ auth, brand, model, generations }) {
                                                         
                                                         <div className="pt-4 flex justify-end">
                                                             <Link
-                                                                href={route('catalog.generation', [brand.slug, model.slug, generation || 'default'])}
+                                                                href={url('catalog/generation', { brand: brand.slug, model: model.slug, generation: generation || 'default' })}
                                                                 className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                             >
                                                                 Выбрать поколение

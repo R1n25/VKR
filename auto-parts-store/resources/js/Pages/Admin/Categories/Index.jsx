@@ -11,6 +11,11 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import InfoButton from '@/Components/InfoButton';
 
+// Добавляем функцию url
+const url = (path) => {
+    return `/${path}`;
+};
+
 // Компонент для отображения одной категории и её подкатегорий
 const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -36,7 +41,7 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                     if (e.target.closest('button') || e.target.closest('a')) {
                         return;
                     }
-                    window.location.href = route('admin.part-categories.show-inertia', category.id);
+                    window.location.href = url(`admin/part-categories/${category.id}`);
                 }}
             >
                 {childCategories.length > 0 && (
@@ -61,7 +66,7 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 )}
                 
                 <Link 
-                    href={route('admin.part-categories.show-inertia', category.id)}
+                    href={url(`admin/part-categories/${category.id}`)}
                     className="mr-2 text-gray-600 hover:text-[#2a4075]"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -71,7 +76,7 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 
                 <div className="flex-grow">
                     <Link 
-                        href={route('admin.part-categories.show-inertia', category.id)}
+                        href={url(`admin/part-categories/${category.id}`)}
                         className="font-medium text-[#2a4075] hover:text-[#1e325a] hover:underline cursor-pointer"
                     >
                         {category.name}
@@ -85,13 +90,13 @@ const CategoryItem = ({ category, categories, level = 0, onDelete }) => {
                 
                 <div className="flex space-x-2">
                     <InfoButton
-                        href={route('admin.part-categories.show-inertia', category.id)}
+                        href={url(`admin/part-categories/${category.id}`)}
                         className="text-xs py-1 px-3"
                     >
                         Просмотр
                     </InfoButton>
                     <SecondaryButton
-                        href={route('admin.part-categories.edit-inertia', category.id)}
+                        href={url(`admin/part-categories/${category.id}/edit`)}
                         className="text-xs py-1 px-3"
                     >
                         Изменить
@@ -152,7 +157,7 @@ const CategoryList = () => {
 
     const handleDelete = (categoryId) => {
         if (confirm('Вы уверены, что хотите удалить эту категорию?')) {
-            router.delete(route('admin.part-categories.destroy-inertia', categoryId), {
+            router.delete(url(`admin/part-categories/${categoryId}`), {
                 onSuccess: () => {
                     toast.success('Категория успешно удалена');
                 },
@@ -167,16 +172,16 @@ const CategoryList = () => {
         <AdminLayout>
             <Head title="Категории запчастей" />
             
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <div className="py-6">
+                <div className="w-full px-2">
                     <AdminCard>
-                        <div className="flex justify-between items-center mb-6">
+                        <div className="flex justify-between items-center mb-4">
                             <AdminPageHeader 
                                 title="Категории запчастей" 
                                 subtitle="Управление древовидным каталогом категорий" 
                             />
                             <PrimaryButton
-                                href={route('admin.part-categories.create-inertia')}
+                                href={url('admin/part-categories/create')}
                                 className="flex items-center"
                             >
                                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">

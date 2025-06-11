@@ -72,27 +72,27 @@ export default function Footer() {
                         <h3 className="text-lg font-semibold mb-4">Навигация</h3>
                         <ul className="space-y-2">
                             <li>
-                                <Link href={route('home')} className="text-gray-400 hover:text-white transition-colors">
+                                <Link href={url('home')} className="text-gray-400 hover:text-white transition-colors">
                                     Главная
                                 </Link>
                             </li>
                             <li>
-                                <Link href={route('news')} className="text-gray-400 hover:text-white transition-colors">
+                                <Link href={url('news')} className="text-gray-400 hover:text-white transition-colors">
                                     Новости и акции
                                 </Link>
                             </li>
                             <li>
-                                <Link href={route('about')} className="text-gray-400 hover:text-white transition-colors">
+                                <Link href={url('about')} className="text-gray-400 hover:text-white transition-colors">
                                     О нас
                                 </Link>
                             </li>
                             <li>
-                                <Link href={route('contacts')} className="text-gray-400 hover:text-white transition-colors">
+                                <Link href={url('contacts')} className="text-gray-400 hover:text-white transition-colors">
                                     Контакты
                                 </Link>
                             </li>
                             <li>
-                                <Link href={route('location-map')} className="text-gray-400 hover:text-white transition-colors">
+                                <Link href={url('location-map')} className="text-gray-400 hover:text-white transition-colors">
                                     Схема заезда
                                 </Link>
                             </li>

@@ -77,7 +77,7 @@ export default function EnginesIndex({ auth, modelId }) {
                                     <nav className="mb-6">
                                         <ol className="flex space-x-2 text-sm text-gray-500">
                                             <li>
-                                                <Link href="/" className="hover:text-indigo-600">
+                                                <Link href={route('home')} className="hover:text-indigo-600">
                                                     Главная
                                                 </Link>
                                             </li>
@@ -85,7 +85,7 @@ export default function EnginesIndex({ auth, modelId }) {
                                                 <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                 </svg>
-                                                <Link href="/brands" className="hover:text-indigo-600">
+                                                <Link href={route('brands.index')} className="hover:text-indigo-600">
                                                     Бренды
                                                 </Link>
                                             </li>
@@ -95,7 +95,7 @@ export default function EnginesIndex({ auth, modelId }) {
                                                         <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                         </svg>
-                                                        <Link href={`/brands/${model.brand_id}`} className="hover:text-indigo-600">
+                                                        <Link href={route('brands.show', { id: String(model.brand_id) })} className="hover:text-indigo-600">
                                                             {model.brand_name}
                                                         </Link>
                                                     </li>
@@ -103,7 +103,7 @@ export default function EnginesIndex({ auth, modelId }) {
                                                         <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                             <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                         </svg>
-                                                        <Link href={`/models/${model.id}`} className="hover:text-indigo-600">
+                                                        <Link href={route('models.show', { id: String(model.id) })} className="hover:text-indigo-600">
                                                             {model.name}
                                                         </Link>
                                                     </li>
@@ -152,7 +152,7 @@ export default function EnginesIndex({ auth, modelId }) {
                                                                 </div>
                                                                 <div className="px-4 pb-4">
                                                                     <Link
-                                                                        href={`/engines/${engine.id}/parts`}
+                                                                        href={route('engines.parts', { id: String(engine.id) })}
                                                                         className="inline-flex w-full justify-center items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                                                     >
                                                                         Выбрать

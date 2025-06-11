@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { toast } from 'react-hot-toast';
 import AdminPageHeader from '@/Components/AdminPageHeader';
@@ -13,11 +13,28 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import DangerButton from '@/Components/DangerButton';
 import AdminTable from '@/Components/AdminTable';
 import AdminAlert from '@/Components/AdminAlert';
+import axios from 'axios';
 
-export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potentialAnalogs }) {
+// Добавляем функцию url
+const url = (path) => {
+    return `/${path}`;
+};
+
+export default function ManageAnalogs({ auth, sparePart = {}, existingAnalogs, potentialAnalogs }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
     const [notification, setNotification] = useState(null);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    
+    // Проверяем, что sparePart не undefined
+    const sparePartId = sparePart?.id || '';
+    const sparePartName = sparePart?.name || 'Запчасть';
+    const sparePartNumber = sparePart?.part_number || '';
+    const sparePartManufacturer = sparePart?.manufacturer || '';
+    
+    // Проверяем, что existingAnalogs не undefined и является массивом
+    const safeExistingAnalogs = Array.isArray(existingAnalogs) ? existingAnalogs : [];
     
     const { data, setData, post, processing, errors, reset } = useForm({
         analog_id: '',
@@ -25,17 +42,59 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
         notes: ''
     });
     
-    const filteredPotentialAnalogs = potentialAnalogs.filter(analog => {
-        const searchLower = searchTerm.toLowerCase();
-        return analog.name.toLowerCase().includes(searchLower) || 
-               analog.part_number.toLowerCase().includes(searchLower) ||
-               analog.manufacturer.toLowerCase().includes(searchLower);
+    // Проверяем, что potentialAnalogs не undefined и является массивом
+    const safeAnalogs = Array.isArray(potentialAnalogs) ? potentialAnalogs : [];
+    
+    const filteredPotentialAnalogs = safeAnalogs.filter(analog => {
+        if (!searchTerm) return true; // Если поисковый запрос пустой, возвращаем все аналоги
+        
+        // Создаем регулярное выражение с флагом 'i' для игнорирования регистра
+        const regex = new RegExp(searchTerm, 'i');
+        
+        return regex.test(analog.name) || 
+               regex.test(analog.part_number) || 
+               regex.test(analog.manufacturer);
     });
+    
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchTerm.trim()) return;
+
+        setIsSearching(true);
+        try {
+            console.log('Выполняется поиск запчастей:', {
+                originalQuery: searchTerm,
+                lowercaseQuery: searchTerm.toLowerCase()
+            });
+            
+            // Преобразуем запрос к нижнему регистру перед отправкой
+            const query = searchTerm.toLowerCase();
+            
+            const response = await axios.get('/api/spare-parts/search', { 
+                params: { 
+                    query: query,
+                    original_query: searchTerm // Сохраняем оригинальный запрос для отладки
+                } 
+            });
+            
+            console.log('Результаты поиска:', {
+                count: response.data.data ? response.data.data.length : 0,
+                firstResult: response.data.data && response.data.data.length > 0 ? response.data.data[0] : null
+            });
+            
+            setSearchResults(response.data.data || []);
+        } catch (error) {
+            console.error('Ошибка при поиске запчастей:', error);
+            setNotification({ type: 'error', message: 'Ошибка при поиске запчастей' });
+        } finally {
+            setIsSearching(false);
+        }
+    };
     
     const handleSubmit = (e) => {
         e.preventDefault();
         
-        post(route('admin.spare-parts.add-analog', sparePart.id), {
+        post(url(`admin/spare-parts/${sparePartId}/add-analog`), {
             onSuccess: () => {
                 setNotification({
                     type: 'success',
@@ -45,34 +104,36 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                 setShowAddForm(false);
                 setTimeout(() => setNotification(null), 3000);
             },
-            onError: () => {
+            onError: (errors) => {
                 setNotification({
                     type: 'error',
-                    message: 'Ошибка при добавлении аналога'
+                    message: 'Ошибка при добавлении аналога: ' + (errors.message || 'Неизвестная ошибка')
                 });
                 setTimeout(() => setNotification(null), 3000);
             }
         });
     };
     
-    const handleRemoveAnalog = (analogId) => {
-        if (confirm('Вы уверены, что хотите удалить этот аналог?')) {
-            window.axios.delete(route('admin.spare-parts.remove-analog', [sparePart.id, analogId]))
-                .then(() => {
-                    setNotification({
-                        type: 'success',
-                        message: 'Аналог успешно удален'
-                    });
-                    setTimeout(() => setNotification(null), 3000);
-                    window.location.reload();
-                })
-                .catch(() => {
-                    setNotification({
-                        type: 'error',
-                        message: 'Ошибка при удалении аналога'
-                    });
-                    setTimeout(() => setNotification(null), 3000);
-                });
+    const handleRemoveAnalog = async (analogId) => {
+        if (!confirm('Вы действительно хотите удалить этот аналог?')) return;
+
+        try {
+            await window.axios.delete(url(`admin/spare-parts/${sparePartId}/analogs/${analogId}`));
+            
+            // Обновляем список аналогов (без перезагрузки страницы)
+            window.location.reload();
+            
+            setNotification({
+                type: 'success',
+                message: 'Аналог успешно удален'
+            });
+        } catch (error) {
+            console.error('Ошибка при удалении аналога:', error);
+            setNotification({
+                type: 'error',
+                message: 'Ошибка при удалении аналога: ' + (error.response?.data?.message || 'Неизвестная ошибка')
+            });
+            setTimeout(() => setNotification(null), 3000);
         }
     };
     
@@ -81,7 +142,7 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
             user={auth.user}
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Управление аналогами</h2>}
         >
-            <Head title={`Аналоги запчасти: ${sparePart.name}`} />
+            <Head title={`Аналоги запчасти: ${sparePartName}`} />
             
             {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
             
@@ -91,12 +152,12 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                         <div className="mb-6">
                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                                 <AdminPageHeader 
-                                    title={`Аналоги запчасти: ${sparePart.name}`} 
-                                    subtitle={`Артикул: ${sparePart.part_number} | Производитель: ${sparePart.manufacturer}`} 
+                                    title={`Аналоги запчасти: ${sparePartName}`} 
+                                    subtitle={`Артикул: ${sparePartNumber} | Производитель: ${sparePartManufacturer}`} 
                                 />
                                 <div className="mt-4 sm:mt-0">
                                     <SecondaryButton
-                                        href={route('admin.spare-parts.show-inertia', sparePart.id)}
+                                        href={url(`admin/spare-parts/${sparePartId}`)}
                                         className="flex items-center"
                                     >
                                         <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,7 +172,7 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                         <div className="mb-8">
                             <h2 className="text-xl font-semibold mb-4 text-[#2a4075]">Существующие аналоги</h2>
                             
-                            {existingAnalogs.length === 0 ? (
+                            {safeExistingAnalogs.length === 0 ? (
                                 <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                                     <p className="text-gray-600">У этой запчасти пока нет аналогов.</p>
                                 </div>
@@ -125,12 +186,12 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                                         'Примечания', 
                                         { content: 'Действия', props: { className: 'text-right' } }
                                     ]}
-                                    data={existingAnalogs}
+                                    data={safeExistingAnalogs}
                                     renderRow={(analog) => (
                                         <>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <Link 
-                                                    href={route('admin.spare-parts.show-inertia', analog.analog_id)}
+                                                    href={url(`admin/spare-parts/${analog.analog_id}`)}
                                                     className="text-[#2a4075] hover:underline"
                                                 >
                                                     {analog.name}
@@ -200,37 +261,105 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                             
                             {showAddForm && (
                                 <AdminCard className="!p-6 mb-6 bg-gray-50">
+                                    <form onSubmit={handleSearch} className="mb-6">
+                                        <AdminFormGroup label="Поиск запчасти" name="search">
+                                            <div className="flex">
+                                                <AdminInput
+                                                    type="text"
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    placeholder="Введите название, артикул или производителя"
+                                                    className="rounded-r-none"
+                                                />
+                                                <PrimaryButton
+                                                    type="submit"
+                                                    className="rounded-l-none"
+                                                    disabled={isSearching}
+                                                >
+                                                    {isSearching ? 'Поиск...' : 'Найти'}
+                                                </PrimaryButton>
+                                            </div>
+                                        </AdminFormGroup>
+                                    </form>
+                                    
+                                    {searchResults.length > 0 && (
+                                        <div className="mb-6">
+                                            <h4 className="text-md font-semibold mb-2 text-gray-700">Результаты поиска</h4>
+                                            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                                <table className="min-w-full divide-y divide-gray-200">
+                                                    <thead className="bg-gray-50">
+                                                        <tr>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Артикул
+                                                            </th>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Название
+                                                            </th>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Производитель
+                                                            </th>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Цена
+                                                            </th>
+                                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                                Действия
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="bg-white divide-y divide-gray-200">
+                                                        {searchResults.map((part) => (
+                                                            <tr key={part.id}>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                                                    {part.part_number}
+                                                                </td>
+                                                                <td className="px-6 py-4 text-sm text-gray-500">
+                                                                    {part.name}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                    {part.manufacturer || '-'}
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                    {part.price} ₽
+                                                                </td>
+                                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="text-indigo-600 hover:text-indigo-900"
+                                                                        onClick={() => setData('analog_id', part.id)}
+                                                                    >
+                                                                        Выбрать
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
                                     <form onSubmit={handleSubmit}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div className="md:col-span-2">
-                                                <AdminFormGroup label="Поиск запчасти" name="search">
-                                                    <AdminInput
-                                                        type="text"
-                                                        value={searchTerm}
-                                                        handleChange={(e) => setSearchTerm(e.target.value)}
-                                                        placeholder="Введите название, артикул или производителя"
-                                                    />
+                                                <AdminFormGroup label="Выберите аналог" name="analog_id" error={errors.analog_id}>
+                                                    <AdminSelect
+                                                        name="analog_id"
+                                                        value={data.analog_id}
+                                                        onChange={(e) => setData('analog_id', e.target.value)}
+                                                        required
+                                                    >
+                                                        <option value="">-- Выберите запчасть --</option>
+                                                        {filteredPotentialAnalogs.map((analog) => (
+                                                            <option key={analog.id} value={analog.id}>
+                                                                {analog.name} ({analog.part_number}, {analog.manufacturer})
+                                                            </option>
+                                                        ))}
+                                                    </AdminSelect>
+                                                    <div className="mt-1 text-sm text-gray-500">
+                                                        Найдено: {filteredPotentialAnalogs.length} запчастей
+                                                    </div>
                                                 </AdminFormGroup>
                                             </div>
-                                            
-                                            <AdminFormGroup label="Выберите аналог" name="analog_id" error={errors.analog_id}>
-                                                <AdminSelect
-                                                    name="analog_id"
-                                                    value={data.analog_id}
-                                                    handleChange={(e) => setData('analog_id', e.target.value)}
-                                                    required
-                                                >
-                                                    <option value="">-- Выберите запчасть --</option>
-                                                    {filteredPotentialAnalogs.map((analog) => (
-                                                        <option key={analog.id} value={analog.id}>
-                                                            {analog.name} ({analog.part_number}, {analog.manufacturer})
-                                                        </option>
-                                                    ))}
-                                                </AdminSelect>
-                                                <div className="mt-1 text-sm text-gray-500">
-                                                    Найдено: {filteredPotentialAnalogs.length} запчастей
-                                                </div>
-                                            </AdminFormGroup>
                                             
                                             <AdminFormGroup label="Тип аналога" name="is_direct" error={errors.is_direct}>
                                                 <div className="mt-2 space-y-2">
@@ -268,7 +397,7 @@ export default function ManageAnalogs({ auth, sparePart, existingAnalogs, potent
                                                     <AdminTextarea
                                                         name="notes"
                                                         value={data.notes}
-                                                        handleChange={(e) => setData('notes', e.target.value)}
+                                                        onChange={(e) => setData('notes', e.target.value)}
                                                         rows="3"
                                                         placeholder="Опишите особенности совместимости (необязательно)"
                                                     />

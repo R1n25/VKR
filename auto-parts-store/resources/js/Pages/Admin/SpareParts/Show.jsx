@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useEffect, useState } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { toast } from 'react-hot-toast';
 import AdminPageHeader from '@/Components/AdminPageHeader';
@@ -10,6 +10,20 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import InfoButton from '@/Components/InfoButton';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
+import AdminAlert from '@/Components/AdminAlert';
+import { formatDate } from '@/utils';
+
+// Функция для формирования URL
+const url = (path, params = {}) => {
+    let url = '/' + path;
+    if (Object.keys(params).length) {
+        const queryString = Object.entries(params)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
+        url += `?${queryString}`;
+    }
+    return url;
+};
 
 // Словарь соответствия ID категорий их названиям
 const categoryNames = {
@@ -55,7 +69,46 @@ function getCategoryNameById(categoryId) {
     return categoryNames[categoryId] || 'Неизвестная категория';
 }
 
-export default function Show({ auth, sparePart }) {
+export default function Show({ auth, sparePart, categories, analogs }) {
+    const [notification, setNotification] = useState(null);
+    
+    // Функция для форматирования цены
+    const formatPrice = (price) => {
+        if (!price) return '0 ₽';
+        return `${Number(price).toFixed(2)} ₽`;
+    };
+
+    // Функция для форматирования даты
+    const formatDateFn = (dateString) => {
+        if (!dateString) return '-';
+        return formatDate(dateString);
+    };
+
+    // Функция для получения названия категории по ID
+    const getCategoryName = (categoryId) => {
+        if (!categoryId) return 'Без категории';
+        const category = categories.find(cat => cat.id === categoryId);
+        return category ? category.name : 'Категория не найдена';
+    };
+
+    // Функция для удаления запчасти
+    const handleDelete = () => {
+        if (confirm('Вы действительно хотите удалить эту запчасть? Это действие нельзя будет отменить.')) {
+            router.delete(url(`admin/spare-parts/${sparePart.id}`), {
+                onSuccess: () => {
+                    // Перенаправляем на страницу списка запчастей
+                    router.visit(url('admin/spare-parts'));
+                },
+                onError: (errors) => {
+                    setNotification({
+                        type: 'error',
+                        message: 'Ошибка при удалении запчасти: ' + (errors.message || 'Неизвестная ошибка')
+                    });
+                }
+            });
+        }
+    };
+
     return (
         <AdminLayout
             user={auth.user}
@@ -63,6 +116,9 @@ export default function Show({ auth, sparePart }) {
         >
             <Head title={`Запчасть: ${sparePart.name}`} />
             
+            {/* Отображение уведомления */}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
+
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <AdminCard>
@@ -73,7 +129,7 @@ export default function Show({ auth, sparePart }) {
                             />
                             <div className="mt-4 sm:mt-0 flex space-x-2">
                                 <SecondaryButton
-                                    href={route('admin.spare-parts.inertia')}
+                                    href={url('admin/spare-parts')}
                                     className="flex items-center justify-center w-44"
                                 >
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,7 +138,7 @@ export default function Show({ auth, sparePart }) {
                                     Назад к списку
                                 </SecondaryButton>
                                 <PrimaryButton
-                                    href={route('admin.spare-parts.analogs', sparePart.id)}
+                                    href={url(`admin/spare-parts/${sparePart.id}/analogs`)}
                                     className="flex items-center justify-center w-44"
                                 >
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -91,7 +147,7 @@ export default function Show({ auth, sparePart }) {
                                     Управление аналогами
                                 </PrimaryButton>
                                 <SuccessButton
-                                    href={route('admin.spare-parts.edit-inertia', sparePart.id)}
+                                    href={url(`admin/spare-parts/${sparePart.id}/edit`)}
                                     className="flex items-center justify-center w-44"
                                 >
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +187,7 @@ export default function Show({ auth, sparePart }) {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Цена</p>
-                                                <p className="font-medium">{sparePart.price} ₽</p>
+                                                <p className="font-medium">{formatPrice(sparePart.price)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Количество на складе</p>
@@ -139,7 +195,7 @@ export default function Show({ auth, sparePart }) {
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Дата добавления</p>
-                                                <p className="font-medium">{new Date(sparePart.created_at).toLocaleDateString('ru-RU')}</p>
+                                                <p className="font-medium">{formatDateFn(sparePart.created_at)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-sm text-gray-500">Статус</p>
@@ -170,7 +226,7 @@ export default function Show({ auth, sparePart }) {
                                         <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимые модели автомобилей</h2>
                                         {sparePart.car_models && sparePart.car_models.length > 0 ? (
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {sparePart.car_models.map((model) => (
+                                                {(sparePart.car_models || []).map((model) => (
                                                     <div key={model.id} className="bg-white p-2 rounded border border-gray-200">
                                                         {model.brand ? `${model.brand.name} ${model.name}` : model.name}
                                                     </div>
@@ -188,7 +244,7 @@ export default function Show({ auth, sparePart }) {
                                         <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимость с двигателями</h2>
                                         {sparePart.engine_compatibilities && sparePart.engine_compatibilities.length > 0 ? (
                                             <div className="space-y-3">
-                                                {sparePart.engine_compatibilities.map((compatibility, index) => (
+                                                {(sparePart.engine_compatibilities || []).map((compatibility, index) => (
                                                     <div key={compatibility.id || `engine-compat-${index}`} className="border-b pb-2">
                                                         <div className="font-medium">{compatibility.brand} {compatibility.model}</div>
                                                         {compatibility.years && (
@@ -224,7 +280,7 @@ export default function Show({ auth, sparePart }) {
                                 <AdminCard className="!p-0">
                                     <div className="p-4">
                                         <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Аналоги</h2>
-                                        {sparePart.analogs && sparePart.analogs.length > 0 ? (
+                                        {analogs && analogs.length > 0 ? (
                                             <AdminTable
                                                 headers={[
                                                     'Название',
@@ -232,12 +288,12 @@ export default function Show({ auth, sparePart }) {
                                                     'Производитель',
                                                     'Тип'
                                                 ]}
-                                                data={sparePart.analogs}
+                                                data={analogs || []}
                                                 renderRow={(analog) => (
                                                     <>
                                                         <td className="px-3 py-2 whitespace-nowrap text-sm">
                                                             <Link 
-                                                                href={route('admin.spare-parts.show-inertia', analog.analog_spare_part_id)}
+                                                                href={url(`admin/spare-parts/${analog.analog_spare_part_id}`)}
                                                                 className="text-indigo-600 hover:text-indigo-900"
                                                             >
                                                                 {analog.analogSparePart.name}
@@ -289,26 +345,20 @@ export default function Show({ auth, sparePart }) {
                                         <h2 className="text-lg font-semibold mb-4 text-[#2a4075]">Действия</h2>
                                         <div className="flex flex-col space-y-2">
                                             <SuccessButton
-                                                href={route('admin.spare-parts.edit-inertia', sparePart.id)}
+                                                href={url(`admin/spare-parts/${sparePart.id}/edit`)}
                                                 className="w-full justify-center"
                                             >
                                                 Редактировать
                                             </SuccessButton>
                                             <PrimaryButton
-                                                href={route('admin.spare-parts.analogs', sparePart.id)}
+                                                href={url(`admin/spare-parts/${sparePart.id}/analogs`)}
                                                 className="w-full justify-center"
                                             >
                                                 Управление аналогами
                                             </PrimaryButton>
                                             <DangerButton
-                                                href={route('admin.spare-parts.inertia')}
+                                                onClick={handleDelete}
                                                 className="w-full justify-center"
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    if (confirm('Вы действительно хотите удалить эту запчасть?')) {
-                                                        router.delete(route('admin.spare-parts.destroy', sparePart.id));
-                                                    }
-                                                }}
                                             >
                                                 Удалить
                                             </DangerButton>

@@ -18,13 +18,9 @@ import SecondaryButton from '@/Components/SecondaryButton';
 import SuccessButton from '@/Components/SuccessButton';
 import DangerButton from '@/Components/DangerButton';
 
-// Настройка axios для работы с CSRF-защитой
+// Настройка axios
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.withCredentials = true;
-const token = document.querySelector('meta[name="csrf-token"]');
-if (token) {
-    axios.defaults.headers.common['X-CSRF-TOKEN'] = token.content;
-}
 
 export default function Show({ auth, order }) {
     const [note, setNote] = useState('');
@@ -39,6 +35,7 @@ export default function Show({ auth, order }) {
     const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [orderData, setOrder] = useState(order || {});
+    const [activeTab, setActiveTab] = useState('info');
     
     // Оставляем только эффект для сброса сообщения обратной связи
     useEffect(() => {
@@ -64,7 +61,7 @@ export default function Show({ auth, order }) {
                             <div className="p-6 text-gray-900 text-center">
                                 <p className="mb-4">Запрашиваемый заказ не найден.</p>
                                 <Link
-                                    href={route('admin.orders.index')}
+                                    href={url('admin/orders')}
                                     className="text-indigo-600 hover:text-indigo-900"
                                 >
                                     ← Вернуться к списку заказов
@@ -115,7 +112,7 @@ export default function Show({ auth, order }) {
             };
             
             // Отправляем запрос на обновление статуса
-            const response = await axios.put(`/admin/orders/${orderData.id}/status`, formData);
+            const response = await axios.put(url(`admin/orders/${orderData.id}/status`), formData);
             
             if (response.data && response.data.success) {
                 setFeedbackMessage('Статус заказа успешно обновлен');
@@ -165,7 +162,7 @@ export default function Show({ auth, order }) {
         setFeedbackMessage(null);
         
         try {
-            const response = await axios.put(route('admin.orders.update-status', order.id), {
+            const response = await axios.put(url(`admin/orders/${order.id}/update-status`), {
                 status: newStatus,
                 note: statusComment
             });
@@ -209,7 +206,7 @@ export default function Show({ auth, order }) {
         setFeedbackMessage(null);
         
         try {
-            const response = await axios.post(route('admin.orders.add-note', order.id), {
+            const response = await axios.post(url(`admin/orders/${order.id}/add-note`), {
                 note: note
             });
             
@@ -238,6 +235,74 @@ export default function Show({ auth, order }) {
             setAddingNote(false);
         }
     };
+    
+    // Получение статуса заказа
+    const getStatusBadge = (status) => {
+        const statusMap = {
+            'new': { text: 'Новый', color: 'bg-blue-100 text-blue-800' },
+            'processing': { text: 'В обработке', color: 'bg-yellow-100 text-yellow-800' },
+            'shipped': { text: 'Отправлен', color: 'bg-purple-100 text-purple-800' },
+            'delivered': { text: 'Доставлен', color: 'bg-green-100 text-green-800' },
+            'cancelled': { text: 'Отменен', color: 'bg-red-100 text-red-800' }
+        };
+        
+        const { text, color } = statusMap[status] || { text: status, color: 'bg-gray-100 text-gray-800' };
+        
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+                {text}
+            </span>
+        );
+    };
+    
+    // Получение метода оплаты
+    const getPaymentMethod = (method) => {
+        const methodMap = {
+            'card': 'Банковская карта',
+            'cash': 'Наличные при получении',
+            'online': 'Онлайн-оплата'
+        };
+        
+        return methodMap[method] || method;
+    };
+    
+    // Получение метода доставки
+    const getShippingMethod = (method) => {
+        const methodMap = {
+            'pickup': 'Самовывоз',
+            'courier': 'Курьерская доставка',
+            'post': 'Почта России'
+        };
+        
+        return methodMap[method] || method;
+    };
+    
+    // Колонки для таблицы товаров
+    const itemColumns = [
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Наименование' },
+        { key: 'part_number', label: 'Артикул' },
+        { key: 'price', label: 'Цена' },
+        { key: 'quantity', label: 'Количество' },
+        { key: 'total', label: 'Сумма' }
+    ];
+    
+    // Данные для таблицы товаров
+    const itemsData = order.items && order.items.map ? order.items.map(item => ({
+        id: item.spare_part.id,
+        name: (
+            <Link 
+                href={url(`admin/spare-parts/${item.spare_part.id}`)}
+                className="text-blue-600 hover:underline font-medium"
+            >
+                {item.spare_part.name}
+            </Link>
+        ),
+        part_number: item.spare_part.part_number,
+        price: `${item.price} ₽`,
+        quantity: item.quantity,
+        total: `${item.price * item.quantity} ₽`
+    })) : [];
     
     return (
         <AdminLayout
@@ -270,7 +335,7 @@ export default function Show({ auth, order }) {
                             </div>
                             <div className="mt-2 sm:mt-0">
                                 <Link 
-                                    href={route('admin.orders.index')} 
+                                    href={url('admin/orders')} 
                                     className="flex items-center text-gray-600 hover:text-[#2a4075]"
                                 >
                                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -408,7 +473,7 @@ export default function Show({ auth, order }) {
                                         {order.user && (
                                             <div className="mt-2">
                                                 <Link
-                                                    href={route('admin.users.edit', order.user.id)}
+                                                    href={url(`admin/users/${order.user.id}/edit`)}
                                                     className="text-sm text-blue-600 hover:text-blue-800"
                                                 >
                                                     Просмотреть профиль пользователя
@@ -455,7 +520,7 @@ export default function Show({ auth, order }) {
                                 'Кол-во',
                                 'Сумма'
                             ]}
-                            data={order.direct_items || []}
+                            data={(order.direct_items || [])}
                             renderRow={(item, index) => (
                                 <>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -498,7 +563,7 @@ export default function Show({ auth, order }) {
                         
                         {order.notes && order.notes.length > 0 ? (
                             <div className="space-y-4 mb-6">
-                                {order.notes.map((noteItem, index) => (
+                                {(order.notes || []).map((noteItem, index) => (
                                     <div key={index} className="bg-gray-50 p-4 rounded-lg">
                                         <div className="flex justify-between mb-2">
                                             <span className="text-sm font-medium text-[#2a4075]">

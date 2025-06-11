@@ -221,7 +221,7 @@ $engineData = [
     // Honda Accord
     [
         'model_name' => 'Accord',
-        'brand_id' => 1823, // Honda
+        'brand_id' => 41, // Honda
         'engines' => [
             [
                 'name' => '1.5L Turbo 192 л.с.',
@@ -256,7 +256,7 @@ $engineData = [
     // BMW 3 series
     [
         'model_name' => '3 series',
-        'brand_id' => 1824, // BMW
+        'brand_id' => 9, // BMW
         'engines' => [
             [
                 'name' => '1.5L 136 л.с.',
@@ -309,7 +309,7 @@ $engineData = [
     // BMW 5 series
     [
         'model_name' => '5 series',
-        'brand_id' => 1824, // BMW
+        'brand_id' => 9, // BMW
         'engines' => [
             [
                 'name' => '2.0L 190 л.с.',
@@ -451,7 +451,7 @@ $engineData = [
     // Audi A6
     [
         'model_name' => 'A6',
-        'brand_id' => 1829, // Audi
+        'brand_id' => 4, // Audi
         'engines' => [
             [
                 'name' => '2.0L TFSI 245 л.с.',
@@ -504,7 +504,7 @@ $engineData = [
     // Kia Sportage
     [
         'model_name' => 'Sportage',
-        'brand_id' => 1877, // Kia
+        'brand_id' => 54, // Kia
         'engines' => [
             [
                 'name' => '1.6L T-GDI 177 л.с.',
@@ -548,7 +548,7 @@ $engineData = [
     // Hyundai Tucson
     [
         'model_name' => 'Tucson',
-        'brand_id' => 1867, // Hyundai
+        'brand_id' => 44, // Hyundai
         'engines' => [
             [
                 'name' => '1.6L T-GDI 177 л.с.',

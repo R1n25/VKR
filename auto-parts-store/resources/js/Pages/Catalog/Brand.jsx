@@ -43,7 +43,7 @@ export default function Brand({ auth, brand, models, popularModels }) {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Хлебные крошки */}
                     <div className="mb-4 flex items-center text-sm text-gray-500">
-                        <Link href={route('catalog.index')} className="hover:text-indigo-600">
+                        <Link href={url('catalog')} className="hover:text-indigo-600">
                             Каталог
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
@@ -99,7 +99,7 @@ export default function Brand({ auth, brand, models, popularModels }) {
                                         {popularModels.map(model => (
                                             <Link
                                                 key={model.id}
-                                                href={route('catalog.model', [brand.slug, model.slug])}
+                                                href={url('catalog/model', { brand: brand.slug, model: model.slug })}
                                                 className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-colors"
                                             >
                                                 <div className="flex items-start space-x-3">
@@ -147,7 +147,7 @@ export default function Brand({ auth, brand, models, popularModels }) {
                                                     {(searchTerm ? filteredModels[letter] : models[letter]).map(model => (
                                                         <Link
                                                             key={model.id}
-                                                            href={route('catalog.model', [brand.slug, model.slug])}
+                                                            href={url('catalog/model', { brand: brand.slug, model: model.slug })}
                                                             className="flex items-center p-2 rounded hover:bg-gray-50"
                                                         >
                                                             <ChevronRightIcon className="h-4 w-4 text-indigo-500 mr-2 flex-shrink-0" />

@@ -146,7 +146,7 @@ class PartCategoryController extends Controller
     }
     
     /**
-     * Получить отфильтрованные запчасти для указанной категории с пагинацией
+     * Получить запчасти по категории с фильтрацией
      * 
      * @param Request $request
      * @param string $id ID категории
@@ -154,110 +154,179 @@ class PartCategoryController extends Controller
      */
     public function filteredParts(Request $request, string $id)
     {
-        $category = PartCategory::findOrFail($id);
-        // Устанавливаем меньший размер страницы для тестирования пагинации
-        $perPage = $request->input('per_page', 4);
-        $filters = $request->input('filters', []);
-        
-        // Получаем ID всех подкатегорий
-        $subcategoryIds = PartCategory::where('parent_id', $id)->pluck('id')->toArray();
-        
-        // Добавляем ID текущей категории
-        $categoryIds = array_merge([$id], $subcategoryIds);
-        
-        // Формируем запрос с учетом связей
-        $query = SparePart::with(['category', 'brand', 'model'])
-            ->whereIn('category_id', $categoryIds);
-        
-        // Применяем фильтры
-        if (!empty($filters['price_min'])) {
-            $query->where('price', '>=', $filters['price_min']);
-        }
-        
-        if (!empty($filters['price_max'])) {
-            $query->where('price', '<=', $filters['price_max']);
-        }
-        
-        if (!empty($filters['brands'])) {
-            $query->whereHas('brand', function($q) use ($filters) {
-                $q->whereIn('name', $filters['brands']);
-            });
-        }
-        
-        if (!empty($filters['in_stock']) && $filters['in_stock']) {
-            $query->where('stock_quantity', '>', 0);
-        }
-        
-        // Фильтр по модели автомобиля
-        if (!empty($filters['model_id'])) {
-            $query->where('model_id', $filters['model_id']);
-        }
-        
-        // Фильтр по бренду автомобиля
-        if (!empty($filters['brand_id'])) {
-            $query->where('brand_id', $filters['brand_id']);
-        }
-        
-        // Сортировка
-        if (!empty($filters['sort'])) {
-            $sortField = 'name';
-            $sortDirection = 'asc';
+        try {
+            // Получаем категорию
+            $category = PartCategory::findOrFail($id);
             
-            switch ($filters['sort']) {
-                case 'price_asc':
-                    $sortField = 'price';
-                    $sortDirection = 'asc';
-                    break;
-                case 'price_desc':
-                    $sortField = 'price';
-                    $sortDirection = 'desc';
-                    break;
-                case 'name_asc':
-                    $sortField = 'name';
-                    $sortDirection = 'asc';
-                    break;
-                case 'name_desc':
-                    $sortField = 'name';
-                    $sortDirection = 'desc';
-                    break;
+            // Логируем информацию о запрашиваемой категории
+            \Log::info('Запрос запчастей для категории', [
+                'category_id' => $id,
+                'category_name' => $category->name,
+                'is_parent' => $category->children()->count() > 0
+            ]);
+            
+            // Проверяем, является ли категория родительской
+            $isParentCategory = $category->children()->count() > 0;
+            
+            // Получаем ID всех подкатегорий
+            $subcategoryIds = PartCategory::where('parent_id', $id)->pluck('id')->toArray();
+            
+            // Логируем подкатегории
+            \Log::info('Подкатегории', [
+                'subcategory_ids' => $subcategoryIds,
+                'count' => count($subcategoryIds)
+            ]);
+            
+            // Всегда включаем ID текущей категории и ID всех её подкатегорий
+            $categoryIds = array_merge([$id], $subcategoryIds);
+            
+            // Логируем итоговые ID категорий для запроса
+            \Log::info('Используемые ID категорий для запроса', [
+                'category_ids' => $categoryIds,
+                'is_parent_category' => $isParentCategory
+            ]);
+            
+            // Если категория родительская, но у неё нет подкатегорий, возвращаем пустой результат
+            if ($isParentCategory && empty($categoryIds)) {
+                \Log::warning('Родительская категория без подкатегорий', ['category_id' => $id]);
+                return response()->json([
+                    'success' => true,
+                    'data' => [],
+                    'message' => 'У этой категории нет подкатегорий с запчастями'
+                ]);
             }
             
-            $query->orderBy($sortField, $sortDirection);
-        } else {
-            $query->orderBy('name', 'asc');
+            // Получаем параметры фильтрации
+            $filters = $request->all();
+            
+            // Количество элементов на странице
+            $perPage = $request->input('per_page', 12);
+            
+            // Создаем запрос к базе данных
+            $query = SparePart::whereIn('category_id', $categoryIds);
+        
+            // Проверяем, есть ли запчасти в выбранных категориях
+            $totalParts = $query->count();
+            \Log::info('Количество найденных запчастей', ['total' => $totalParts]);
+            
+            if ($totalParts === 0) {
+                \Log::warning('Запчасти не найдены для категорий', ['category_ids' => $categoryIds]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Не удалось загрузить запчасти для выбранной категории',
+                    'error' => 'В данной категории нет запчастей',
+                    'data' => []
+                ]);
+            }
+        
+            // Применяем фильтры
+            if (!empty($filters['brand'])) {
+                $query->where('manufacturer', $filters['brand']);
+            }
+            
+            if (!empty($filters['price_min'])) {
+                $query->where('price', '>=', $filters['price_min']);
+            }
+            
+            if (!empty($filters['price_max'])) {
+                $query->where('price', '<=', $filters['price_max']);
+            }
+            
+            if (!empty($filters['in_stock']) && $filters['in_stock'] === 'true') {
+                $query->where('stock_quantity', '>', 0);
+            }
+            
+            // Фильтрация по двигателю
+            if (!empty($filters['engine_id'])) {
+                $engineId = $filters['engine_id'];
+                \Log::info('Применяем фильтр по двигателю', ['engine_id' => $engineId]);
+                
+                // Подзапрос для получения ID запчастей, совместимых с двигателем
+                $query->whereIn('id', function($subquery) use ($engineId) {
+                    $subquery->select('spare_part_id')
+                        ->from('car_engine_spare_part')
+                        ->where('car_engine_id', $engineId);
+                });
+            }
+            
+            if (!empty($filters['search'])) {
+                $searchTerm = $filters['search'];
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                      ->orWhere('part_number', 'like', "%{$searchTerm}%")
+                      ->orWhere('description', 'like', "%{$searchTerm}%");
+                });
+            }
+        
+            // Сортировка
+            if (!empty($filters['sort'])) {
+                $sortField = 'name';
+                $sortDirection = 'asc';
+                
+                switch ($filters['sort']) {
+                    case 'price_asc':
+                        $sortField = 'price';
+                        $sortDirection = 'asc';
+                        break;
+                    case 'price_desc':
+                        $sortField = 'price';
+                        $sortDirection = 'desc';
+                        break;
+                    case 'name_asc':
+                        $sortField = 'name';
+                        $sortDirection = 'asc';
+                        break;
+                    case 'name_desc':
+                        $sortField = 'name';
+                        $sortDirection = 'desc';
+                        break;
+                }
+                
+                $query->orderBy($sortField, $sortDirection);
+            } else {
+                $query->orderBy('name', 'asc');
+            }
+        
+            // Получаем результаты с пагинацией
+            $parts = $query->paginate($perPage);
+            
+            \Log::info('Запчасти успешно получены', [
+                'count' => $parts->count(),
+                'current_page' => $parts->currentPage(),
+                'last_page' => $parts->lastPage()
+            ]);
+        
+            // Создаем ссылки для пагинации в формате, который ожидает компонент Pagination
+            $parts->links = $this->generatePaginationLinks($parts, $request);
+        
+            return response()->json([
+                'success' => true,
+                'data' => $parts,
+                'debug' => [
+                    'per_page' => $perPage,
+                    'current_page' => $parts->currentPage(),
+                    'last_page' => $parts->lastPage(),
+                    'should_show_pagination' => $parts->lastPage() > 1,
+                    'pagination_links' => $parts->links,
+                    'category_ids' => $categoryIds,
+                    'is_parent_category' => $isParentCategory,
+                    'total_parts' => $totalParts
+                ]
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при получении запчастей', [
+                'category_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Не удалось загрузить запчасти для выбранной категории',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-        
-        // Получаем результаты с пагинацией
-        $parts = $query->paginate($perPage);
-        
-        // Принудительно устанавливаем общее количество страниц для тестирования
-        $totalCount = $query->count();
-        $currentPage = $parts->currentPage();
-        
-        // Принудительно устанавливаем totalCount больше, чтобы создать несколько страниц
-        $testCount = max($totalCount, 15); // Минимум 15 элементов
-        $totalPages = ceil($testCount / $perPage);
-        
-        // Модифицируем объект пагинации для тестирования
-        $parts->total = $testCount;
-        $parts->lastPage = $totalPages;
-        
-        // Создаем ссылки для пагинации в формате, который ожидает компонент Pagination
-        $parts->links = $this->generatePaginationLinks($parts, $request);
-        
-        return response()->json([
-            'success' => true,
-            'data' => $parts,
-            'debug' => [
-                'original_total_count' => $totalCount,
-                'test_total_count' => $testCount,
-                'per_page' => $perPage,
-                'current_page' => $currentPage,
-                'last_page' => $totalPages,
-                'should_show_pagination' => $totalPages > 1,
-                'pagination_links' => $parts->links
-            ]
-        ]);
     }
     
     /**
@@ -389,5 +458,128 @@ class PartCategoryController extends Controller
         $params = $request->all();
         $params['page'] = $page;
         return url()->current() . '?' . http_build_query($params);
+    }
+
+    /**
+     * Получить запчасти по категории
+     * 
+     * @param Request $request
+     * @param int $id ID категории
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPartsByCategory(Request $request, $id)
+    {
+        try {
+            // Проверяем существование категории
+            $category = PartCategory::find($id);
+            if (!$category) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Категория не найдена'
+                ], 404);
+            }
+            
+            // Получаем ID всех подкатегорий
+            $subcategoryIds = PartCategory::where('parent_id', $id)->pluck('id')->toArray();
+            
+            // Добавляем ID текущей категории
+            $categoryIds = array_merge([$id], $subcategoryIds);
+            
+            // Получаем параметры фильтрации и сортировки
+            $filters = $request->all();
+            
+            // Количество элементов на странице
+            $perPage = $request->input('per_page', 12);
+            
+            // Создаем запрос к базе данных
+            $query = SparePart::whereIn('category_id', $categoryIds);
+            
+            // Применяем фильтры
+            if (!empty($filters['brand'])) {
+                $query->where('manufacturer', $filters['brand']);
+            }
+            
+            if (!empty($filters['price_min'])) {
+                $query->where('price', '>=', $filters['price_min']);
+            }
+            
+            if (!empty($filters['price_max'])) {
+                $query->where('price', '<=', $filters['price_max']);
+            }
+            
+            if (!empty($filters['in_stock']) && $filters['in_stock'] === 'true') {
+                $query->where('stock_quantity', '>', 0);
+            }
+            
+            if (!empty($filters['search'])) {
+                $searchTerm = $filters['search'];
+                $query->where(function($q) use ($searchTerm) {
+                    $q->where('name', 'like', "%{$searchTerm}%")
+                      ->orWhere('part_number', 'like', "%{$searchTerm}%")
+                      ->orWhere('description', 'like', "%{$searchTerm}%");
+                });
+            }
+            
+            // Применяем сортировку
+            if (!empty($filters['sort'])) {
+                $sortField = 'name';
+                $sortDirection = 'asc';
+                
+                switch ($filters['sort']) {
+                    case 'price_asc':
+                        $sortField = 'price';
+                        $sortDirection = 'asc';
+                        break;
+                    case 'price_desc':
+                        $sortField = 'price';
+                        $sortDirection = 'desc';
+                        break;
+                    case 'name_asc':
+                        $sortField = 'name';
+                        $sortDirection = 'asc';
+                        break;
+                    case 'name_desc':
+                        $sortField = 'name';
+                        $sortDirection = 'desc';
+                        break;
+                }
+                
+                $query->orderBy($sortField, $sortDirection);
+            } else {
+                $query->orderBy('name', 'asc');
+            }
+            
+            // Получаем результаты с пагинацией
+            $parts = $query->paginate($perPage);
+            
+            // Создаем ссылки для пагинации в формате, который ожидает компонент Pagination
+            $parts->links = $this->generatePaginationLinks($parts, $request);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'parts' => $parts->items(),
+                    'pagination' => [
+                        'total' => $parts->total(),
+                        'per_page' => $parts->perPage(),
+                        'current_page' => $parts->currentPage(),
+                        'last_page' => $parts->lastPage(),
+                        'from' => $parts->firstItem(),
+                        'to' => $parts->lastItem(),
+                        'links' => $parts->links,
+                    ],
+                    'category' => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'description' => $category->description,
+                    ],
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ошибка при получении запчастей: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

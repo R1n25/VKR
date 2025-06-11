@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import axios from 'axios';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
@@ -6,12 +6,33 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 // Компонент для древовидной категории
 const CategoryItem = ({ category, engineId, subcategories = [], level = 0, onSelectCategory, isSelected, selectedCategoryId }) => {
     const isCurrentSelected = selectedCategoryId === category.id;
-    // Категория развернута, если она выбрана или была явно развернута пользователем
-    const [isExpanded, setIsExpanded] = useState(isCurrentSelected);
+    // Категория развернута по умолчанию или если она выбрана
+    const [isExpanded, setIsExpanded] = useState(true);
     const [childCategories, setChildCategories] = useState(subcategories);
     const [loading, setLoading] = useState(false);
     
     const hasChildren = subcategories.length > 0 || category.has_children;
+    
+    // Загружаем подкатегории при первом рендере, если они есть
+    useEffect(() => {
+        const loadSubcategories = async () => {
+            if (hasChildren && childCategories.length === 0) {
+                setLoading(true);
+                try {
+                    const response = await axios.get(`/api/categories/${category.id}/subcategories`);
+                    if (response.data.status === 'success' && response.data.data.subcategories) {
+                        setChildCategories(response.data.data.subcategories);
+                    }
+                } catch (error) {
+                    console.error('Ошибка при загрузке подкатегорий:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        
+        loadSubcategories();
+    }, []);
     
     // Обновляем состояние, когда меняется выбранная категория
     useEffect(() => {
@@ -20,20 +41,7 @@ const CategoryItem = ({ category, engineId, subcategories = [], level = 0, onSel
         }
     }, [selectedCategoryId, isCurrentSelected, isExpanded]);
     
-    const toggleExpand = async () => {
-        if (hasChildren && childCategories.length === 0 && !isExpanded) {
-            setLoading(true);
-            try {
-                const response = await axios.get(`/api/categories/${category.id}/subcategories`);
-                if (response.data.status === 'success' && response.data.data.subcategories) {
-                    setChildCategories(response.data.data.subcategories);
-                }
-            } catch (error) {
-                console.error('Ошибка при загрузке подкатегорий:', error);
-            } finally {
-                setLoading(false);
-            }
-        }
+    const toggleExpand = () => {
         setIsExpanded(!isExpanded);
     };
     
@@ -153,9 +161,14 @@ const getCategoryIcon = (categoryName) => {
 };
 
 // Компонент для отображения запчасти в списке
-const PartItem = ({ part, onAddToCart, engineParts }) => {
+const PartItem = ({ part, onAddToCart, engineParts, engine }) => {
     // Проверяем, совместима ли запчасть с текущим двигателем
     const isCompatibleWithEngine = engineParts.some(enginePart => enginePart.id === part.id);
+    const [showCompatibility, setShowCompatibility] = useState(false);
+    
+    // Если запчасть отображается в списке запчастей для категории с фильтром по двигателю,
+    // то она уже является совместимой с этим двигателем
+    const isCompatible = true; // Всегда считаем совместимой, так как запчасть уже отфильтрована по категории и двигателю
     
     return (
         <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition mb-4">
@@ -183,19 +196,90 @@ const PartItem = ({ part, onAddToCart, engineParts }) => {
                         <p className="text-sm text-gray-600 mb-3 line-clamp-2">
                             {part.description || `${part.name} - оригинальная запчасть для вашего автомобиля.`}
                         </p>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                             <div className="font-bold text-lg text-indigo-600">{part.price} ₽</div>
                             <div className="flex space-x-2">
                                 <div className={`text-sm px-2 py-1 rounded ${part.stock_quantity > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                     {part.stock_quantity > 0 ? `В наличии (${part.stock_quantity})` : 'Нет в наличии'}
                                 </div>
-                                {isCompatibleWithEngine && (
-                                    <div className="text-sm px-2 py-1 rounded bg-blue-100 text-blue-800">
+                                {isCompatible && (
+                                    <div className="text-sm px-2 py-1 rounded bg-blue-100 text-blue-800 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
                                         Совместимо с двигателем
                                     </div>
                                 )}
                             </div>
                         </div>
+                        
+                        {/* Кнопки действий */}
+                        <div className="flex items-center space-x-2 mt-3">
+                            <button 
+                                onClick={() => onAddToCart(part, 1)}
+                                disabled={part.stock_quantity <= 0}
+                                className={`flex items-center px-3 py-1.5 text-sm rounded-md ${
+                                    part.stock_quantity > 0 
+                                        ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
+                                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+                                </svg>
+                                В корзину
+                            </button>
+                            
+                            <button 
+                                onClick={() => setShowCompatibility(!showCompatibility)}
+                                className="flex items-center px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437l1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008z" />
+                                </svg>
+                                {showCompatibility ? 'Скрыть совместимость' : 'Показать совместимость'}
+                            </button>
+                            
+                            <Link 
+                                href={`/parts/${part.id}`}
+                                className="flex items-center px-3 py-1.5 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                Подробнее
+                            </Link>
+                        </div>
+                        
+                        {/* Информация о совместимости */}
+                        {showCompatibility && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-md border border-gray-200">
+                                <h4 className="font-medium text-sm mb-2">Совместимость с двигателями:</h4>
+                                {isCompatible ? (
+                                    <div className="flex items-center text-sm text-green-700 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1 text-green-600">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>
+                                            {engine ? `${engine.name} (${engine.volume} л, ${engine.power} л.с.)` : 'Текущий двигатель'}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center text-sm text-red-700 mb-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 mr-1 text-red-600">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                        <span>
+                                            Не совместимо с текущим двигателем
+                                        </span>
+                                    </div>
+                                )}
+                                <div className="text-xs text-gray-500 mt-1">
+                                    Для получения полной информации о совместимости перейдите на страницу запчасти
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -264,16 +348,31 @@ export default function EngineParts({ auth, engineId }) {
                 setPartsError('');
                 
                 try {
-                    const response = await axios.get(`/api/spare-parts`, {
+                    // Используем правильный API-маршрут для получения запчастей по категории
+                    const response = await axios.get(`/api/part-categories/${selectedCategory.id}/filtered-parts`, {
                         params: {
-                            category_id: selectedCategory.id,
                             engine_id: engineId
                         }
                     });
                     
-                    if (response.data && response.data.data) {
-                        setParts(response.data.data);
+                    console.log('API Response:', response.data);
+                    
+                    // Проверяем структуру ответа и извлекаем данные
+                    if (response.data && response.data.success) {
+                        if (response.data.data && Array.isArray(response.data.data.data)) {
+                            // Если данные находятся в data.data.data (пагинированный ответ)
+                            setParts(response.data.data.data);
+                        } else if (response.data.data && Array.isArray(response.data.data)) {
+                            // Если данные находятся в data.data
+                            setParts(response.data.data);
+                        } else {
+                            console.error('Неверная структура данных:', response.data);
+                            setPartsError('Не удалось загрузить запчасти для выбранной категории');
+                            setParts([]);
+                        }
                     } else {
+                        console.error('Ошибка в ответе API:', response.data.message || 'Неизвестная ошибка');
+                        setPartsError(response.data.message || 'Не удалось загрузить запчасти для выбранной категории');
                         setParts([]);
                     }
                 } catch (err) {
@@ -310,10 +409,10 @@ export default function EngineParts({ auth, engineId }) {
     };
     
     // Обработчик добавления в корзину
-    const handleAddToCart = async (part, quantity) => {
+    const handleAddToCart = async (part, quantity = 1) => {
         try {
             await axios.post('/api/cart/add', {
-                id: part.id,
+                spare_part_id: part.id,
                 quantity: quantity
             });
             
@@ -415,7 +514,7 @@ export default function EngineParts({ auth, engineId }) {
                                                                 <svg className="h-4 w-4 mx-1" fill="currentColor" viewBox="0 0 20 20">
                                                                     <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
                                                                 </svg>
-                                                                <Link href={`/models/${engine.model_id}/engines`} className="hover:text-indigo-600">
+                                                                <Link href={route('engines.index', { id: engine.model_id })} className="hover:text-indigo-600">
                                                                     Двигатели
                                                                 </Link>
                                                             </li>
@@ -522,6 +621,7 @@ export default function EngineParts({ auth, engineId }) {
                                                             part={part}
                                                             onAddToCart={handleAddToCart}
                                                             engineParts={engineParts}
+                                                            engine={engine}
                                                         />
                                                     ))}
                                                 </div>

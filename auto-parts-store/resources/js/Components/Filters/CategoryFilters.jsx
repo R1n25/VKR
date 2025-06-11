@@ -89,7 +89,7 @@ export default function CategoryFilters({ filters, onFilterChange }) {
         <div className="w-full space-y-4">
             <h2 className="text-lg font-semibold text-gray-900">Фильтры</h2>
             {Object.entries(filters).map(([id, filter]) => (
-                <Disclosure key={id} as="div" className="border rounded-lg">
+                <Disclosure key={id} as="div" className="border rounded-lg" defaultOpen={true}>
                     {({ open }) => (
                         <>
                             <Disclosure.Button className="flex w-full justify-between rounded-lg bg-white px-4 py-2 text-left text-sm font-medium text-gray-900 hover:bg-gray-50 focus:outline-none focus-visible:ring focus-visible:ring-indigo-500 focus-visible:ring-opacity-50">

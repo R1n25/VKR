@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react';
 import UserIcon from '@/Components/UserIcon';
 
 const MainLayout = ({ auth, children }) => {
-    const { url } = usePage();
+    const { url: currentUrl } = usePage();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
@@ -43,9 +43,9 @@ const MainLayout = ({ auth, children }) => {
                             {/* Навигационные ссылки */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                                 <Link
-                                    href={route('home')}
+                                    href={url('/')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url === '/' || url === '/home'
+                                        currentUrl === '/' || currentUrl === '/home'
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -53,9 +53,9 @@ const MainLayout = ({ auth, children }) => {
                                     Главная
                                 </Link>
                                 <Link
-                                    href={route('brands.index')}
+                                    href={url('/brands')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url.startsWith('/brands')
+                                        currentUrl.startsWith('/brands')
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -63,9 +63,9 @@ const MainLayout = ({ auth, children }) => {
                                     Бренды
                                 </Link>
                                 <Link
-                                    href={route('about')}
+                                    href={url('/about')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url === '/about'
+                                        currentUrl === '/about'
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -73,9 +73,9 @@ const MainLayout = ({ auth, children }) => {
                                     О нас
                                 </Link>
                                 <Link
-                                    href={route('contacts')}
+                                    href={url('/contacts')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url === '/contacts'
+                                        currentUrl === '/contacts'
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -83,9 +83,9 @@ const MainLayout = ({ auth, children }) => {
                                     Контакты
                                 </Link>
                                 <Link
-                                    href={route('search')}
+                                    href={url('/search')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url === '/search'
+                                        currentUrl === '/search'
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -94,9 +94,9 @@ const MainLayout = ({ auth, children }) => {
                                     Поиск
                                 </Link>
                                 <Link
-                                    href={route('vin-decoder')}
+                                    href={url('/vin-decoder')}
                                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium leading-5 transition duration-150 ease-in-out ${
-                                        url === '/vin-decoder'
+                                        currentUrl === '/vin-decoder'
                                             ? 'border-primary text-gray-900'
                                             : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                                     }`}
@@ -116,14 +116,14 @@ const MainLayout = ({ auth, children }) => {
                             {auth?.user ? (
                                 <div className="ml-3 flex items-center space-x-2">
                                     <Link
-                                        href={route('profile.edit')}
+                                        href={url('/profile/edit')}
                                         className="inline-flex items-center px-3 py-2 border border-indigo-500 text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition ease-in-out duration-150"
                                     >
                                         <UserIcon className="w-4 h-4 mr-1" />
                                         Личный кабинет
                                     </Link>
                                     <Link
-                                        href={route('logout')}
+                                        href={url('/logout')}
                                         className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition ease-in-out duration-150"
                                     >
                                         <svg 
@@ -146,13 +146,13 @@ const MainLayout = ({ auth, children }) => {
                             ) : (
                                 <div className="flex items-center space-x-2">
                                     <Link
-                                        href={route('login')}
+                                        href={url('/login')}
                                         className="text-sm text-gray-700 hover:text-primary"
                                     >
                                         Вход
                                     </Link>
                                     <Link
-                                        href={route('register')}
+                                        href={url('/register')}
                                         className="text-sm text-gray-700 hover:text-primary"
                                     >
                                         Регистрация
@@ -194,7 +194,7 @@ const MainLayout = ({ auth, children }) => {
                             <ul className="space-y-2">
                                 <li>
                                     <Link
-                                        href={route('about')}
+                                        href={url('/about')}
                                         className="text-gray-600 hover:text-primary"
                                     >
                                         О нас
@@ -202,7 +202,7 @@ const MainLayout = ({ auth, children }) => {
                                 </li>
                                 <li>
                                     <Link
-                                        href={route('contacts')}
+                                        href={url('/contacts')}
                                         className="text-gray-600 hover:text-primary"
                                     >
                                         Контакты
@@ -210,7 +210,7 @@ const MainLayout = ({ auth, children }) => {
                                 </li>
                                 <li>
                                     <Link
-                                        href={route('vin-request.index')}
+                                        href={url('/vin-request')}
                                         className="text-gray-600 hover:text-primary"
                                     >
                                         Подбор по VIN

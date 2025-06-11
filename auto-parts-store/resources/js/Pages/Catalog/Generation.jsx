@@ -42,7 +42,7 @@ export default function Generation({ auth, brand, model, engineVolumes, bodyType
         if (selectedEngine) params.append('engine_volume', selectedEngine);
         if (selectedBodyType) params.append('body_type', selectedBodyType);
         
-        const baseUrl = route('catalog.parts', [brand.slug, model.slug, model.generation]);
+        const baseUrl = url('catalog/parts', { brand: brand.slug, model: model.slug, generation: model.generation });
         return `${baseUrl}?${params.toString()}`;
     };
     
@@ -54,15 +54,15 @@ export default function Generation({ auth, brand, model, engineVolumes, bodyType
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Хлебные крошки */}
                     <div className="mb-4 flex flex-wrap items-center text-sm text-gray-500">
-                        <Link href={route('catalog.index')} className="hover:text-indigo-600">
+                        <Link href={url('catalog')} className="hover:text-indigo-600">
                             Каталог
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.brand', brand.slug)} className="hover:text-indigo-600">
+                        <Link href={url('catalog/brand', { slug: brand.slug })} className="hover:text-indigo-600">
                             {brand.name}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.model', [brand.slug, model.slug])} className="hover:text-indigo-600">
+                        <Link href={url('catalog/model', { brand: brand.slug, model: model.slug })} className="hover:text-indigo-600">
                             {model.name}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />

@@ -28,7 +28,8 @@ export default function ModelShow({ auth, modelId }) {
     // Перенаправляем на страницу выбора двигателей
     useEffect(() => {
         if (!loading && model) {
-            window.location.href = `/models/${modelId}/engines`;
+            // Используем функцию route вместо прямого URL и преобразуем id к строке
+            window.location.href = route('engines.index', { id: String(modelId) });
         }
     }, [loading, model, modelId]);
 

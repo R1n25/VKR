@@ -5,18 +5,23 @@ import { FormattedPrice } from '@/utils/helpers';
 import axios from 'axios';
 import AddToCartButton from '@/Components/AddToCartButton';
 
-const Show = ({ auth, sparePart, isAdmin }) => {
+const Show = ({ auth, sparePart, isAdmin, compatibilities, analogs: initialAnalogs, similarParts }) => {
     const { flash } = usePage().props;
-    const [analogs, setAnalogs] = useState([]);
+    const [analogs, setAnalogs] = useState(initialAnalogs || []);
     const [loading, setLoading] = useState(false);
     const [partData, setPartData] = useState(sparePart);
     const [quantityLoading, setQuantityLoading] = useState(false);
     const [availableQuantity, setAvailableQuantity] = useState(0);
     const [isAvailable, setIsAvailable] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(!!flash?.success);
+    
+    // Проверка, является ли пользователь администратором
+    const userIsAdmin = auth.user && auth.user.role === 'admin';
 
     useEffect(() => {
-        loadAnalogs();
+        if (!initialAnalogs || initialAnalogs.length === 0) {
+            loadAnalogs();
+        }
         updateQuantity();
         
         // Добавляем слушатель события обновления товара
@@ -59,7 +64,8 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                     ...prevData,
                     stock_quantity: response.data.stock_quantity,
                     is_available: response.data.is_available,
-                    price: response.data.price
+                    price: response.data.price,
+                    base_price: response.data.base_price || response.data.price
                 }));
                 
                 console.log('Обновлены данные о товаре:', response.data);
@@ -87,6 +93,42 @@ const Show = ({ auth, sparePart, isAdmin }) => {
             setLoading(false);
         }
     };
+
+    // Функция для группировки двигателей по моделям автомобилей
+    const groupEnginesByCarModel = () => {
+        if (!compatibilities || compatibilities.length === 0) {
+            return {};
+        }
+
+        const groupedEngines = {};
+        
+        compatibilities.forEach(compatibility => {
+            if (compatibility.engine) {
+                const modelKey = compatibility.brand ? 
+                    `${compatibility.brand.name} ${compatibility.model.name}` : 
+                    'Универсальные';
+                
+                if (!groupedEngines[modelKey]) {
+                    groupedEngines[modelKey] = {
+                        brand: compatibility.brand,
+                        model: compatibility.model,
+                        engines: []
+                    };
+                }
+                
+                groupedEngines[modelKey].engines.push({
+                    ...compatibility.engine,
+                    notes: compatibility.notes
+                });
+            }
+        });
+        
+        return groupedEngines;
+    };
+
+    // Получаем сгруппированные двигатели
+    const groupedEngines = groupEnginesByCarModel();
+    const hasCompatibleEngines = Object.keys(groupedEngines).length > 0;
 
     return (
         <MainLayout auth={auth}>
@@ -167,10 +209,27 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-gray-600">Цена:</p>
-                                    <FormattedPrice 
-                                        value={partData.price} 
-                                        className="text-2xl font-bold text-primary"
-                                    />
+                                    {!userIsAdmin ? (
+                                        <FormattedPrice 
+                                            value={partData.price} 
+                                            className="text-2xl font-bold text-primary"
+                                        />
+                                    ) : (
+                                        <div>
+                                            <FormattedPrice 
+                                                value={partData.price} 
+                                                className="text-2xl font-bold text-primary"
+                                            />
+                                            <span className="text-xs ml-1 font-normal text-gray-500">(с наценкой)</span>
+                                            <div>
+                                                <FormattedPrice 
+                                                    value={partData.base_price} 
+                                                    className="text-lg text-gray-600"
+                                                />
+                                                <span className="text-xs ml-1 font-normal text-gray-500">(базовая)</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                                 
                                 {isAvailable && (
@@ -178,9 +237,10 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                                         sparePart={{
                                             id: partData.id,
                                             name: partData.name,
-                                            price: partData.price,
+                                            // Для администратора используем базовую цену при добавлении в корзину
+                                            price: userIsAdmin ? partData.base_price : partData.price,
                                             image: partData.image_url,
-                                            stock: availableQuantity
+                                            stock_quantity: availableQuantity
                                         }}
                                         user={auth.user}
                                         className="w-40"
@@ -192,7 +252,7 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                 </div>
 
                 {/* Секция с аналогами */}
-                <div className="bg-white rounded-lg shadow-lg p-6">
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
                     <h2 className="text-xl font-bold mb-4">Аналоги и заменители</h2>
                     
                     {loading ? (
@@ -243,6 +303,60 @@ const Show = ({ auth, sparePart, isAdmin }) => {
                                                 {analog.type || 'Аналог'}
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Секция с совместимыми двигателями */}
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+                    <h2 className="text-xl font-bold mb-4">Совместимые двигатели</h2>
+                    
+                    {!hasCompatibleEngines ? (
+                        <div className="text-center py-10 bg-gray-50 rounded-lg">
+                            <p className="text-gray-500">Информация о совместимости с двигателями не найдена</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {Object.entries(groupedEngines).map(([modelName, data]) => (
+                                <div key={modelName} className="border-b pb-4 last:border-b-0">
+                                    <h3 className="text-lg font-semibold mb-2">{modelName}</h3>
+                                    
+                                    <div className="grid gap-3 mt-2">
+                                        {data.engines.map((engine, index) => (
+                                            <div key={`${engine.id || index}`} className="bg-gray-50 p-3 rounded-lg">
+                                                <div className="flex justify-between">
+                                                    <div>
+                                                        <p className="font-medium">{engine.name}</p>
+                                                        <div className="flex flex-wrap gap-2 mt-1">
+                                                            {engine.volume && (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                                                    {engine.volume} л
+                                                                </span>
+                                                            )}
+                                                            {engine.power && (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                                                    {engine.power} л.с.
+                                                                </span>
+                                                            )}
+                                                            {engine.fuel_type && (
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                                    {engine.fuel_type}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                {engine.notes && (
+                                                    <div className="mt-2 text-sm text-gray-600">
+                                                        <p className="italic">{engine.notes}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             ))}

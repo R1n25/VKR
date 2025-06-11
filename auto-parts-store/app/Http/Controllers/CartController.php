@@ -23,12 +23,29 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cartData = $this->cartService->getCartWithItems();
-        
-        return Inertia::render('Cart/Index', [
-            'cart' => $cartData['cart'],
-            'cartItems' => $cartData['items'],
-        ]);
+        try {
+            // Получаем данные корзины
+            $cartData = $this->cartService->getCartWithItems();
+            
+            return Inertia::render('Cart/Index', [
+                'cart' => $cartData['cart'],
+                'cartItems' => $cartData['items'],
+            ]);
+        } catch (\Exception $e) {
+            // Логируем ошибку
+            \Illuminate\Support\Facades\Log::error('Ошибка при получении корзины: ' . $e->getMessage(), [
+                'exception' => $e,
+                'user_id' => auth()->id(),
+                'session_id' => session()->getId()
+            ]);
+            
+            // Возвращаем пустую корзину в случае ошибки
+            return Inertia::render('Cart/Index', [
+                'cart' => null,
+                'cartItems' => [],
+                'error' => 'Произошла ошибка при загрузке корзины. Пожалуйста, попробуйте обновить страницу.'
+            ]);
+        }
     }
 
     /**

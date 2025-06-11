@@ -80,6 +80,9 @@ export default function CategoriesIndex({ auth }) {
     
     // Компонент для отображения категории и её подкатегорий
     const CategoryItem = ({ category, level = 0 }) => {
+        // Все категории теперь развернуты по умолчанию
+        const [isExpanded, setIsExpanded] = useState(true);
+        
         return (
             <div key={category.id} className="mb-4">
                 <Link 

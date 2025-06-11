@@ -39,25 +39,25 @@ export default function AppLayout({ children }) {
                             {/* Навигационные ссылки */}
                             <div className="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
                                 <Link 
-                                    href={route('home')} 
+                                    href={url('home')} 
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition"
                                 >
                                     Главная
                                 </Link>
                                 <Link 
-                                    href={route('categories.index')} 
+                                    href={url('categories')} 
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition"
                                 >
                                     Каталог
                                 </Link>
                                 <Link 
-                                    href={route('brands.index')} 
+                                    href={url('brands')} 
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition"
                                 >
                                     Бренды
                                 </Link>
                                 <Link 
-                                    href={route('search')} 
+                                    href={url('search')} 
                                     className="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300 focus:outline-none focus:text-gray-700 focus:border-gray-300 transition"
                                 >
                                     Поиск
@@ -70,7 +70,7 @@ export default function AppLayout({ children }) {
                             {auth.user ? (
                                 <div className="flex items-center space-x-4">
                                     <Link 
-                                        href={route('cart')} 
+                                        href={url('cart')} 
                                         className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -80,8 +80,8 @@ export default function AppLayout({ children }) {
                                     </Link>
                                     <div className="flex items-center space-x-2">
                                         <Link
-                                            href={route('dashboard')}
-                                            className="inline-flex items-center px-3 py-2 border border-indigo-500 text-sm leading-4 font-medium rounded-md text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition ease-in-out duration-150"
+                                            href={url('/dashboard')}
+                                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150"
                                         >
                                             <svg 
                                                 xmlns="http://www.w3.org/2000/svg" 
@@ -100,7 +100,7 @@ export default function AppLayout({ children }) {
                                             Личный кабинет
                                         </Link>
                                         <Link
-                                            href={route('logout')}
+                                            href={url('logout')}
                                             className="inline-flex items-center px-3 py-2 border border-red-300 text-sm leading-4 font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 transition ease-in-out duration-150"
                                         >
                                             <svg 
@@ -124,13 +124,13 @@ export default function AppLayout({ children }) {
                             ) : (
                                 <div className="flex items-center space-x-4">
                                     <Link 
-                                        href={route('login')} 
-                                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition"
+                                        href={url('/login')} 
+                                        className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-300 mr-2"
                                     >
                                         Вход
                                     </Link>
                                     <Link 
-                                        href={route('register')} 
+                                        href={url('register')} 
                                         className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:text-gray-500 focus:outline-none transition"
                                     >
                                         Регистрация
@@ -176,12 +176,12 @@ export default function AppLayout({ children }) {
                                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Компания</h3>
                                 <ul className="mt-4 space-y-2">
                                     <li>
-                                        <Link href={route('about')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('about')} className="text-base text-gray-500 hover:text-gray-900">
                                             О нас
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link href={route('contacts')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('contacts')} className="text-base text-gray-500 hover:text-gray-900">
                                             Контакты
                                         </Link>
                                     </li>
@@ -191,12 +191,12 @@ export default function AppLayout({ children }) {
                                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Каталог</h3>
                                 <ul className="mt-4 space-y-2">
                                     <li>
-                                        <Link href={route('categories.index')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('categories')} className="text-base text-gray-500 hover:text-gray-900">
                                             Категории
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link href={route('brands.index')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('brands')} className="text-base text-gray-500 hover:text-gray-900">
                                             Бренды
                                         </Link>
                                     </li>
@@ -206,12 +206,12 @@ export default function AppLayout({ children }) {
                                 <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Поддержка</h3>
                                 <ul className="mt-4 space-y-2">
                                     <li>
-                                        <Link href={route('vin-request.index')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('vin-request')} className="text-base text-gray-500 hover:text-gray-900">
                                             Подбор по VIN
                                         </Link>
                                     </li>
                                     <li>
-                                        <Link href={route('search')} className="text-base text-gray-500 hover:text-gray-900">
+                                        <Link href={url('search')} className="text-base text-gray-500 hover:text-gray-900">
                                             Поиск
                                         </Link>
                                     </li>

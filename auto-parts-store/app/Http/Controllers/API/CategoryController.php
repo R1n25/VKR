@@ -145,4 +145,30 @@ class CategoryController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Получить название категории по ID
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getName($id)
+    {
+        $category = DB::table('part_categories')->find($id);
+        
+        if (!$category) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Категория не найдена'
+            ], 404);
+        }
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'id' => $category->id,
+                'name' => $category->name
+            ]
+        ]);
+    }
 } 

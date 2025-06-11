@@ -23,7 +23,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
         if (e.target.value) {
             const brand = allBrands.find(b => b.id == e.target.value);
             if (brand && brand.slug) {
-                window.location.href = route('catalog.brand', brand.slug);
+                window.location.href = url('catalog/brand', { slug: brand.slug });
             }
         }
     };
@@ -90,7 +90,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
                                         <div key={brand.id} className="bg-gray-50 rounded-lg overflow-hidden shadow-md">
                                             <div className="px-4 py-3 bg-gray-100 border-b">
                                                 <Link 
-                                                    href={route('catalog.brand', brand.slug)} 
+                                                    href={url('catalog/brand', { slug: brand.slug })} 
                                                     className="text-lg font-medium text-gray-900 hover:text-indigo-600"
                                                 >
                                                     {brand.name}
@@ -102,7 +102,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
                                                         <li key={model.id} className="flex items-center">
                                                             <ChevronRightIcon className="h-4 w-4 text-indigo-500 mr-2" />
                                                             <Link 
-                                                                href={route('catalog.model', [brand.slug, model.slug])}
+                                                                href={url('catalog/model', { brand: brand.slug, model: model.slug })}
                                                                 className="text-gray-700 hover:text-indigo-600"
                                                             >
                                                                 {model.name}
@@ -119,7 +119,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
                                                 {brand.car_models && brand.car_models.length > 5 && (
                                                     <div className="mt-3 text-right">
                                                         <Link 
-                                                            href={route('catalog.brand', brand.slug)}
+                                                            href={url('catalog/brand', { slug: brand.slug })}
                                                             className="text-sm text-indigo-600 hover:text-indigo-800"
                                                         >
                                                             Все модели ({brand.car_models.length})
@@ -142,7 +142,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
                                             {filteredBrands.map(brand => (
                                                 <Link
                                                     key={brand.id}
-                                                    href={route('catalog.brand', brand.slug)}
+                                                    href={url('catalog/brand', { slug: brand.slug })}
                                                     className="bg-gray-50 p-3 rounded-md hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
                                                 >
                                                     {brand.name}
@@ -163,7 +163,7 @@ export default function Index({ auth, popularBrands, allBrands }) {
                                         {allBrands.map(brand => (
                                             <Link
                                                 key={brand.id}
-                                                href={route('catalog.brand', brand.slug)}
+                                                href={url('catalog/brand', { slug: brand.slug })}
                                                 className="bg-gray-50 p-3 rounded-md hover:bg-indigo-50 hover:text-indigo-700 transition-colors"
                                             >
                                                 {brand.name}

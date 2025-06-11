@@ -27,7 +27,7 @@ export default function Index({ auth, cart, cartItems, user }) {
         setProcessing(true);
         setErrors({});
 
-        router.post(route('checkout.store'), formData, {
+        router.post(url('checkout/store'), formData, {
             onSuccess: () => {
                 setProcessing(false);
             },
@@ -192,7 +192,7 @@ export default function Index({ auth, cart, cartItems, user }) {
                                         
                                         <div className="mt-6 flex items-center justify-between">
                                             <Link
-                                                href={route('cart.index')}
+                                                href={url('cart')}
                                                 className="text-sm text-indigo-600 hover:text-indigo-800"
                                             >
                                                 ← Вернуться в корзину

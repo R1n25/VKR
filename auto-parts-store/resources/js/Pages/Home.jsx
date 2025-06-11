@@ -31,6 +31,15 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
 
     // Получаем только популярные бренды и сортируем их по алфавиту
     const popularBrands = brands.filter(brand => brand.is_popular);
+    
+    // Стили для анимации элементов
+    const getItemStyle = (isActive, index, delay = 0) => {
+        return { 
+            transitionDelay: `${index * 50 + delay}ms`,
+            opacity: isActive ? 1 : 0,
+            transform: isActive ? 'translateY(0)' : 'translateY(20px)'
+        };
+    };
 
     return (
         <AuthenticatedLayout
@@ -78,7 +87,7 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                     Популярные бренды
                                 </h3>
                                 <Link 
-                                    href={route('brands.index')}
+                                    href={url('brands')}
                                     className="inline-flex items-center text-primary-600 hover:text-primary-800 text-sm font-medium transition-colors duration-200"
                                 >
                                     Все бренды
@@ -92,13 +101,9 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                 {popularBrands.map((brand, index) => (
                                     <Link
                                         key={brand.id}
-                                        href={route('brands.show', brand.id)}
+                                        href={url(`brands/${brand.id}`)}
                                         className="group relative flex flex-col items-center transition-all duration-300"
-                                        style={{ 
-                                            transitionDelay: `${index * 50}ms`,
-                                            opacity: animatedItems.brands ? 1 : 0,
-                                            transform: animatedItems.brands ? 'translateY(0)' : 'translateY(20px)'
-                                        }}
+                                        style={getItemStyle(animatedItems.brands, index)}
                                     >
                                         <div className="relative w-full aspect-square mb-3">
                                             <div className="absolute inset-0 flex items-center justify-center bg-white rounded-xl border border-gray-200 p-4 transition-all duration-300 group-hover:shadow-lg group-hover:border-primary-200">
@@ -134,7 +139,7 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                     Категории запчастей
                                 </h3>
                                 <Link 
-                                    href={route('categories.index')} 
+                                    href={url('categories')} 
                                     className="inline-flex items-center text-primary-600 hover:text-primary-800 text-sm font-medium transition-colors duration-200"
                                 >
                                     Все категории
@@ -148,13 +153,9 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                 {categories.slice(0, 8).map((category, index) => (
                                     <Link
                                         key={category.id}
-                                        href={route('category.show', category.id)}
+                                        href={url(`category/${category.id}`)}
                                         className="group block p-6 bg-white rounded-xl border border-gray-200 hover:border-primary-200 hover:shadow-lg transition-all duration-300"
-                                        style={{ 
-                                            transitionDelay: `${index * 50 + 300}ms`,
-                                            opacity: animatedItems.categories ? 1 : 0,
-                                            transform: animatedItems.categories ? 'translateY(0)' : 'translateY(20px)'
-                                        }}
+                                        style={getItemStyle(animatedItems.categories, index, 300)}
                                     >
                                         <h4 className="text-lg font-semibold text-gray-900 group-hover:text-primary-600 mb-2 transition-colors duration-300">
                                             {category.name}
@@ -202,7 +203,7 @@ export default function Home({ auth, canLogin, canRegister, brands: initialBrand
                                     </li>
                                 </ul>
                                 <Link
-                                    href={route('vin-request.index')}
+                                    href={url('vin-request')}
                                     className="btn btn-primary inline-flex items-center gap-2 rounded-lg shadow-md"
                                 >
                                     VIN-запрос

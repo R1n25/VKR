@@ -34,6 +34,7 @@ class SparePart extends Model
         'category_id',
         'image_url',
         'is_available',
+        'is_active',
     ];
 
     /**
@@ -45,6 +46,7 @@ class SparePart extends Model
         'price' => 'decimal:2',
         'stock_quantity' => 'integer',
         'is_available' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -59,11 +61,13 @@ class SparePart extends Model
         'description',
         'part_number',
         'price',
+        'base_price',
         'stock_quantity',
         'manufacturer',
         'category_id',
         'image_url',
         'is_available',
+        'is_active',
         'created_at',
         'updated_at',
         'original_price',
@@ -243,6 +247,11 @@ class SparePart extends Model
             $array['markup_price'] = number_format((float)$array['markup_price'], 2, '.', '');
         }
         
+        // Форматируем базовую цену
+        if (isset($array['base_price'])) {
+            $array['base_price'] = number_format((float)$array['base_price'], 2, '.', '');
+        }
+        
         return $array;
     }
 
@@ -272,5 +281,62 @@ class SparePart extends Model
         return $this->belongsToMany(CarEngine::class, 'car_engine_spare_part')
             ->withPivot('notes')
             ->withTimestamps();
+    }
+
+    /**
+     * Аксессор для получения базовой цены
+     * 
+     * @return float
+     */
+    public function getBasePriceAttribute()
+    {
+        // Если свойство уже установлено, возвращаем его
+        if (isset($this->attributes['base_price'])) {
+            return $this->attributes['base_price'];
+        }
+        
+        // Иначе возвращаем текущую цену как базовую
+        return $this->price;
+    }
+
+    /**
+     * Получить цену с наценкой для корзины
+     * 
+     * @param float $markupPercent Процент наценки (по умолчанию 10%)
+     * @return float
+     */
+    public function getCartPrice($markupPercent = 10)
+    {
+        // Рассчитываем цену с наценкой
+        $markupPrice = $this->price * (1 + $markupPercent / 100);
+        
+        // Округляем до двух знаков после запятой
+        return round($markupPrice, 2);
+    }
+
+    /**
+     * Получить историю изменения цены запчасти
+     */
+    public function priceHistory()
+    {
+        // Заглушка, возвращающая пустую коллекцию
+        return new \Illuminate\Database\Eloquent\Relations\HasMany($this->newQuery(), $this, '', '');
+    }
+
+    /**
+     * Получить историю изменения количества запчасти
+     */
+    public function stockHistory()
+    {
+        // Заглушка, возвращающая пустую коллекцию
+        return new \Illuminate\Database\Eloquent\Relations\HasMany($this->newQuery(), $this, '', '');
+    }
+
+    /**
+     * Получить отзывы о запчасти
+     */
+    public function reviews()
+    {
+        return $this->hasMany(\App\Models\Review::class, 'spare_part_id');
     }
 } 

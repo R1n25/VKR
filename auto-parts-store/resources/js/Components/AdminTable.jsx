@@ -17,17 +17,17 @@ export default function AdminTable({
     // Стили для разных размеров таблицы
     const sizeClasses = compact 
         ? { 
-            header: 'px-3 py-2 text-xs',
-            cell: 'px-3 py-2 text-xs' 
+            header: 'px-2 py-2 text-xs',
+            cell: 'px-2 py-2 text-xs' 
         } 
         : { 
-            header: 'px-6 py-3 text-xs',
-            cell: 'px-6 py-4 text-sm' 
+            header: 'px-3 py-2 text-xs',
+            cell: 'px-3 py-3 text-sm' 
         };
 
     return (
-        <div className={`overflow-x-auto rounded-lg border border-gray-200 shadow-sm ${className}`}>
-            <table className="min-w-full divide-y divide-gray-200">
+        <div className={`w-full overflow-x-auto rounded-lg border border-gray-200 shadow-sm ${className}`}>
+            <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-[#eef2ff]">
                     <tr>
                         {headers.map((header, index) => (
@@ -58,7 +58,7 @@ export default function AdminTable({
                                     : Object.values(item).map((cell, cellIndex) => (
                                         <td 
                                             key={cellIndex} 
-                                            className={`${sizeClasses.cell} whitespace-nowrap text-gray-500 ${cellClassName}`}
+                                            className={`${sizeClasses.cell} text-gray-500 ${cellClassName}`}
                                         >
                                             {cell}
                                         </td>

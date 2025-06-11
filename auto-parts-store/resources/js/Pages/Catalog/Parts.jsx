@@ -47,19 +47,19 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Хлебные крошки */}
                     <div className="mb-4 flex flex-wrap items-center text-sm text-gray-500">
-                        <Link href={route('catalog.index')} className="hover:text-indigo-600">
+                        <Link href={url('catalog')} className="hover:text-indigo-600">
                             Каталог
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.brand', brand.slug)} className="hover:text-indigo-600">
+                        <Link href={url('catalog/brand', { slug: brand.slug })} className="hover:text-indigo-600">
                             {brand.name}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.model', [brand.slug, model.slug])} className="hover:text-indigo-600">
+                        <Link href={url('catalog/model', { brand: brand.slug, model: model.slug })} className="hover:text-indigo-600">
                             {model.name}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
-                        <Link href={route('catalog.generation', [brand.slug, model.slug, model.generation])} className="hover:text-indigo-600">
+                        <Link href={url('catalog/generation', { brand: brand.slug, model: model.slug, generation: model.generation })} className="hover:text-indigo-600">
                             {model.generation}
                         </Link>
                         <ChevronRightIcon className="h-4 w-4 mx-2" />
@@ -121,7 +121,7 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {filteredParts.map(part => (
                                                 <div key={part.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                                                    <Link href={route('catalog.part', part.slug)}>
+                                                    <Link href={url('catalog/part', { slug: part.slug })}>
                                                         <div className="h-40 bg-gray-100">
                                                             {part.image_url ? (
                                                                 <img 
@@ -139,7 +139,7 @@ export default function Parts({ auth, brand, model, spareParts, categories, filt
                                                     
                                                     <div className="p-4">
                                                         <Link 
-                                                            href={route('catalog.part', part.slug)}
+                                                            href={url('catalog/part', { slug: part.slug })}
                                                             className="text-indigo-600 hover:text-indigo-800 font-medium"
                                                         >
                                                             {part.name}

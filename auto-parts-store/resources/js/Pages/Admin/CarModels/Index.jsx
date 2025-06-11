@@ -1,13 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { PencilIcon, TrashIcon, PlusIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import AdminCard from '@/Components/AdminCard';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminTable from '@/Components/AdminTable';
+import AdminAlert from '@/Components/AdminAlert';
 
 export default function Index({ auth, carModels, brands }) {
     const [filteredModels, setFilteredModels] = useState(carModels);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedBrand, setSelectedBrand] = useState('');
     const [isPopularFilter, setIsPopularFilter] = useState('');
+    const [notification, setNotification] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [modelToDelete, setModelToDelete] = useState(null);
     
     // Фильтрация моделей при изменении параметров поиска
     useEffect(() => {
@@ -51,6 +58,107 @@ export default function Index({ auth, carModels, brands }) {
         setIsPopularFilter(e.target.value);
     };
     
+    // Обработчик удаления модели
+    const handleDeleteClick = (model) => {
+        setModelToDelete(model);
+        setShowDeleteModal(true);
+    };
+    
+    const handleDeleteConfirm = () => {
+        router.delete(url(`admin/car-models/${modelToDelete.id}`), {
+            onSuccess: () => {
+                setNotification({
+                    type: 'success',
+                    message: `Модель "${modelToDelete.name}" успешно удалена`
+                });
+                setTimeout(() => setNotification(null), 3000);
+            },
+            onError: () => {
+                setNotification({
+                    type: 'error',
+                    message: 'Ошибка при удалении модели'
+                });
+                setTimeout(() => setNotification(null), 3000);
+            }
+        });
+        setShowDeleteModal(false);
+        setModelToDelete(null);
+    };
+    
+    // Колонки для таблицы
+    const columns = [
+        { key: 'id', label: 'ID' },
+        { key: 'name', label: 'Название' },
+        { key: 'brand', label: 'Бренд' },
+        { key: 'years', label: 'Годы выпуска' },
+        { key: 'generation', label: 'Поколение' },
+        { key: 'actions', label: 'Действия' }
+    ];
+    
+    // Форматирование данных для таблицы
+    const data = filteredModels.map(model => ({
+        id: model.id,
+        name: (
+            <Link 
+                href={url(`admin/car-models/${model.id}`)} 
+                className="text-blue-600 hover:underline font-medium"
+            >
+                {model.name}
+            </Link>
+        ),
+        brand: model.brand.name,
+        years: `${model.year_start} - ${model.year_end || 'н.в.'}`,
+        generation: model.generation || '—',
+        actions: (
+            <div className="flex space-x-2">
+                <Link 
+                    href={url(`admin/car-models/${model.id}`)} 
+                    className="btn-sm btn-info"
+                >
+                    Просмотр
+                </Link>
+                <Link 
+                    href={url(`admin/car-models/${model.id}/edit`)} 
+                    className="btn-sm btn-primary"
+                >
+                    Редактировать
+                </Link>
+                <button 
+                    onClick={() => handleDeleteClick(model)} 
+                    className="btn-sm btn-danger"
+                >
+                    Удалить
+                </button>
+            </div>
+        )
+    }));
+    
+    // Модальное окно подтверждения удаления
+    const DeleteModal = () => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Подтверждение удаления</h3>
+                <p className="mb-6">
+                    Вы уверены, что хотите удалить модель "{modelToDelete?.name}"?
+                </p>
+                <div className="flex justify-end space-x-3">
+                    <button 
+                        onClick={() => setShowDeleteModal(false)} 
+                        className="btn-secondary"
+                    >
+                        Отмена
+                    </button>
+                    <button 
+                        onClick={handleDeleteConfirm} 
+                        className="btn-danger"
+                    >
+                        Удалить
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+    
     return (
         <AdminLayout
             user={auth.user}
@@ -58,185 +166,92 @@ export default function Index({ auth, carModels, brands }) {
         >
             <Head title="Модели автомобилей" />
 
+            {/* Отображение уведомления */}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
+            
+            {/* Модальное окно удаления */}
+            {showDeleteModal && <DeleteModal />}
+            
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            {/* Фильтры и поиск */}
-                            <div className="mb-6 flex flex-col md:flex-row md:items-end gap-4">
-                                <div className="w-full md:w-1/4">
-                                    <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Поиск
-                                    </label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            id="search"
-                                            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                            placeholder="Поиск по названию..."
-                                            value={searchTerm}
-                                            onChange={handleSearch}
-                                        />
+                    <AdminCard>
+                        <AdminPageHeader 
+                            title="Модели автомобилей" 
+                            subtitle={`Всего моделей: ${carModels.length}`}
+                            actions={
+                                <Link href={url('admin/car-models/create')} className="btn-primary">
+                                    Добавить модель
+                                </Link>
+                            }
+                        />
+                        
+                        {/* Фильтры и поиск */}
+                        <div className="mb-6 flex flex-col md:flex-row md:items-end gap-4">
+                            <div className="w-full md:w-1/4">
+                                <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Поиск
+                                </label>
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
                                     </div>
-                                </div>
-                                
-                                <div className="w-full md:w-1/4">
-                                    <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Бренд
-                                    </label>
-                                    <select
-                                        id="brand"
-                                        className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        value={selectedBrand}
-                                        onChange={handleBrandSelect}
-                                    >
-                                        <option value="">Все бренды</option>
-                                        {brands.map(brand => (
-                                            <option key={brand.id} value={brand.id}>
-                                                {brand.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                
-                                <div className="w-full md:w-1/4">
-                                    <label htmlFor="popular" className="block text-sm font-medium text-gray-700 mb-1">
-                                        Популярность
-                                    </label>
-                                    <select
-                                        id="popular"
-                                        className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                        value={isPopularFilter}
-                                        onChange={handlePopularityFilter}
-                                    >
-                                        <option value="">Все модели</option>
-                                        <option value="popular">Только популярные</option>
-                                        <option value="not-popular">Не популярные</option>
-                                    </select>
-                                </div>
-                                
-                                <div className="w-full md:w-1/4 flex justify-end">
-                                    <Link
-                                        href={route('admin.car-models.create')}
-                                        className="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                                    >
-                                        <PlusIcon className="h-5 w-5 mr-2" />
-                                        Добавить модель
-                                    </Link>
+                                    <input
+                                        type="text"
+                                        id="search"
+                                        className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                        placeholder="Поиск по названию..."
+                                        value={searchTerm}
+                                        onChange={handleSearch}
+                                    />
                                 </div>
                             </div>
                             
-                            {/* Таблица моделей */}
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
-                                        <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Изображение
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Название
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Бренд
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Годы выпуска
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Популярная
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Действия
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {filteredModels.length > 0 ? (
-                                            filteredModels.map(model => (
-                                                <tr key={model.id} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        {model.image_url ? (
-                                                            <img 
-                                                                src={`/storage/${model.image_url}`} 
-                                                                alt={model.name}
-                                                                className="h-12 w-16 object-cover rounded"
-                                                            />
-                                                        ) : (
-                                                            <div className="h-12 w-16 bg-gray-200 rounded flex items-center justify-center">
-                                                                <span className="text-xs text-gray-500">Нет фото</span>
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">
-                                                            {model.name}
-                                                        </div>
-                                                        {model.generation && (
-                                                            <div className="text-xs text-gray-500">
-                                                                {model.generation}
-                                                            </div>
-                                                        )}
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">
-                                                            {model.brand ? model.brand.name : 'Неизвестный бренд'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">
-                                                            {model.year_start && model.year_end ? 
-                                                                `${model.year_start} - ${model.year_end}` : 
-                                                                model.year_start ? 
-                                                                    `${model.year_start} - н.в.` : 
-                                                                    'Не указано'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${model.is_popular ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                            {model.is_popular ? 'Да' : 'Нет'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                        <div className="flex items-center space-x-3">
-                                                            <Link
-                                                                href={route('admin.car-models.edit', model.id)}
-                                                                className="text-indigo-600 hover:text-indigo-900"
-                                                            >
-                                                                <PencilIcon className="h-5 w-5" />
-                                                            </Link>
-                                                            <Link
-                                                                href={route('admin.car-models.destroy', model.id)}
-                                                                method="delete"
-                                                                as="button"
-                                                                className="text-red-600 hover:text-red-900"
-                                                                onClick={(e) => {
-                                                                    if (!confirm('Вы уверены, что хотите удалить эту модель?')) {
-                                                                        e.preventDefault();
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <TrashIcon className="h-5 w-5" />
-                                                            </Link>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            ))
-                                        ) : (
-                                            <tr>
-                                                <td colSpan="6" className="px-6 py-4 text-center text-gray-500">
-                                                    Нет моделей, соответствующих заданным критериям
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
+                            <div className="w-full md:w-1/4">
+                                <label htmlFor="brand" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Бренд
+                                </label>
+                                <select
+                                    id="brand"
+                                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value={selectedBrand}
+                                    onChange={handleBrandSelect}
+                                >
+                                    <option value="">Все бренды</option>
+                                    {brands.map(brand => (
+                                        <option key={brand.id} value={brand.id}>
+                                            {brand.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            
+                            <div className="w-full md:w-1/4">
+                                <label htmlFor="popular" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Популярность
+                                </label>
+                                <select
+                                    id="popular"
+                                    className="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    value={isPopularFilter}
+                                    onChange={handlePopularityFilter}
+                                >
+                                    <option value="">Все модели</option>
+                                    <option value="popular">Только популярные</option>
+                                    <option value="not-popular">Не популярные</option>
+                                </select>
                             </div>
                         </div>
-                    </div>
+                        
+                        <div className="mt-6">
+                            <AdminTable 
+                                columns={columns} 
+                                data={data} 
+                                searchTerm={searchTerm}
+                                onSearchChange={setSearchTerm}
+                                searchPlaceholder="Поиск по названию, бренду или поколению..."
+                            />
+                        </div>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>

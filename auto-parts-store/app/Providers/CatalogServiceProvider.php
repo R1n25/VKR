@@ -14,12 +14,14 @@ class CatalogServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(ImportService::class, function ($app) {
-            return new ImportService();
-        });
-        
         $this->app->singleton(ExportService::class, function ($app) {
             return new ExportService();
+        });
+        
+        $this->app->singleton(ImportService::class, function ($app) {
+            return new ImportService(
+                $app->make(ExportService::class)
+            );
         });
         
         $this->app->singleton(CatalogManager::class, function ($app) {

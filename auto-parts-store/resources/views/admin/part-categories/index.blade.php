@@ -4,6 +4,14 @@
 
 @section('content')
 <div class="container-fluid px-4">
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <strong>Важно!</strong> Мы переходим на новую версию интерфейса. 
+        <a href="{{ route('admin.part-categories.index') }}" class="btn btn-primary btn-sm">Перейти на новую версию</a>
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+
     <h1 class="mt-4">Категории запчастей</h1>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Панель управления</a></li>
@@ -72,7 +80,6 @@
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     <form action="{{ route('admin.part-categories.destroy', $category->id) }}" method="POST" class="d-inline delete-form">
-                                        @csrf
                                         @method('DELETE')
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Вы уверены, что хотите удалить эту категорию?')">
                                             <i class="fas fa-trash"></i>

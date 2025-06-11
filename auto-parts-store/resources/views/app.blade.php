@@ -3,19 +3,82 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title inertia>{{ config('app.name', 'Laravel') }}</title>
+        <title inertia>{{ config('app.name', 'Auto Parts Store') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
 
         <!-- Стили и скрипты -->
-        @routes
         @viteReactRefresh
         @vite(['resources/css/app.css', 'resources/js/app.jsx', "resources/js/Pages/{$page['component']}.jsx"])
         @inertiaHead
+        
+        <!-- Регистрация Service Worker для блокировки нежелательных запросов -->
+        <script>
+            // Регистрируем Service Worker только если он поддерживается браузером
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/blocking-sw.js')
+                        .then(function(registration) {
+                            console.debug('Service Worker зарегистрирован с областью:', registration.scope);
+                        })
+                        .catch(function(error) {
+                            console.error('Ошибка регистрации Service Worker:', error);
+                        });
+                });
+            }
+        </script>
+        
+        <!-- Блокировка отмененных XHR-запросов -->
+        <script>
+            // Перехватываем XMLHttpRequest перед выполнением запроса
+            (function() {
+                // Сохраняем оригинальный XMLHttpRequest
+                const originalXHR = window.XMLHttpRequest;
+                
+                // Создаем список URL-паттернов для блокировки
+                const blockedPatterns = [
+                    /ca\.onHtml/i,
+                    /from\?get/i,
+                    /pageHide/i,
+                    /\?tm=202[0-9]/i
+                ];
+                
+                // Переопределяем XMLHttpRequest
+                window.XMLHttpRequest = function() {
+                    const xhr = new originalXHR();
+                    const originalOpen = xhr.open;
+                    
+                    // Переопределяем метод open для проверки URL
+                    xhr.open = function(method, url, ...args) {
+                        // Проверяем URL на наличие заблокированных паттернов
+                        const isBlocked = blockedPatterns.some(pattern => pattern.test(url));
+                        
+                        if (isBlocked) {
+                            // Если URL заблокирован, не выполняем запрос
+                            console.debug('Заблокирован XHR-запрос:', url);
+                            
+                            // Эмулируем отмену запроса
+                            setTimeout(() => {
+                                if (typeof xhr.onabort === 'function') {
+                                    xhr.onabort();
+                                }
+                            }, 0);
+                            
+                            // Возвращаем ложный метод, который ничего не делает
+                            return;
+                        }
+                        
+                        // Если URL не заблокирован, продолжаем как обычно
+                        return originalOpen.apply(xhr, [method, url, ...args]);
+                    };
+                    
+                    return xhr;
+                };
+            })();
+        </script>
     </head>
     <body class="font-sans antialiased">
         @inertia

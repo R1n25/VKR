@@ -7,9 +7,11 @@ import InputLabel from '@/Components/InputLabel';
 import InputError from '@/Components/InputError';
 import Textarea from '@/Components/Textarea';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import AdminAlert from '@/Components/AdminAlert';
 
 export default function VinRequestShow({ auth, request, success }) {
     const [isConfirmingStatus, setIsConfirmingStatus] = useState(false);
+    const [notification, setNotification] = useState(null);
     
     const { data, setData, patch, processing, errors, reset } = useForm({
         status: request.status,
@@ -45,9 +47,22 @@ export default function VinRequestShow({ auth, request, success }) {
     };
     
     const confirmStatusChange = () => {
-        patch(route('admin.vin-requests.update-status', request.id), {
+        patch(url(`admin/vin-requests/${request.id}/update-status`), {
             onSuccess: () => {
                 setIsConfirmingStatus(false);
+                setNotification({
+                    type: 'success',
+                    message: 'Статус запроса успешно обновлен'
+                });
+                setTimeout(() => setNotification(null), 3000);
+            },
+            onError: () => {
+                setIsConfirmingStatus(false);
+                setNotification({
+                    type: 'error',
+                    message: 'Ошибка при обновлении статуса запроса'
+                });
+                setTimeout(() => setNotification(null), 3000);
             }
         });
     };
@@ -59,12 +74,15 @@ export default function VinRequestShow({ auth, request, success }) {
         >
             <Head title={`Запрос #${request.id}`} />
 
+            {/* Отображение уведомления */}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
+
             <div className="bg-white overflow-hidden shadow-sm rounded-lg">
                 <div className="p-6 border-b border-gray-200">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-medium text-gray-900">Информация о запросе</h3>
                         <Link
-                            href={route('admin.vin-requests.index')}
+                            href={url('admin/vin-requests')}
                             className="inline-flex items-center px-4 py-2 bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-gray-800 uppercase tracking-widest hover:bg-gray-300 active:bg-gray-300 focus:outline-none focus:border-gray-900 focus:ring focus:ring-gray-300 disabled:opacity-25 transition"
                         >
                             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -115,7 +133,7 @@ export default function VinRequestShow({ auth, request, success }) {
                                     <div>
                                         <p className="text-sm text-gray-500 mb-1">Пользователь</p>
                                         <Link 
-                                            href={route('admin.users.edit', request.user_id)}
+                                            href={url(`admin/users/${request.user_id}/edit`)}
                                             className="text-blue-600 hover:text-blue-900"
                                         >
                                             ID: {request.user_id} (профиль)

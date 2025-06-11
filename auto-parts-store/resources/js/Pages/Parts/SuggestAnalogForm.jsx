@@ -18,7 +18,16 @@ export default function SuggestAnalogForm({ auth, sparePart }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('suggestions.store-analog', sparePart.id));
+        
+        // Проверяем, содержит ли URL строку "parts" вместо "spare-parts"
+        const currentUrl = window.location.pathname;
+        if (currentUrl.includes('/parts/')) {
+            // Если форма открыта со страницы каталога, используем маршрут для ID
+            post(route('suggestions.store-analog-by-id', sparePart.id));
+        } else {
+            // Иначе используем обычный маршрут
+            post(route('suggestions.store-analog', sparePart.id));
+        }
     };
 
     return (
@@ -140,7 +149,7 @@ export default function SuggestAnalogForm({ auth, sparePart }) {
                                 </div>
 
                                 <div className="flex items-center justify-end mt-6">
-                                    <Link className="mr-4" href={route('spare-parts.show', sparePart.id)}>
+                                    <Link className="mr-4" href={route('parts.show', sparePart.id)}>
                                         <SecondaryButton>
                                         Отмена
                                     </SecondaryButton>

@@ -156,7 +156,7 @@ export default function VinRequestsIndex({ auth, requests }) {
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
                                                 <Link
-                                                    href={route('admin.vin-requests.show', request.id)}
+                                                    href={url(`admin/vin-requests/${request.id}`)}
                                                     className="text-blue-600 hover:text-blue-900 flex items-center"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">

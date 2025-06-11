@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import AdminPageHeader from '@/Components/AdminPageHeader';
 import AdminCard from '@/Components/AdminCard';
@@ -11,7 +11,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import AdminAlert from '@/Components/AdminAlert';
 
-export default function Create({ auth, categories, manufacturers, carModels }) {
+export default function Create({ auth, categories, manufacturers, carModels, carEngines }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         part_number: '',
@@ -21,6 +21,7 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
         category_id: '',
         manufacturer: '',
         compatible_car_models: [],
+        compatible_car_engines: [],
         image: null,
     });
 
@@ -29,6 +30,9 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
     const [groupedCarModels, setGroupedCarModels] = useState({});
     const [filteredCarModels, setFilteredCarModels] = useState([]);
     const [selectedModels, setSelectedModels] = useState([]);
+    const [availableEngines, setAvailableEngines] = useState([]);
+    const [selectedEngines, setSelectedEngines] = useState([]);
+    const [notification, setNotification] = useState(null);
 
     // Группировка моделей автомобилей по брендам
     useEffect(() => {
@@ -61,6 +65,36 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
         }
         setSelectedModels(newSelectedModels);
         setData('compatible_car_models', newSelectedModels);
+        
+        // Обновляем список доступных двигателей при изменении выбранных моделей
+        updateAvailableEngines(newSelectedModels);
+    };
+    
+    // Обновление списка доступных двигателей для выбранных моделей
+    const updateAvailableEngines = (selectedModelIds) => {
+        if (selectedModelIds.length === 0) {
+            setAvailableEngines([]);
+            return;
+        }
+        
+        // Фильтруем двигатели, которые соответствуют выбранным моделям
+        const engines = carEngines.filter(engine => 
+            selectedModelIds.includes(engine.model_id)
+        );
+        
+        setAvailableEngines(engines);
+    };
+    
+    // Обработка выбора/отмены выбора двигателя
+    const handleEngineToggle = (engineId) => {
+        let newSelectedEngines;
+        if (selectedEngines.includes(engineId)) {
+            newSelectedEngines = selectedEngines.filter(id => id !== engineId);
+        } else {
+            newSelectedEngines = [...selectedEngines, engineId];
+        }
+        setSelectedEngines(newSelectedEngines);
+        setData('compatible_car_engines', newSelectedEngines);
     };
 
     const handleChange = (e) => {
@@ -86,7 +120,7 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.spare-parts.store-inertia'), {
+        post(url('admin/spare-parts'), {
             onSuccess: () => {
                 // Перенаправление обрабатывается автоматически
             }
@@ -100,8 +134,23 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
         >
             <Head title="Добавление запчасти" />
 
+            {/* Отображение уведомления */}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
+
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    <div className="mb-4">
+                        <Link
+                            href={url('admin/spare-parts')}
+                            className="inline-flex items-center text-gray-600 hover:text-gray-900"
+                        >
+                            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            </svg>
+                            Назад к списку запчастей
+                        </Link>
+                    </div>
+
                     <AdminCard>
                         <AdminPageHeader 
                             title="Добавление новой запчасти" 
@@ -324,10 +373,67 @@ export default function Create({ auth, categories, manufacturers, carModels }) {
                                     )}
                                 </div>
                             </div>
+                            
+                            {/* Совместимые двигатели */}
+                            {selectedModels.length > 0 && (
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Совместимые двигатели</h3>
+                                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                        {availableEngines.length > 0 ? (
+                                            <>
+                                                <p className="text-sm text-gray-600 mb-3">
+                                                    Выберите двигатели, совместимые с данной запчастью:
+                                                </p>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {availableEngines.map((engine) => {
+                                                        const carModel = carModels.find(m => m.id === engine.model_id);
+                                                        const brandName = carModel && carModel.brand ? carModel.brand.name : '';
+                                                        const modelName = carModel ? carModel.name : '';
+                                                        
+                                                        return (
+                                                            <div 
+                                                                key={engine.id} 
+                                                                className={`p-2 rounded border cursor-pointer transition-colors ${
+                                                                    selectedEngines.includes(engine.id) 
+                                                                        ? 'bg-[#2a4075] text-white border-[#2a4075]' 
+                                                                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'
+                                                                }`}
+                                                                onClick={() => handleEngineToggle(engine.id)}
+                                                            >
+                                                                <div className="font-medium">{brandName} {modelName}</div>
+                                                                <div className="text-sm">
+                                                                    {engine.name} {engine.volume && `${engine.volume}л`} {engine.power && `${engine.power}л.с.`}
+                                                                </div>
+                                                                {engine.type && (
+                                                                    <div className="text-xs mt-1">
+                                                                        Тип: {engine.type}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                                
+                                                {selectedEngines.length > 0 && (
+                                                    <div className="mt-4 p-3 bg-green-50 rounded-md">
+                                                        <p className="font-medium text-green-700 mb-2">
+                                                            Выбрано двигателей: {selectedEngines.length}
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <div className="text-gray-500 text-center py-4">
+                                                Для выбранных моделей автомобилей не найдено доступных двигателей
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="mt-8 flex justify-end space-x-3">
                                 <SecondaryButton
-                                    href={route('admin.spare-parts.inertia')}
+                                    href={url('admin/spare-parts')}
                                     className="flex items-center"
                                 >
                                     Отмена

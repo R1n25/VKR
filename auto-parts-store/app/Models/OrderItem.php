@@ -14,6 +14,7 @@ class OrderItem extends Model
         'quantity',
         'price',
         'total',
+        'part_number',
     ];
 
     /**
@@ -30,6 +31,14 @@ class OrderItem extends Model
     public function sparePart(): BelongsTo
     {
         return $this->belongsTo(SparePart::class, 'spare_part_id');
+    }
+    
+    /**
+     * Алиас для получения запчасти с именем spare_part для совместимости с фронтендом
+     */
+    public function getSparePartAttribute()
+    {
+        return $this->sparePart()->first();
     }
     
     /**

@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Services\SparePartService;
+use App\Services\SparePartSearchService;
+use App\Services\SparePartCompatibilityService;
+use App\Services\AnalogService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
@@ -14,6 +18,26 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        // Регистрируем сервисы для работы с запчастями
+        $this->app->singleton(SparePartService::class, function ($app) {
+            return new SparePartService();
+        });
+        
+        $this->app->singleton(AnalogService::class, function ($app) {
+            return new AnalogService();
+        });
+        
+        $this->app->singleton(SparePartSearchService::class, function ($app) {
+            return new SparePartSearchService(
+                $app->make(SparePartService::class),
+                $app->make(AnalogService::class)
+            );
+        });
+        
+        $this->app->singleton(SparePartCompatibilityService::class, function ($app) {
+            return new SparePartCompatibilityService();
+        });
+        
         // Отключаем логирование запросов в продакшн
         if (!app()->isProduction()) {
             DB::listen(function ($query) {

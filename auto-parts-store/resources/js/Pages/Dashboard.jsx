@@ -13,37 +13,24 @@ export default function Dashboard({ auth }) {
             if (!auth.user) return;
             
             try {
-                console.log('Отправка запроса на получение заказов для пользователя:', auth.user.id);
-                const response = await axios.get('/api/orders', {
+                const response = await axios.get('/api/user/orders', {
                     params: { limit: 5 }
                 });
-                
-                // Добавляем отладочную информацию
-                console.log('API запрос:', '/api/orders?limit=5');
-                console.log('API ответ:', response);
-                console.log('API данные:', response.data);
-                console.log('API данные.data:', response.data.data);
-                console.log('API данные.success:', response.data.success);
-                console.log('API текущий пользователь:', auth.user);
                 
                 // Проверяем формат ответа
                 if (response.data && response.data.success) {
                     // Если есть данные в формате data
                     if (Array.isArray(response.data.data)) {
-                        console.log('Установка данных заказов из массива:', response.data.data);
                         setRecentOrders(response.data.data);
                     } else if (response.data.data && Array.isArray(response.data.data.data)) {
                         // Поддержка старого формата ответа, где данные были внутри data.data
-                        console.log('Установка данных заказов из вложенного массива:', response.data.data.data);
                         setRecentOrders(response.data.data.data);
                     } else {
                         // Если формат ответа некорректный, устанавливаем пустой массив
-                        console.log('Некорректный формат ответа, установка пустого массива');
                         setRecentOrders([]);
                     }
                 } else {
                     // Если ответ неуспешный, устанавливаем пустой массив
-                    console.log('Неуспешный ответ API, установка пустого массива');
                     setRecentOrders([]);
                 }
                 
@@ -120,28 +107,28 @@ export default function Dashboard({ auth }) {
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 <div className="bg-indigo-50 p-6 rounded-lg border border-indigo-100">
                                     <div className="text-indigo-800 font-medium mb-1">Заказы</div>
-                                    <Link href="/orders" className="text-xl font-bold text-indigo-700 hover:text-indigo-900">
+                                    <Link href={url('orders')} className="text-xl font-bold text-indigo-700 hover:text-indigo-900">
                                         Мои заказы
                                     </Link>
                                 </div>
                                 
                                 <div className="bg-emerald-50 p-6 rounded-lg border border-emerald-100">
                                     <div className="text-emerald-800 font-medium mb-1">Корзина</div>
-                                    <Link href="/cart" className="text-xl font-bold text-emerald-700 hover:text-emerald-900">
+                                    <Link href={url('cart')} className="text-xl font-bold text-emerald-700 hover:text-emerald-900">
                                         Перейти в корзину
                                     </Link>
                                 </div>
                                 
                                 <div className="bg-amber-50 p-6 rounded-lg border border-amber-100">
                                     <div className="text-amber-800 font-medium mb-1">Профиль</div>
-                                    <Link href="/profile" className="text-xl font-bold text-amber-700 hover:text-amber-900">
+                                    <Link href={url('profile')} className="text-xl font-bold text-amber-700 hover:text-amber-900">
                                         Настройки профиля
                                     </Link>
                                 </div>
                                 
                                 <div className="bg-green-50 p-6 rounded-lg border border-green-100">
                                     <div className="text-green-800 font-medium mb-1">Подбор запчастей</div>
-                                    <Link href={route('vin-request.index')} className="text-xl font-bold text-green-700 hover:text-green-900">
+                                    <Link href={url('vin-request')} className="text-xl font-bold text-green-700 hover:text-green-900">
                                         Подбор по VIN
                                     </Link>
                                 </div>
@@ -154,7 +141,7 @@ export default function Dashboard({ auth }) {
                         <div className="p-6 text-gray-900">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-semibold">Подбор запчастей по VIN-коду</h3>
-                                <Link href={route('vin-request.user')} className="text-green-600 hover:text-green-800 text-sm font-medium">
+                                <Link href={url('vin-request/user')} className="text-green-600 hover:text-green-800 text-sm font-medium">
                                     Мои VIN-запросы
                                 </Link>
                             </div>
@@ -186,7 +173,7 @@ export default function Dashboard({ auth }) {
                                         </li>
                                     </ul>
                                     <Link
-                                        href={route('vin-request.index')}
+                                        href={url('vin-request')}
                                         className="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 active:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                     >
                                         Создать запрос
@@ -205,7 +192,7 @@ export default function Dashboard({ auth }) {
                                             VIN-код состоит из 17 символов и находится в техпаспорте или на кузове автомобиля
                                         </p>
                                         <Link
-                                            href={route('vin-request.index')}
+                                            href={url('vin-request')}
                                             className="inline-flex items-center text-green-600 hover:text-green-800 font-medium"
                                         >
                                             Подробнее
@@ -224,7 +211,7 @@ export default function Dashboard({ auth }) {
                         <div className="p-6 text-gray-900">
                             <div className="flex justify-between items-center mb-6">
                                 <h3 className="text-xl font-semibold">Последние заказы</h3>
-                                <Link href="/orders" className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                                <Link href={url('orders')} className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
                                     Все заказы
                                 </Link>
                             </div>
@@ -281,47 +268,22 @@ export default function Dashboard({ auth }) {
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                         {formatDate(order.created_at)}
                                                     </td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">
-                                                        {order.order_items && order.order_items.length > 0 ? (
-                                                            <div className="max-h-24 overflow-y-auto">
-                                                                {order.order_items.map((item, idx) => (
-                                                                    <div key={idx} className="mb-2 last:mb-0">
-                                                                        <div className="font-medium">{item.part_name || (item.spare_part && item.spare_part.name)}</div>
-                                                                        <div className="text-xs text-gray-400">
-                                                                            Артикул: {item.part_number || (item.spare_part && item.spare_part.part_number)}
-                                                                        </div>
-                                                                        {(item.spare_part && item.spare_part.brand) && (
-                                                                            <div className="text-xs text-gray-400">
-                                                                                Производитель: {item.spare_part.brand}
-                                                                            </div>
-                                                                        )}
-                                                                        <div className="text-xs">
-                                                                            {item.quantity} x {item.price ? `${Number(item.price).toFixed(2)} руб.` : ''}
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-gray-400">Нет данных</span>
-                                                        )}
-                                                    </td>
                                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {typeof order.total === 'number' 
-                                                            ? `${order.total.toFixed(2)} руб.` 
-                                                            : order.total_price 
-                                                                ? `${Number(order.total_price).toFixed(2)} руб.` 
-                                                                : `${order.total || 0} руб.`}
+                                                        {order.orderItems && order.orderItems.length > 0 ? 
+                                                            `${order.orderItems.length} ${order.orderItems.length === 1 ? 'товар' : 
+                                                            (order.orderItems.length < 5 ? 'товара' : 'товаров')}` : 
+                                                            'Нет товаров'}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {order.total_price ? `${order.total_price} ₽` : 'Не указана'}
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(order.status)}`}>
                                                             {getStatusText(order.status)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <Link
-                                                            href={`/orders/${order.id}`}
-                                                            className="text-indigo-600 hover:text-indigo-900"
-                                                        >
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        <Link href={url(`orders/${order.id}`)} className="text-indigo-600 hover:text-indigo-900">
                                                             Подробнее
                                                         </Link>
                                                     </td>
@@ -341,7 +303,7 @@ export default function Dashboard({ auth }) {
                             
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <Link
-                                    href="/brands"
+                                    href={url('brands')}
                                     className="block p-6 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition"
                                 >
                                     <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -353,7 +315,7 @@ export default function Dashboard({ auth }) {
                                 </Link>
                                 
                                 <Link
-                                    href="/categories"
+                                    href={url('categories')}
                                     className="block p-6 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition"
                                 >
                                     <h4 className="text-lg font-medium text-gray-900 mb-2">
@@ -365,7 +327,7 @@ export default function Dashboard({ auth }) {
                                 </Link>
 
                                 <Link
-                                    href="/search"
+                                    href={url('search')}
                                     className="block p-6 bg-gray-50 border border-gray-200 rounded-lg hover:shadow-md transition"
                                 >
                                     <h4 className="text-lg font-medium text-gray-900 mb-2">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -14,6 +14,7 @@ import AdminPagination from '@/Components/AdminPagination';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 import AdminTable from '@/Components/AdminTable';
+import { formatDate } from '@/utils';
 
 export default function Index({ auth, orders, filters, ordersCount }) {
     // Отладочная информация
@@ -23,18 +24,21 @@ export default function Index({ auth, orders, filters, ordersCount }) {
     // Константа для админ-панели
     const isAdmin = true;
 
-    const [searchFilters, setSearchFilters] = useState({
+    // Форма фильтрации
+    const { data, setData, get, processing } = useForm({
         order_number: filters?.order_number || '',
         customer_name: filters?.customer_name || '',
         status: filters?.status || '',
         date_from: filters?.date_from || '',
         date_to: filters?.date_to || '',
+        sort: filters?.sort || 'created_at',
+        direction: filters?.direction || 'desc',
     });
     
     // Функция для обработки изменений в форме фильтров
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
-        setSearchFilters(prev => ({
+        setData(prev => ({
             ...prev,
             [name]: value
         }));
@@ -43,28 +47,22 @@ export default function Index({ auth, orders, filters, ordersCount }) {
     // Функция для отправки формы фильтров
     const handleSearch = (e) => {
         e.preventDefault();
-        const queryParams = new URLSearchParams();
-        
-        Object.entries(searchFilters).forEach(([key, value]) => {
-            if (value) {
-                queryParams.append(key, value);
-            }
-        });
-        
-        window.location.href = `${route('admin.orders.index')}?${queryParams.toString()}`;
+        applyFilters();
     };
 
     // Функция для сброса фильтров
     const handleResetFilters = () => {
-        setSearchFilters({
+        setData({
             order_number: '',
             customer_name: '',
             status: '',
             date_from: '',
             date_to: '',
+            sort: 'created_at',
+            direction: 'desc',
         });
         
-        window.location.href = route('admin.orders.index');
+        applyFilters();
     };
 
     // Функция для получения текстового представления статуса заказа
@@ -111,14 +109,28 @@ export default function Index({ auth, orders, filters, ordersCount }) {
         }
     };
 
-    // Функция для форматирования даты
-    const formatDate = (dateString) => {
-        try {
-            const date = new Date(dateString);
-            return format(date, 'dd.MM.yyyy, HH:mm', { locale: ru });
-        } catch (error) {
-            return dateString || 'Нет данных';
-        }
+    // Функция для получения иконки сортировки
+    const getSortIcon = (field) => {
+        if (data.sort !== field) return null;
+        return data.direction === 'asc' ? '↑' : '↓';
+    };
+
+    // Применение фильтров
+    const applyFilters = () => {
+        // Создаем объект URLSearchParams для формирования строки запроса
+        const queryParams = new URLSearchParams();
+        
+        // Добавляем параметры фильтрации
+        if (data.order_number) queryParams.append('order_number', data.order_number);
+        if (data.customer_name) queryParams.append('customer_name', data.customer_name);
+        if (data.status) queryParams.append('status', data.status);
+        if (data.date_from) queryParams.append('date_from', data.date_from);
+        if (data.date_to) queryParams.append('date_to', data.date_to);
+        if (data.sort) queryParams.append('sort', data.sort);
+        if (data.direction) queryParams.append('direction', data.direction);
+        
+        // Перенаправляем на страницу с примененными фильтрами
+        window.location.href = url('admin/orders') + '?' + queryParams.toString();
     };
 
     return (
@@ -151,7 +163,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                         <AdminInput
                                             type="text"
                                             name="order_number"
-                                            value={searchFilters.order_number}
+                                            value={data.order_number}
                                             handleChange={handleFilterChange}
                                             placeholder="Введите номер"
                                         />
@@ -161,7 +173,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                         <AdminInput
                                             type="text"
                                             name="customer_name"
-                                            value={searchFilters.customer_name}
+                                            value={data.customer_name}
                                             handleChange={handleFilterChange}
                                             placeholder="Введите имя"
                                         />
@@ -170,7 +182,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                     <AdminFormGroup label="Статус" name="status">
                                         <AdminSelect
                                             name="status"
-                                            value={searchFilters.status}
+                                            value={data.status}
                                             handleChange={handleFilterChange}
                                         >
                                             <option value="">Все статусы</option>
@@ -188,7 +200,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                         <AdminInput
                                             type="date"
                                             name="date_from"
-                                            value={searchFilters.date_from}
+                                            value={data.date_from}
                                             handleChange={handleFilterChange}
                                         />
                                     </AdminFormGroup>
@@ -197,7 +209,7 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                         <AdminInput
                                             type="date"
                                             name="date_to"
-                                            value={searchFilters.date_to}
+                                            value={data.date_to}
                                             handleChange={handleFilterChange}
                                         />
                                     </AdminFormGroup>
@@ -227,12 +239,12 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                         {/* Список заказов */}
                         <AdminTable
                             headers={[
-                                '№',
-                                'Дата',
-                                'Клиент',
-                                'Сумма',
-                                'Статус',
-                                'Действия'
+                                { content: <button onClick={() => handleFilterChange({ target: { name: 'sort', value: 'id' } })} className="flex items-center">ID {getSortIcon('id')}</button> },
+                                { content: <button onClick={() => handleFilterChange({ target: { name: 'sort', value: 'created_at' } })} className="flex items-center">Дата {getSortIcon('created_at')}</button> },
+                                { content: 'Клиент' },
+                                { content: <button onClick={() => handleFilterChange({ target: { name: 'sort', value: 'total_amount' } })} className="flex items-center">Сумма {getSortIcon('total_amount')}</button> },
+                                { content: <button onClick={() => handleFilterChange({ target: { name: 'sort', value: 'status' } })} className="flex items-center">Статус {getSortIcon('status')}</button> },
+                                { content: 'Действия' }
                             ]}
                             data={orders.data}
                             renderRow={(order) => (
@@ -247,13 +259,13 @@ export default function Index({ auth, orders, filters, ordersCount }) {
                                         {order.user ? order.user.name : (order.shipping_name || order.customer_name || 'Н/Д')}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        {order.total || order.total_amount || 0} ₽
+                                        {order.total_amount} ₽
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <OrderStatusBadge status={order.status} />
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <Link href={route('admin.orders.show', order.id)} className="btn-primary text-xs py-1 px-3">
+                                        <Link href={url(`admin/orders/${order.id}`)} className="btn-primary text-xs py-1 px-3">
                                             Просмотр
                                         </Link>
                                     </td>

@@ -23,7 +23,7 @@ export default function FindByArticle({ auth, articleNumber, parts, analogs, isA
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        get(route('parts.article-search'), {
+        get(url('parts/article-search'), {
             preserveState: true,
         });
     };
@@ -109,12 +109,12 @@ export default function FindByArticle({ auth, articleNumber, parts, analogs, isA
                                                     {parts.map((part) => (
                                                         <tr key={part.id}>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{part.name}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{part.article_number}</td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{part.part_number}</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{part.manufacturer}</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{part.price?.toFixed(2) || 0} ₽</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                                 <a 
-                                                                    href={route('parts.show', part.id)} 
+                                                                    href={url('parts/show', { id: part.id })} 
                                                                     className="text-indigo-600 hover:text-indigo-900"
                                                                 >
                                                                     Подробнее
@@ -147,12 +147,12 @@ export default function FindByArticle({ auth, articleNumber, parts, analogs, isA
                                                     {analogs.map((analog) => (
                                                         <tr key={analog.id}>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{analog.name}</td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{analog.article_number}</td>
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{analog.part_number}</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{analog.manufacturer}</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{analog.price?.toFixed(2) || 0} ₽</td>
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                                 <a 
-                                                                    href={route('parts.show', analog.id)} 
+                                                                    href={url('parts/show', { id: analog.id })} 
                                                                     className="text-indigo-600 hover:text-indigo-900"
                                                                 >
                                                                     Подробнее

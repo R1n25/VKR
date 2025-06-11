@@ -1,68 +1,89 @@
-import React, { useState, useEffect } from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import React, { useState } from 'react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import Checkbox from '@/Components/Checkbox';
+import AdminCard from '@/Components/AdminCard';
+import AdminPageHeader from '@/Components/AdminPageHeader';
+import AdminFormGroup from '@/Components/AdminFormGroup';
+import AdminInput from '@/Components/AdminInput';
+import AdminSelect from '@/Components/AdminSelect';
+import AdminTextarea from '@/Components/AdminTextarea';
+import PrimaryButton from '@/Components/PrimaryButton';
+import AdminAlert from '@/Components/AdminAlert';
 
 export default function Edit({ auth, carModel, brands }) {
-    const [preview, setPreview] = useState(carModel.image_url ? `/storage/${carModel.image_url}` : null);
+    const [notification, setNotification] = useState(null);
+    const [previewImage, setPreviewImage] = useState(carModel.image ? `/storage/${carModel.image}` : null);
     
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, progress } = useForm({
         name: carModel.name || '',
         brand_id: carModel.brand_id || '',
         year_start: carModel.year_start || '',
         year_end: carModel.year_end || '',
         generation: carModel.generation || '',
         body_type: carModel.body_type || '',
-        engine_type: carModel.engine_type || '',
-        engine_volume: carModel.engine_volume || '',
-        transmission_type: carModel.transmission_type || '',
-        drive_type: carModel.drive_type || '',
-        is_popular: carModel.is_popular || false,
+        is_popular: carModel.is_popular ? '1' : '0',
         description: carModel.description || '',
         image: null,
-        _method: 'PUT',
+        _method: 'PUT'
     });
-    
-    const handleChange = (e) => {
-        const { name, value, type, checked, files } = e.target;
-        
-        if (type === 'file') {
-            const file = files[0];
-            setData(name, file);
-            
-            // Создаем предпросмотр изображения
-            if (file) {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    setPreview(reader.result);
-                };
-                reader.readAsDataURL(file);
-            }
-        } else if (type === 'checkbox') {
-            setData(name, checked);
-        } else {
-            setData(name, value);
-        }
-    };
     
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('admin.car-models.update', carModel.id), {
-            forceFormData: true,
+        
+        post(url(`admin/car-models/${carModel.id}`), {
+            onSuccess: () => {
+                setNotification({
+                    type: 'success',
+                    message: 'Модель успешно обновлена'
+                });
+                
+                // Скрыть уведомление через 3 секунды
+                setTimeout(() => setNotification(null), 3000);
+            },
+            onError: (errors) => {
+                setNotification({
+                    type: 'error',
+                    message: 'Ошибка при обновлении модели'
+                });
+                
+                // Скрыть уведомление через 3 секунды
+                setTimeout(() => setNotification(null), 3000);
+                
+                console.error('Form errors:', errors);
+            }
         });
     };
     
     const handleDeleteImage = () => {
         if (confirm('Вы уверены, что хотите удалить изображение?')) {
-            post(route('admin.car-models.delete-image', carModel.id), {
-                preserveScroll: true,
+            post(url(`admin/car-models/${carModel.id}/delete-image`), {
                 onSuccess: () => {
-                    setPreview(null);
+                    setPreviewImage(null);
+                    setNotification({
+                        type: 'success',
+                        message: 'Изображение успешно удалено'
+                    });
+                    setTimeout(() => setNotification(null), 3000);
+                },
+                onError: () => {
+                    setNotification({
+                        type: 'error',
+                        message: 'Ошибка при удалении изображения'
+                    });
+                    setTimeout(() => setNotification(null), 3000);
                 }
             });
+        }
+    };
+    
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        setData('image', file);
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => setPreviewImage(e.target.result);
+            reader.readAsDataURL(file);
         }
     };
     
@@ -72,255 +93,191 @@ export default function Edit({ auth, carModel, brands }) {
             header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Редактирование модели автомобиля</h2>}
         >
             <Head title="Редактирование модели автомобиля" />
-
+            
+            {/* Отображение уведомления */}
+            {notification && <AdminAlert type={notification.type} message={notification.message} onClose={() => setNotification(null)} />}
+            
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                        <div className="p-6 text-gray-900">
-                            <form onSubmit={handleSubmit}>
+                    <AdminCard>
+                        <AdminPageHeader 
+                            title="Редактирование модели автомобиля" 
+                            subtitle={`ID: ${carModel.id}`} 
+                        />
+                        
+                        <form onSubmit={handleSubmit}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Основная информация */}
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Основная информация</h3>
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Основная информация</h3>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <InputLabel htmlFor="name" value="Название модели *" />
-                                            <TextInput
-                                                id="name"
-                                                type="text"
-                                                name="name"
-                                                value={data.name}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                                required
-                                            />
-                                            <InputError message={errors.name} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="brand_id" value="Бренд *" />
-                                            <select
-                                                id="brand_id"
-                                                name="brand_id"
-                                                value={data.brand_id}
-                                                className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                                onChange={handleChange}
-                                                required
-                                            >
-                                                <option value="">Выберите бренд</option>
-                                                {brands.map(brand => (
-                                                    <option key={brand.id} value={brand.id}>
-                                                        {brand.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <InputError message={errors.brand_id} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="year_start" value="Год начала выпуска" />
-                                            <TextInput
-                                                id="year_start"
+                                    <AdminFormGroup label="Название" name="name" error={errors.name}>
+                                        <AdminInput
+                                            type="text"
+                                            name="name"
+                                            value={data.name}
+                                            onChange={(e) => setData('name', e.target.value)}
+                                            placeholder="Введите название модели"
+                                        />
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Бренд" name="brand_id" error={errors.brand_id}>
+                                        <AdminSelect
+                                            name="brand_id"
+                                            value={data.brand_id}
+                                            onChange={(e) => setData('brand_id', e.target.value)}
+                                        >
+                                            <option value="">Выберите бренд</option>
+                                            {brands.map((brand) => (
+                                                <option key={brand.id} value={brand.id}>
+                                                    {brand.name}
+                                                </option>
+                                            ))}
+                                        </AdminSelect>
+                                    </AdminFormGroup>
+                                    
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <AdminFormGroup label="Год начала выпуска" name="year_start" error={errors.year_start}>
+                                            <AdminInput
                                                 type="number"
                                                 name="year_start"
                                                 value={data.year_start}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
+                                                onChange={(e) => setData('year_start', e.target.value)}
+                                                placeholder="Например: 2010"
                                                 min="1900"
-                                                max={new Date().getFullYear() + 5}
+                                                max={new Date().getFullYear()}
                                             />
-                                            <InputError message={errors.year_start} className="mt-2" />
-                                        </div>
+                                        </AdminFormGroup>
                                         
-                                        <div>
-                                            <InputLabel htmlFor="year_end" value="Год окончания выпуска" />
-                                            <TextInput
-                                                id="year_end"
+                                        <AdminFormGroup label="Год окончания выпуска" name="year_end" error={errors.year_end}>
+                                            <AdminInput
                                                 type="number"
                                                 name="year_end"
                                                 value={data.year_end}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
+                                                onChange={(e) => setData('year_end', e.target.value)}
+                                                placeholder="Оставьте пустым, если выпускается"
                                                 min="1900"
-                                                max={new Date().getFullYear() + 5}
+                                                max={new Date().getFullYear() + 10}
                                             />
-                                            <InputError message={errors.year_end} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="generation" value="Поколение" />
-                                            <TextInput
-                                                id="generation"
-                                                type="text"
-                                                name="generation"
-                                                value={data.generation}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.generation} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="body_type" value="Тип кузова" />
-                                            <TextInput
-                                                id="body_type"
-                                                type="text"
-                                                name="body_type"
-                                                value={data.body_type}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.body_type} className="mt-2" />
-                                        </div>
+                                        </AdminFormGroup>
                                     </div>
-                                </div>
-                                
-                                {/* Техническая информация */}
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Техническая информация</h3>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div>
-                                            <InputLabel htmlFor="engine_type" value="Тип двигателя" />
-                                            <TextInput
-                                                id="engine_type"
-                                                type="text"
-                                                name="engine_type"
-                                                value={data.engine_type}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.engine_type} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="engine_volume" value="Объем двигателя" />
-                                            <TextInput
-                                                id="engine_volume"
-                                                type="text"
-                                                name="engine_volume"
-                                                value={data.engine_volume}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.engine_volume} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="transmission_type" value="Тип коробки передач" />
-                                            <TextInput
-                                                id="transmission_type"
-                                                type="text"
-                                                name="transmission_type"
-                                                value={data.transmission_type}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.transmission_type} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="drive_type" value="Тип привода" />
-                                            <TextInput
-                                                id="drive_type"
-                                                type="text"
-                                                name="drive_type"
-                                                value={data.drive_type}
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                            />
-                                            <InputError message={errors.drive_type} className="mt-2" />
-                                        </div>
-                                    </div>
+                                    <AdminFormGroup label="Поколение" name="generation" error={errors.generation}>
+                                        <AdminInput
+                                            type="text"
+                                            name="generation"
+                                            value={data.generation}
+                                            onChange={(e) => setData('generation', e.target.value)}
+                                            placeholder="Например: III (F30/F31/F34)"
+                                        />
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Тип кузова" name="body_type" error={errors.body_type}>
+                                        <AdminSelect
+                                            name="body_type"
+                                            value={data.body_type}
+                                            onChange={(e) => setData('body_type', e.target.value)}
+                                        >
+                                            <option value="">Выберите тип кузова</option>
+                                            <option value="sedan">Седан</option>
+                                            <option value="hatchback">Хэтчбек</option>
+                                            <option value="universal">Универсал</option>
+                                            <option value="suv">Внедорожник</option>
+                                            <option value="crossover">Кроссовер</option>
+                                            <option value="coupe">Купе</option>
+                                            <option value="cabriolet">Кабриолет</option>
+                                            <option value="pickup">Пикап</option>
+                                            <option value="minivan">Минивэн</option>
+                                        </AdminSelect>
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Популярная модель" name="is_popular" error={errors.is_popular}>
+                                        <AdminSelect
+                                            name="is_popular"
+                                            value={data.is_popular}
+                                            onChange={(e) => setData('is_popular', e.target.value)}
+                                        >
+                                            <option value="0">Нет</option>
+                                            <option value="1">Да</option>
+                                        </AdminSelect>
+                                    </AdminFormGroup>
                                 </div>
                                 
                                 {/* Дополнительная информация */}
-                                <div className="mb-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Дополнительная информация</h3>
+                                <div>
+                                    <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Дополнительная информация</h3>
                                     
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2">
-                                            <InputLabel htmlFor="description" value="Описание" />
-                                            <textarea
-                                                id="description"
-                                                name="description"
-                                                value={data.description}
-                                                className="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                                onChange={handleChange}
-                                                rows={4}
-                                            />
-                                            <InputError message={errors.description} className="mt-2" />
-                                        </div>
+                                    <AdminFormGroup label="Описание" name="description" error={errors.description}>
+                                        <AdminTextarea
+                                            name="description"
+                                            value={data.description}
+                                            onChange={(e) => setData('description', e.target.value)}
+                                            placeholder="Введите описание модели"
+                                            rows={5}
+                                        />
+                                    </AdminFormGroup>
+                                    
+                                    <AdminFormGroup label="Изображение" name="image" error={errors.image}>
+                                        <AdminInput
+                                            type="file"
+                                            name="image"
+                                            onChange={handleImageChange}
+                                            accept="image/*"
+                                        />
                                         
-                                        <div>
-                                            <div className="flex items-center">
-                                                <Checkbox
-                                                    id="is_popular"
-                                                    name="is_popular"
-                                                    checked={data.is_popular}
-                                                    onChange={handleChange}
-                                                />
-                                                <InputLabel htmlFor="is_popular" value="Популярная модель" className="ml-2" />
-                                            </div>
-                                            <InputError message={errors.is_popular} className="mt-2" />
-                                        </div>
-                                        
-                                        <div>
-                                            <InputLabel htmlFor="image" value="Изображение модели" />
-                                            <input
-                                                id="image"
-                                                type="file"
-                                                name="image"
-                                                className="mt-1 block w-full"
-                                                onChange={handleChange}
-                                                accept="image/*"
-                                            />
-                                            <InputError message={errors.image} className="mt-2" />
-                                            
-                                            {preview && (
-                                                <div className="mt-4">
-                                                    <p className="text-sm text-gray-600 mb-2">Изображение модели:</p>
-                                                    <div className="relative">
-                                                        <img
-                                                            src={preview}
-                                                            alt="Изображение модели"
-                                                            className="max-w-xs h-auto rounded-md"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full"
-                                                            onClick={handleDeleteImage}
-                                                        >
-                                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                                            </svg>
-                                                        </button>
-                                                    </div>
+                                        {progress && (
+                                            <div className="mt-2">
+                                                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                                                    <div
+                                                        className="bg-blue-600 h-2.5 rounded-full"
+                                                        style={{ width: `${progress.percentage}%` }}
+                                                    ></div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                                <p className="text-xs text-gray-500 mt-1">
+                                                    {progress.percentage}% загружено
+                                                </p>
+                                            </div>
+                                        )}
+                                        
+                                        {previewImage && (
+                                            <div className="mt-4">
+                                                <div className="relative inline-block">
+                                                    <img
+                                                        src={previewImage}
+                                                        alt="Предпросмотр"
+                                                        className="max-w-xs rounded-lg shadow-md"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleDeleteImage}
+                                                        className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 hover:bg-red-700"
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </AdminFormGroup>
                                 </div>
+                            </div>
+                            
+                            {/* Кнопки действий */}
+                            <div className="mt-6 flex flex-wrap gap-2 pt-6 border-t border-gray-200">
+                                <PrimaryButton type="submit" disabled={processing}>
+                                    {processing ? 'Сохранение...' : 'Сохранить изменения'}
+                                </PrimaryButton>
                                 
-                                {/* Кнопки действий */}
-                                <div className="flex justify-end space-x-3">
-                                    <Link
-                                        href={route('admin.car-models.index')}
-                                        className="px-4 py-2 bg-gray-200 rounded-md text-gray-700 hover:bg-gray-300"
-                                    >
-                                        Отмена
-                                    </Link>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 bg-indigo-600 rounded-md text-white hover:bg-indigo-700"
-                                        disabled={processing}
-                                    >
-                                        {processing ? 'Сохранение...' : 'Сохранить изменения'}
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
+                                <Link
+                                    href={url('admin/car-models')}
+                                    className="btn-secondary"
+                                >
+                                    Отмена
+                                </Link>
+                            </div>
+                        </form>
+                    </AdminCard>
                 </div>
             </div>
         </AdminLayout>
