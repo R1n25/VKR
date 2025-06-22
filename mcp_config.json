@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": [
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "interactive-feedback": {
+      "command": "py",
+      "args": [
+        "-3.12",
+        "C:/Users/User/Desktop/VKR/interactive-feedback-mcp/server.py"
+      ],
+      "timeout": 600,
+      "autoApprove": [
+        "interactive_feedback"
+      ]
+    }
+  }
+} 

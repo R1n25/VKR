@@ -1,0 +1,6 @@
+@echo off
+echo Запуск Artisan команды для добавления категорий запчастей...
+php artisan app:add-part-categories
+echo.
+echo Нажмите любую клавишу для выхода...
+pause > nul 
