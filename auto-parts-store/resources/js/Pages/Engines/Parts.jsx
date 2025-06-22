@@ -437,7 +437,7 @@ export default function EngineParts({ auth, engineId }) {
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 className="font-semibold text-xl text-white leading-tight">
                     {loading ? 'Загрузка...' : engine ? `Запчасти для ${engine.brand_name} ${engine.model_name}` : 'Категории запчастей'}
                 </h2>
             }

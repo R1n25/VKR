@@ -33,7 +33,7 @@ export default function FindByArticle({ auth, articleNumber, parts, analogs, isA
     return (
         <Layout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Поиск по артикулу</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Поиск по артикулу</h2>}
         >
             <Head title="Поиск запчастей по артикулу" />
 

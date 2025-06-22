@@ -81,6 +81,16 @@ window.route = function(name, params = {}) {
         'cart': '/cart',
         'vin-request.index': '/vin-request',
         'vin-request.show': '/vin-request/{id}',
+        'parts.show': '/parts/{id}',
+        'spare-parts.show': '/spare-parts/{id}',
+        'suggestions.store-analog': '/spare-parts/{sparePart}/suggest-analog',
+        'suggestions.store-analog-by-id': '/parts/{id}/suggest-analog',
+        'suggestions.create-analog': '/spare-parts/{sparePart}/suggest-analog',
+        'suggestions.create-analog-by-id': '/parts/{id}/suggest-analog',
+        'suggestions.store-compatibility': '/spare-parts/{sparePart}/suggest-compatibility',
+        'suggestions.store-compatibility-by-id': '/parts/{id}/suggest-compatibility',
+        'suggestions.create-compatibility': '/spare-parts/{sparePart}/suggest-compatibility',
+        'suggestions.create-compatibility-by-id': '/parts/{id}/suggest-compatibility',
         // Добавьте другие маршруты по мере необходимости
     };
     
@@ -93,8 +103,20 @@ window.route = function(name, params = {}) {
     // Получаем шаблон URL из карты маршрутов
     let url = routeMap[name];
     
+    // Если params - это не объект, а примитивное значение (например, число или строка),
+    // то предполагаем, что это идентификатор и используем его для замены первого плейсхолдера
+    if (params !== null && typeof params !== 'undefined' && typeof params !== 'object') {
+        // Находим первый плейсхолдер в URL и заменяем его
+        const placeholderMatch = url.match(/\{([^}]+)\}/);
+        if (placeholderMatch) {
+            const placeholder = placeholderMatch[0];
+            url = url.replace(placeholder, params);
+            return url;
+        }
+    }
+    
     // Заменяем плейсхолдеры вида {параметр} на значения из params
-    if (params) {
+    if (params && typeof params === 'object') {
         for (const key in params) {
             const placeholder = `{${key}}`;
             if (url.includes(placeholder)) {
@@ -146,11 +168,34 @@ const AppWrapper = ({ children, ...props }) => {
     );
 };
 
+// Хранилище для корневых элементов React
+window.__REACT_ROOTS__ = window.__REACT_ROOTS__ || {};
+
 createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) => resolvePageComponent(`./Pages/${name}.jsx`, import.meta.glob('./Pages/**/*.jsx')),
     setup({ el, App, props }) {
+        // Проверяем, существует ли уже корневой элемент для этого контейнера
+        const rootId = el.id || 'app';
+        
+        // Если корневой элемент уже существует, используем его
+        if (window.__REACT_ROOTS__[rootId]) {
+            console.log(`Используем существующий корневой элемент для #${rootId}`);
+            const existingRoot = window.__REACT_ROOTS__[rootId];
+            
+            // Рендерим приложение в существующий корневой элемент
+            existingRoot.render(
+                <AppWrapper {...props}>
+                    <App {...props} />
+                </AppWrapper>
+            );
+            return;
+        }
+        
+        // Если корневого элемента нет, создаем новый
+        console.log(`Создаем новый корневой элемент для #${rootId}`);
         const root = createRoot(el);
+        window.__REACT_ROOTS__[rootId] = root;
         
         // Отключаем строгий режим в продакшене для улучшения производительности
         const isProd = import.meta.env.PROD;

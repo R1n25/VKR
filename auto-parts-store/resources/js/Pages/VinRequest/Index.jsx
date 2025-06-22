@@ -15,9 +15,97 @@ export default function VinRequestIndex({ auth }) {
         phone: '',
         parts_description: '',
     });
+    
+    // Состояние для ошибок клиентской валидации
+    const [validationErrors, setValidationErrors] = useState({
+        phone: '',
+    });
+    
+    // Функция для валидации телефонного номера в российском формате
+    const validatePhone = (phoneNumber) => {
+        // Если телефон не обязателен и пустой, пропускаем валидацию
+        if (!phoneNumber) return { isValid: true, error: '' };
+        
+        // Удаляем все нецифровые символы для проверки
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Проверка основных форматов российских номеров
+        if (/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits)) {
+            return { isValid: true, error: '' };
+        } else if (digits.length !== 11) {
+            return { 
+                isValid: false, 
+                error: 'Номер телефона должен содержать 11 цифр'
+            };
+        } else if (!/^[78]/.test(digits)) {
+            return { 
+                isValid: false, 
+                error: 'Номер должен начинаться с 7 или 8'
+            };
+        } else {
+            return { 
+                isValid: false, 
+                error: 'Неверный формат номера телефона'
+            };
+        }
+    };
+    
+    // Форматирование телефонного номера
+    const formatPhone = (phoneNumber) => {
+        // Удаляем все нецифровые символы
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Если номер пустой, возвращаем пустую строку
+        if (!digits) return '';
+        
+        // Форматируем номер в формате +7 (XXX) XXX-XX-XX
+        if (digits.length <= 1) {
+            return digits;
+        } else if (digits.length <= 4) {
+            return `+7 (${digits.substring(1)}`;
+        } else if (digits.length <= 7) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4)}`;
+        } else if (digits.length <= 9) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}`;
+        } else {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7, 9)}-${digits.substring(9, 11)}`;
+        }
+    };
+    
+    // Обработчик изменения полей формы с добавлением валидации телефона
+    const handleInputChange = (field, value) => {
+        if (field === 'phone') {
+            // Форматируем номер и валидируем его
+            const formattedValue = formatPhone(value);
+            const { isValid, error } = validatePhone(value);
+            
+            // Устанавливаем ошибку только если поле не пустое и невалидно
+            if (value && !isValid) {
+                setValidationErrors(prev => ({ ...prev, phone: error }));
+            } else {
+                setValidationErrors(prev => ({ ...prev, phone: '' }));
+            }
+            
+            // Обновляем значение в форме
+            setData(field, formattedValue);
+        } else {
+            // Для других полей - стандартная обработка
+            setData(field, value);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Проверяем валидность телефона перед отправкой
+        if (data.phone) {
+            const { isValid, error } = validatePhone(data.phone);
+            if (!isValid) {
+                setValidationErrors(prev => ({ ...prev, phone: error }));
+                return;
+            }
+        }
+        
         post(url('vin-request/store'), { onSuccess: () => reset() });
     };
 
@@ -50,7 +138,7 @@ export default function VinRequestIndex({ auth }) {
                                         name="vin_code"
                                         value={data.vin_code}
                                         className="mt-1 block w-full"
-                                        onChange={(e) => setData('vin_code', e.target.value)}
+                                        onChange={(e) => handleInputChange('vin_code', e.target.value)}
                                         required
                                         maxLength={17}
                                         minLength={17}
@@ -70,7 +158,7 @@ export default function VinRequestIndex({ auth }) {
                                             name="name"
                                             value={data.name}
                                             className="mt-1 block w-full"
-                                            onChange={(e) => setData('name', e.target.value)}
+                                            onChange={(e) => handleInputChange('name', e.target.value)}
                                             required
                                         />
                                         <InputError message={errors.name} className="mt-2" />
@@ -84,7 +172,7 @@ export default function VinRequestIndex({ auth }) {
                                             name="email"
                                             value={data.email}
                                             className="mt-1 block w-full"
-                                            onChange={(e) => setData('email', e.target.value)}
+                                            onChange={(e) => handleInputChange('email', e.target.value)}
                                             required
                                         />
                                         <InputError message={errors.email} className="mt-2" />
@@ -98,9 +186,13 @@ export default function VinRequestIndex({ auth }) {
                                         type="tel"
                                         name="phone"
                                         value={data.phone}
-                                        className="mt-1 block w-full"
-                                        onChange={(e) => setData('phone', e.target.value)}
+                                        className={`mt-1 block w-full ${validationErrors.phone ? 'border-red-500' : ''}`}
+                                        onChange={(e) => handleInputChange('phone', e.target.value)}
+                                        placeholder="+7 (XXX) XXX-XX-XX"
                                     />
+                                    {validationErrors.phone && (
+                                        <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                                    )}
                                     <InputError message={errors.phone} className="mt-2" />
                                 </div>
 
@@ -111,7 +203,7 @@ export default function VinRequestIndex({ auth }) {
                                         name="parts_description"
                                         value={data.parts_description}
                                         className="mt-1 block w-full"
-                                        onChange={(e) => setData('parts_description', e.target.value)}
+                                        onChange={(e) => handleInputChange('parts_description', e.target.value)}
                                         required
                                         rows={5}
                                     />

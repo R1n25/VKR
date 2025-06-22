@@ -24,7 +24,7 @@ export default function Dashboard({ auth, stats, recentSuggestions, recentOrders
     return (
         <AdminLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Панель администратора</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Панель администратора</h2>}
         >
             <Head title="Панель администратора" />
 

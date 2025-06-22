@@ -463,6 +463,12 @@ class SparePartService
      */
     public function getPartById(mixed $id, bool $isAdmin = false, ?float $markupPercent = null)
     {
+        // Проверяем, что ID является числом или может быть преобразован в число
+        if (!is_numeric($id)) {
+            \Log::warning("Попытка получить запчасть с некорректным ID: {$id}");
+            return null;
+        }
+        
         // Преобразуем $id в целое число
         $id = (int) $id;
         return $this->getSparePartById($id, $isAdmin, $markupPercent);

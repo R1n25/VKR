@@ -142,6 +142,13 @@ class CartController extends Controller
      */
     public function getCartCount()
     {
+        // Для неавторизованных пользователей возвращаем 0
+        if (!auth()->check()) {
+            return response()->json([
+                'cart_count' => 0,
+            ]);
+        }
+        
         $cartCount = $this->cartService->getCartItemsCount();
 
         return response()->json([

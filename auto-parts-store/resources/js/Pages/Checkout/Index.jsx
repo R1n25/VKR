@@ -5,6 +5,9 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 export default function Index({ auth, cart, cartItems, user }) {
     const [processing, setProcessing] = useState(false);
     const [errors, setErrors] = useState({});
+    const [validationErrors, setValidationErrors] = useState({
+        shipping_phone: '',
+    });
     const [formData, setFormData] = useState({
         shipping_name: user ? user.name : '',
         shipping_phone: user ? user.phone || '' : '',
@@ -13,17 +16,108 @@ export default function Index({ auth, cart, cartItems, user }) {
         shipping_zip: '',
         notes: '',
     });
+    
+    // Функция для валидации телефонного номера в российском формате
+    const validatePhone = (phoneNumber) => {
+        // Удаляем все нецифровые символы для проверки
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Проверка основных форматов российских номеров:
+        // 1. Начинается с 7 или 8, всего 11 цифр
+        // 2. Начинается с +7, всего 11 цифр (+ не считается)
+        if (/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits)) {
+            return { isValid: true, error: '' };
+        } else if (digits.length !== 11) {
+            return { 
+                isValid: false, 
+                error: 'Номер телефона должен содержать 11 цифр'
+            };
+        } else if (!/^[78]/.test(digits)) {
+            return { 
+                isValid: false, 
+                error: 'Номер должен начинаться с 7 или 8'
+            };
+        } else {
+            return { 
+                isValid: false, 
+                error: 'Неверный формат номера телефона'
+            };
+        }
+    };
+    
+    // Форматирование телефонного номера для удобного отображения
+    const formatPhone = (phoneNumber) => {
+        // Удаляем все нецифровые символы
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Если номер пустой, возвращаем пустую строку
+        if (!digits) return '';
+        
+        // Форматируем номер в формате +7 (XXX) XXX-XX-XX
+        if (digits.length <= 1) {
+            return digits;
+        } else if (digits.length <= 4) {
+            return `+7 (${digits.substring(1)}`;
+        } else if (digits.length <= 7) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4)}`;
+        } else if (digits.length <= 9) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}`;
+        } else {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7, 9)}-${digits.substring(9, 11)}`;
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
+        
+        // Специальная обработка для телефона
+        if (name === 'shipping_phone') {
+            // Форматируем номер и сохраняем его
+            const formattedValue = formatPhone(value);
+            
+            // Проверяем валидность номера
+            const { isValid, error } = validatePhone(value);
+            
+            // Устанавливаем ошибку только если поле не пустое
+            if (value && !isValid) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    shipping_phone: error
+                }));
+            } else {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    shipping_phone: ''
+                }));
+            }
+            
+            // Обновляем значение поля
+            setFormData(prev => ({
+                ...prev,
+                [name]: formattedValue
+            }));
+        } else {
+            // Для других полей стандартная обработка
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        
+        // Проверяем валидность телефона перед отправкой
+        const { isValid, error } = validatePhone(formData.shipping_phone);
+        if (!isValid && formData.shipping_phone) {
+            setValidationErrors(prev => ({
+                ...prev,
+                shipping_phone: error
+            }));
+            return;
+        }
+        
         setProcessing(true);
         setErrors({});
 
@@ -43,7 +137,7 @@ export default function Index({ auth, cart, cartItems, user }) {
         return (
             <AuthenticatedLayout
                 user={auth.user}
-                header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Оформление заказа</h2>}
+                header={<h2 className="font-semibold text-xl text-white leading-tight">Оформление заказа</h2>}
             >
                 <Head title="Оформление заказа" />
                 <div className="py-12">
@@ -72,7 +166,7 @@ export default function Index({ auth, cart, cartItems, user }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Оформление заказа</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Оформление заказа</h2>}
         >
             <Head title="Оформление заказа" />
 
@@ -109,14 +203,18 @@ export default function Index({ auth, cart, cartItems, user }) {
                                                     Телефон
                                                 </label>
                                                 <input
-                                                    type="text"
+                                                    type="tel"
                                                     id="shipping_phone"
                                                     name="shipping_phone"
                                                     value={formData.shipping_phone}
                                                     onChange={handleInputChange}
-                                                    className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${errors.shipping_phone ? 'border-red-500' : ''}`}
+                                                    placeholder="+7 (XXX) XXX-XX-XX"
+                                                    className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${errors.shipping_phone || validationErrors.shipping_phone ? 'border-red-500' : ''}`}
                                                 />
-                                                {errors.shipping_phone && (
+                                                {validationErrors.shipping_phone && (
+                                                    <p className="mt-1 text-sm text-red-600">{validationErrors.shipping_phone}</p>
+                                                )}
+                                                {errors.shipping_phone && !validationErrors.shipping_phone && (
                                                     <p className="mt-1 text-sm text-red-600">{errors.shipping_phone}</p>
                                                 )}
                                             </div>

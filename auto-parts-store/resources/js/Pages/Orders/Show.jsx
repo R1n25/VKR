@@ -83,7 +83,7 @@ export default function OrderShow({ auth, order }) {
     return (
         <AuthenticatedLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Заказ №{order.order_number}</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Заказ №{order.order_number}</h2>}
         >
             <Head title={`Заказ №${order.order_number}`} />
 

@@ -130,10 +130,11 @@ export default function Index({ auth, spareParts, categories, filters }) {
     };
 
     const handleUpdateCategory = (partId, categoryId) => {
-        router.put(url(`admin/spare-parts-update-category/${partId}`), {
+        router.put(url(`admin/spare-parts/${partId}/update-category`), {
             category_id: categoryId
         }, {
             preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
                 setNotification({ type: 'success', message: 'Категория запчасти успешно обновлена' });
             },
@@ -153,7 +154,7 @@ export default function Index({ auth, spareParts, categories, filters }) {
     return (
         <AdminLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Запчасти</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Запчасти</h2>}
         >
             <Head title="Управление запчастями" />
             

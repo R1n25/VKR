@@ -87,7 +87,7 @@ export default function OrderSuccess({ auth, order }) {
             {auth.user ? (
                 <AuthenticatedLayout
                     user={auth.user}
-                    header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Заказ оформлен</h2>}
+                    header={<h2 className="font-semibold text-xl text-white leading-tight">Заказ оформлен</h2>}
                 >
                     {content}
                 </AuthenticatedLayout>

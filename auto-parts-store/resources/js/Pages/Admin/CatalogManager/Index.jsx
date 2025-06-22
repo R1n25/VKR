@@ -106,7 +106,7 @@ export default function CatalogManager({ auth, backups }) {
     return (
         <AdminLayout
             user={auth.user}
-            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Управление каталогом</h2>}
+            header={<h2 className="font-semibold text-xl text-white leading-tight">Управление каталогом</h2>}
         >
             <Head title="Управление каталогом" />
             

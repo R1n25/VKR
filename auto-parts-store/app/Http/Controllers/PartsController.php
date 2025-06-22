@@ -35,6 +35,11 @@ class PartsController extends Controller
      */
     public function show($id)
     {
+        // Проверяем, что ID является числом
+        if (!is_numeric($id)) {
+            abort(404, 'Запчасть не найдена');
+        }
+        
         // Проверяем, является ли пользователь администратором
         $isAdmin = auth()->check() && auth()->user()->is_admin;
         

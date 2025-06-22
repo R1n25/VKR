@@ -25,15 +25,26 @@ class CartMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        // Если пользователь вошел в систему, выполняем объединение корзин
+        // Если пользователь вошел в систему
         if (Auth::check()) {
-            // Получаем текущего пользователя
             $user = Auth::user();
             
-            // Объединяем корзину гостя с корзиной пользователя
-            // и получаем персональную корзину пользователя
-            $this->cartService->mergeGuestCartWithUserCart($user);
+            // Проверяем наличие активной корзины для пользователя
+            $userCart = \App\Models\Cart::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->first();
+            
+            // Если у пользователя нет активной корзины, создаем новую
+            if (!$userCart) {
+                \App\Models\Cart::create([
+                    'user_id' => $user->id,
+                    'session_id' => null,
+                    'is_active' => true,
+                    'total_price' => 0
+                ]);
+            }
         }
+        // Для неавторизованных пользователей ничего не делаем
 
         return $next($request);
     }

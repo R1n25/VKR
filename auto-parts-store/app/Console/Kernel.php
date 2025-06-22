@@ -13,6 +13,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        
+        // Очистка неактивных корзин каждый день в полночь
+        $schedule->command('carts:cleanup')->daily();
     }
 
     /**
@@ -29,5 +32,6 @@ class Kernel extends ConsoleKernel
         // ... существующие команды ...
         \App\Console\Commands\AssignPartsToEngines::class,
         \App\Console\Commands\AssignPartsByCategoryToEngines::class,
+        \App\Console\Commands\CleanupInactiveCarts::class,
     ];
 } 

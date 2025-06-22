@@ -43,12 +43,27 @@ class AuthenticatedSessionController extends Controller
         
         // Аутентифицируем пользователя
         $loginRequest->authenticate();
-
+        
+        // Получаем пользователя
+        $user = Auth::user();
+        
+        // Проверяем, есть ли у пользователя активная корзина
+        $userCart = \App\Models\Cart::where('user_id', $user->id)
+            ->where('is_active', true)
+            ->first();
+        
+        // Если у пользователя нет активной корзины, создаем новую
+        if (!$userCart) {
+            \App\Models\Cart::create([
+                'user_id' => $user->id,
+                'session_id' => null,
+                'is_active' => true,
+                'total_price' => 0
+            ]);
+        }
+        
         // Регенерируем сессию
         $request->session()->regenerate();
-        
-        // Объединяем корзину гостя с корзиной пользователя
-        $this->cartService->mergeGuestCartWithUserCart(Auth::user());
 
         // Перенаправляем на домашнюю страницу
         return redirect()->intended(RouteServiceProvider::HOME);
@@ -59,18 +74,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Сохраняем ID пользователя перед выходом
+        $userId = Auth::id();
+        
+        // Деактивируем все корзины пользователя при выходе
+        if ($userId) {
+            \App\Models\Cart::where('user_id', $userId)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
+        }
+        
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
-        
-        // Очищаем ключ корзины гостя при выходе
-        if ($request->hasHeader('User-Agent')) {
-            $response = redirect('/login');
-            $response->header('Set-Cookie', 'cart_guest_key=; Max-Age=0; path=/');
-            return $response;
-        }
 
         return redirect('/login');
     }

@@ -438,52 +438,13 @@ class SparePartController extends Controller
     }
     
     /**
-     * Отображение деталей запчасти
-     *
-     * @param  int  $id
-     * @return \Inertia\Response
+     * Отображение информации о запчасти
+     * Перенаправляет на PartsController для обеспечения обратной совместимости
      */
     public function show($id)
     {
-        try {
-            // Проверяем, является ли пользователь администратором
-            $isAdmin = auth()->check() && auth()->user()->is_admin;
-            
-            // Получаем информацию о запчасти
-            $sparePart = $this->sparePartService->getSparePartById($id, $isAdmin);
-            
-            if (!$sparePart) {
-                return redirect()->route('home')->with('error', 'Запчасть не найдена');
-            }
-            
-            // Получаем аналоги запчасти
-            $analogs = $this->analogService->getAnalogs($id);
-            
-            // Получаем совместимые автомобили
-            $compatibilities = $this->compatibilityService->getCompatibilities($id);
-            
-            // Получаем похожие запчасти
-            $similarParts = $this->sparePartService->getSimilarSpareParts($id, 4, $isAdmin);
-            
-            // Получаем хлебные крошки
-            $breadcrumbs = $this->getBreadcrumbs($sparePart);
-            
-            return Inertia::render('SpareParts/Show', [
-                'auth' => [
-                    'user' => auth()->user(),
-                ],
-                'sparePart' => $sparePart,
-                'analogs' => $analogs,
-                'compatibilities' => $compatibilities,
-                'similarParts' => $similarParts,
-                'breadcrumbs' => $breadcrumbs
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Ошибка при отображении запчасти: ' . $e->getMessage());
-            Log::error($e->getTraceAsString());
-            
-            return redirect()->route('home')->with('error', 'Произошла ошибка при загрузке информации о запчасти');
-        }
+        // Перенаправляем на метод show контроллера PartsController
+        return app(PartsController::class)->show($id);
     }
     
     /**

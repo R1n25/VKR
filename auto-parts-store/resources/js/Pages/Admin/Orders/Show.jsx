@@ -15,19 +15,13 @@ import AdminAlert from '@/Components/AdminAlert';
 import OrderStatusBadge from '@/Components/OrderStatusBadge';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
-import SuccessButton from '@/Components/SuccessButton';
-import DangerButton from '@/Components/DangerButton';
 
 // Настройка axios
 axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 axios.defaults.withCredentials = true;
 
 export default function Show({ auth, order }) {
-    const [note, setNote] = useState('');
-    const [processing, setProcessing] = useState(false);
     const [statusError, setStatusError] = useState('');
-    const [noteError, setNoteError] = useState('');
-    const [addingNote, setAddingNote] = useState(false);
     const [statusComment, setStatusComment] = useState('');
     const [selectedStatus, setSelectedStatus] = useState(order?.status || 'pending');
     const [feedbackMessage, setFeedbackMessage] = useState(null);
@@ -139,100 +133,6 @@ export default function Show({ auth, order }) {
             setMessageType('error');
         } finally {
             setIsUpdating(false);
-        }
-    };
-
-    // Функция для быстрого изменения статуса через кнопку
-    const handleQuickStatusChange = async (newStatus) => {
-        if (processing) return;
-        
-        if (newStatus === order.status) {
-            setFeedbackMessage('Заказ уже имеет этот статус');
-            setMessageType('info');
-            return;
-        }
-        
-        if (!confirm(`Изменить статус заказа на "${getStatusText(newStatus)}"?`)) {
-            return;
-        }
-        
-        setSelectedStatus(newStatus);
-        setProcessing(true);
-        setStatusError('');
-        setFeedbackMessage(null);
-        
-        try {
-            const response = await axios.put(url(`admin/orders/${order.id}/update-status`), {
-                status: newStatus,
-                note: statusComment
-            });
-            
-            setStatusComment('');
-            setFeedbackMessage('Статус заказа успешно обновлен');
-            setMessageType('success');
-            
-            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
-            setTimeout(() => {
-                router.reload();
-            }, 1000);
-        } catch (error) {
-            console.error('Ошибка при обновлении статуса:', error);
-            
-            if (error.response && error.response.data && error.response.data.error) {
-                setStatusError(error.response.data.error);
-                setFeedbackMessage(error.response.data.error);
-            } else {
-                setStatusError('Не удалось обновить статус заказа.');
-                setFeedbackMessage('Не удалось обновить статус заказа.');
-            }
-            
-            setMessageType('error');
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    // Функция для добавления заметки к заказу
-    const handleAddNote = async (e) => {
-        e.preventDefault();
-        
-        if (!note.trim()) {
-            setNoteError('Введите текст заметки');
-            return;
-        }
-        
-        setAddingNote(true);
-        setNoteError('');
-        setFeedbackMessage(null);
-        
-        try {
-            const response = await axios.post(url(`admin/orders/${order.id}/add-note`), {
-                note: note
-            });
-            
-            // Очищаем форму и обновляем страницу
-            setNote('');
-            setFeedbackMessage('Комментарий успешно добавлен');
-            setMessageType('success');
-            
-            // Обновляем страницу через 1 секунду, чтобы пользователь успел увидеть сообщение
-            setTimeout(() => {
-                router.reload();
-            }, 1000);
-        } catch (error) {
-            console.error('Ошибка при добавлении заметки:', error);
-            
-            if (error.response && error.response.data && error.response.data.error) {
-                setNoteError(error.response.data.error);
-                setFeedbackMessage(error.response.data.error);
-            } else {
-                setNoteError('Не удалось добавить заметку к заказу.');
-                setFeedbackMessage('Не удалось добавить заметку к заказу.');
-            }
-            
-            setMessageType('error');
-        } finally {
-            setAddingNote(false);
         }
     };
     
@@ -413,37 +313,6 @@ export default function Show({ auth, order }) {
                                     )}
                                 </div>
                             )}
-                            
-                            <div className="flex flex-wrap gap-2 mt-4">
-                                <SuccessButton
-                                    onClick={() => handleQuickStatusChange('processing')}
-                                    disabled={processing || order.status === 'processing'}
-                                    className="text-xs"
-                                >
-                                    В работу
-                                </SuccessButton>
-                                <PrimaryButton
-                                    onClick={() => handleQuickStatusChange('ready_for_pickup')}
-                                    disabled={processing || order.status === 'ready_for_pickup'}
-                                    className="text-xs"
-                                >
-                                    Готов к выдаче
-                                </PrimaryButton>
-                                <PrimaryButton
-                                    onClick={() => handleQuickStatusChange('delivered')}
-                                    disabled={processing || order.status === 'delivered'}
-                                    className="text-xs"
-                                >
-                                    Выдано клиенту
-                                </PrimaryButton>
-                                <DangerButton
-                                    onClick={() => handleQuickStatusChange('returned')}
-                                    disabled={processing || order.status === 'returned'}
-                                    className="text-xs"
-                                >
-                                    Возврат
-                                </DangerButton>
-                            </div>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -555,70 +424,6 @@ export default function Show({ auth, order }) {
                             }
                             emptyMessage="В заказе нет товаров"
                         />
-                    </AdminCard>
-                    
-                    {/* Комментарии к заказу */}
-                    <AdminCard className="mb-6">
-                        <h3 className="text-lg font-semibold mb-4 text-[#2a4075]">Комментарии к заказу</h3>
-                        
-                        {order.notes && order.notes.length > 0 ? (
-                            <div className="space-y-4 mb-6">
-                                {(order.notes || []).map((noteItem, index) => (
-                                    <div key={index} className="bg-gray-50 p-4 rounded-lg">
-                                        <div className="flex justify-between mb-2">
-                                            <span className="text-sm font-medium text-[#2a4075]">
-                                                {noteItem.admin_name || 'Администратор'}
-                                            </span>
-                                            <span className="text-xs text-gray-500">
-                                                {formatDate(noteItem.created_at)}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm text-gray-700">{noteItem.note}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-gray-500 mb-4">Нет комментариев к заказу</p>
-                        )}
-                        
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h4 className="text-md font-medium mb-3 text-[#2a4075]">Добавить комментарий</h4>
-                            <form onSubmit={handleAddNote}>
-                                <AdminFormGroup>
-                                    <AdminTextarea
-                                        value={note}
-                                        handleChange={(e) => setNote(e.target.value)}
-                                        rows="3"
-                                        placeholder="Введите текст комментария"
-                                        error={noteError}
-                                    />
-                                </AdminFormGroup>
-                                <div className="flex justify-end">
-                                    <PrimaryButton
-                                        type="submit"
-                                        disabled={addingNote || !note.trim()}
-                                        className="flex items-center"
-                                    >
-                                        {addingNote ? (
-                                            <>
-                                                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                                </svg>
-                                                Добавление...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                                </svg>
-                                                Добавить комментарий
-                                            </>
-                                        )}
-                                    </PrimaryButton>
-                                </div>
-                            </form>
-                        </div>
                     </AdminCard>
                 </div>
             </div>

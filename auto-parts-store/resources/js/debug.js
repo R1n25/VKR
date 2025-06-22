@@ -8,8 +8,15 @@ function addDebugInfo() {
     if (window.location.pathname === '/search') {
         console.log('Страница поиска загружена');
         
+        // Проверяем, существует ли уже контейнер для отладки
+        if (document.getElementById('debug-container')) {
+            console.log('Отладочный контейнер уже существует, пропускаем создание');
+            return;
+        }
+        
         // Создаем контейнер для отладочной информации
         const debugContainer = document.createElement('div');
+        debugContainer.id = 'debug-container';
         debugContainer.style.position = 'fixed';
         debugContainer.style.bottom = '10px';
         debugContainer.style.right = '10px';
@@ -142,7 +149,7 @@ function addDebugInfo() {
             debugContainer.appendChild(showResultsButton);
         } else {
             const errorInfo = document.createElement('div');
-            errorInfo.textContent = 'Не удалось получить данные страницы';
+            errorInfo.textContent = '';
             debugContainer.appendChild(errorInfo);
         }
         
@@ -158,4 +165,47 @@ if (document.readyState === 'complete') {
     window.addEventListener('load', addDebugInfo);
 }
 
-// Удаляем патч для Inertia.js, который может вызывать проблемы с двойным рендерингом 
+// Полезные отладочные функции для фронтенда
+
+window.dd = function(...args) {
+    console.log('DEBUG:', ...args);
+};
+
+// Сохранение CSRF-токена при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) {
+        localStorage.setItem('csrf_token', metaTag.getAttribute('content'));
+    }
+});
+
+// Глобальная функция получения CSRF-токена для всего приложения
+window.getCsrfToken = function() {
+    // Пробуем получить из мета-тега
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag && metaTag.getAttribute('content')) {
+        return metaTag.getAttribute('content');
+    }
+    
+    // Пробуем получить из cookies (Laravel хранит токен в зашифрованном виде)
+    let match = document.cookie.match(new RegExp('(^|;)\\s*XSRF-TOKEN\\s*=\\s*([^;]+)'));
+    if (match) {
+        // Laravel хранит токен в URL-закодированном виде
+        return decodeURIComponent(match[2]);
+    }
+    
+    // Пробуем получить из простого cookie csrf_token
+    match = document.cookie.match(new RegExp('(^|;)\\s*csrf_token\\s*=\\s*([^;]+)'));
+    if (match) {
+        return match[2];
+    }
+    
+    // Последняя попытка - получить из локального хранилища
+    const storedToken = localStorage.getItem('csrf_token');
+    if (storedToken) {
+        return storedToken;
+    }
+    
+    console.warn('CSRF токен не найден, запрос может быть отклонен сервером');
+    return '';
+}; 

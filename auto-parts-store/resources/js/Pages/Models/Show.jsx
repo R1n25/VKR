@@ -37,7 +37,7 @@ export default function ModelShow({ auth, modelId }) {
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 className="font-semibold text-xl text-white leading-tight">
                     {loading ? 'Загрузка модели...' : model ? (model.brand_name ? `${model.brand_name.replace(/^"(.+)"$/, '$1')} ${model.name}` : model.name) : 'Модель'}
                 </h2>
             }

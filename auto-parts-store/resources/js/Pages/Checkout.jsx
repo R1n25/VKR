@@ -19,6 +19,11 @@ export default function Checkout({ auth }) {
         address: '',
         notes: ''
     });
+    
+    // Объект для хранения ошибок валидации полей
+    const [validationErrors, setValidationErrors] = useState({
+        phone: ''
+    });
 
     // Получаем ключ для localStorage в зависимости от пользователя
     const getStorageKey = () => {
@@ -60,12 +65,93 @@ export default function Checkout({ auth }) {
         setLoading(false);
     }, []);
 
+    // Функция для валидации телефонного номера в российском формате
+    const validatePhone = (phoneNumber) => {
+        // Удаляем все нецифровые символы для проверки
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Проверка основных форматов российских номеров:
+        // 1. Начинается с 7 или 8, всего 11 цифр
+        // 2. Начинается с +7, всего 11 цифр (+ не считается)
+        if (/^7\d{10}$/.test(digits) || /^8\d{10}$/.test(digits)) {
+            return { isValid: true, error: '' };
+        } else if (digits.length !== 11) {
+            return { 
+                isValid: false, 
+                error: 'Номер телефона должен содержать 11 цифр'
+            };
+        } else if (!/^[78]/.test(digits)) {
+            return { 
+                isValid: false, 
+                error: 'Номер должен начинаться с 7 или 8'
+            };
+        } else {
+            return { 
+                isValid: false, 
+                error: 'Неверный формат номера телефона'
+            };
+        }
+    };
+    
+    // Форматирование телефонного номера для удобного отображения
+    const formatPhone = (phoneNumber) => {
+        // Удаляем все нецифровые символы
+        const digits = phoneNumber.replace(/\D/g, '');
+        
+        // Если номер пустой, возвращаем пустую строку
+        if (!digits) return '';
+        
+        // Форматируем номер в формате +7 (XXX) XXX-XX-XX
+        if (digits.length <= 1) {
+            return digits;
+        } else if (digits.length <= 4) {
+            return `+7 (${digits.substring(1)}`;
+        } else if (digits.length <= 7) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4)}`;
+        } else if (digits.length <= 9) {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7)}`;
+        } else {
+            return `+7 (${digits.substring(1, 4)}) ${digits.substring(4, 7)}-${digits.substring(7, 9)}-${digits.substring(9, 11)}`;
+        }
+    };
+
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFormData({
-            ...formData,
-            [name]: value
-        });
+        
+        // Специальная обработка для телефона
+        if (name === 'phone') {
+            // Форматируем номер и сохраняем его
+            const formattedValue = formatPhone(value);
+            
+            // Проверяем валидность номера
+            const { isValid, error } = validatePhone(value);
+            
+            // Устанавливаем ошибку только если поле не пустое
+            if (value && !isValid) {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    phone: error
+                }));
+            } else {
+                setValidationErrors(prev => ({
+                    ...prev,
+                    phone: ''
+                }));
+            }
+            
+            // Обновляем значение поля
+            setFormData(prev => ({
+                ...prev,
+                [name]: formattedValue
+            }));
+        } else {
+            // Для других полей стандартная обработка
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+        
         console.log('Обновлено поле формы:', name, value);
     };
 
@@ -95,6 +181,17 @@ export default function Checkout({ auth }) {
         if (!hasValidItems) {
             console.error('Ошибка в формате данных корзины:', cart);
             setError('Неверный формат данных в корзине. Пожалуйста, обновите страницу и попробуйте снова.');
+            return;
+        }
+        
+        // Проверяем валидность телефона
+        const { isValid, error } = validatePhone(formData.phone);
+        if (!isValid) {
+            setError(error || 'Неверный формат телефона');
+            setValidationErrors(prev => ({
+                ...prev,
+                phone: error || 'Неверный формат телефона'
+            }));
             return;
         }
         
@@ -355,8 +452,11 @@ export default function Checkout({ auth }) {
                                                     onChange={handleInputChange}
                                                     required
                                                     placeholder="+7 (XXX) XXX-XX-XX"
-                                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                                                    className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 ${validationErrors.phone ? 'border-red-500' : ''}`}
                                                 />
+                                                {validationErrors.phone && (
+                                                    <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                                                )}
                                             </div>
                                             
                                             <div className="sm:col-span-2">
@@ -456,7 +556,7 @@ export default function Checkout({ auth }) {
             {auth.user ? (
                 <AuthenticatedLayout
                     user={auth.user}
-                    header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Оформление заказа</h2>}
+                    header={<h2 className="font-semibold text-xl text-white leading-tight">Оформление заказа</h2>}
                 >
                     {content}
                 </AuthenticatedLayout>

@@ -83,7 +83,7 @@ export default function CategoryShow({ auth, categoryId, engine }) {
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 className="font-semibold text-xl text-white leading-tight">
                     {loading ? 'Загрузка категории...' : category ? (
                         engine ? `${category.name} для ${engine.brand_name} ${engine.model_name}` : category.name
                     ) : 'Категория'}

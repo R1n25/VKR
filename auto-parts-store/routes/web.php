@@ -88,6 +88,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     // Детальная информация о запчасти
     Route::get('/parts/{id}', [PartDetailController::class, 'show'])->name('parts.show');
+    
+    // Альтернативный маршрут для обратной совместимости
+    Route::get('/spare-parts/{id}', [PartDetailController::class, 'show'])->name('spare-parts.show');
 });
 
 // Маршруты для авторизованных пользователей
@@ -178,13 +181,15 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('auth');
     Route::post('/parts/{id}/suggest-analog', [UserSuggestionController::class, 'storeAnalogById'])
         ->name('suggestions.store-analog-by-id')
-        ->middleware('auth');
+        ->middleware('auth')
+        ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
     Route::get('/parts/{id}/suggest-compatibility', [UserSuggestionController::class, 'createCompatibilityById'])
         ->name('suggestions.create-compatibility-by-id')
         ->middleware('auth');
     Route::post('/parts/{id}/suggest-compatibility', [UserSuggestionController::class, 'storeCompatibilityById'])
         ->name('suggestions.store-compatibility-by-id')
-        ->middleware('auth');
+        ->middleware('auth')
+        ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);
 });
 
 // Маршруты админ-панели

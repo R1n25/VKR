@@ -48,7 +48,7 @@ export default function BrandShow({ auth, brandId, brand: initialBrand, models: 
         <AuthenticatedLayout
             user={auth.user}
             header={
-                <h2 className="font-semibold text-xl text-gray-800 leading-tight">
+                <h2 className="font-semibold text-xl text-white leading-tight">
                     {loading ? 'Загрузка бренда...' : brand ? brand.name : 'Бренд'}
                 </h2>
             }
